@@ -1,0 +1,1374 @@
+{
+  "bookings" : [
+    {
+      "arrives" : "2025-11-23T12:29",
+      "departs" : "2025-11-23T08:00",
+      "from" : "London King's Cross",
+      "id" : "booking-train-out",
+      "kind" : "train",
+      "notes" : "Direct service. Allow time for station entrances and finding your platform.",
+      "to" : "Edinburgh Waverley"
+    },
+    {
+      "arrives" : "2025-11-25T18:52",
+      "departs" : "2025-11-25T14:30",
+      "from" : "Edinburgh Waverley",
+      "id" : "booking-train-back",
+      "kind" : "train",
+      "notes" : "Check the live platform and service status on the day.",
+      "to" : "London King's Cross"
+    }
+  ],
+  "days" : [
+    {
+      "copy" : {
+        "summary" : "The Sunday market closes at 16:00, so it gets first dibs on your afternoon.",
+        "title" : "Market first. Magic later."
+      },
+      "date" : "2025-11-23",
+      "stops" : [
+        {
+          "copy" : {
+            "actionLabel" : "Walk to the luggage store",
+            "body" : "Arrive in Edinburgh. If the apartment is not ready, leave your bags at the luggage store on Rose Street before heading out to Stockbridge.",
+            "title" : "Arrive at Waverley"
+          },
+          "flexible" : false,
+          "id" : "d1-arrive",
+          "kind" : "travel",
+          "minutes" : 20,
+          "placeId" : "osm:node/7149998196",
+          "start" : "12:29"
+        },
+        {
+          "copy" : {
+            "actionLabel" : "Walk to the market",
+            "body" : "Build your own lunch from whichever hot-food traders are there. Browse the breads, cheese, bakes and little independent stands. Sunday only, 10:00-16:00.",
+            "title" : "Stockbridge Market"
+          },
+          "flexible" : true,
+          "id" : "d1-market",
+          "kind" : "meal",
+          "mealSlot" : "lunch",
+          "minutes" : 90,
+          "placeId" : "osm:node/2338447599",
+          "start" : "13:15"
+        },
+        {
+          "copy" : {
+            "actionLabel" : "Walk back via Rose Street",
+            "body" : "Walk back via Rose Street to pick up the bags, then check in, get the kettle on and rest your feet. There is no lift, so take the stairs slowly.",
+            "title" : "Bags, check-in and warm up"
+          },
+          "flexible" : false,
+          "id" : "d1-bags",
+          "kind" : "logistics",
+          "minutes" : 60,
+          "placeId" : "manual:stay-new-town",
+          "start" : "15:00"
+        },
+        {
+          "copy" : {
+            "actionLabel" : "Head to the lights",
+            "body" : "Big Wheel, festive stalls, drinks and illuminated architecture. East Princes Street Gardens is free to enter; buy only what looks delicious. Come at blue hour.",
+            "title" : "Christmas market after dark"
+          },
+          "flexible" : true,
+          "id" : "d1-christmas",
+          "kind" : "sight",
+          "minutes" : 90,
+          "placeId" : "osm:way/5585005",
+          "start" : "16:30"
+        },
+        {
+          "copy" : {
+            "actionLabel" : "Find The Abbotsford",
+            "body" : "The Abbotsford is close to the apartment and a traditional Scottish pub to start with. No queue required.",
+            "title" : "First Edinburgh pint"
+          },
+          "flexible" : true,
+          "id" : "d1-pint",
+          "kind" : "drink",
+          "minutes" : 60,
+          "placeId" : "osm:node/1367337816",
+          "start" : "19:00"
+        }
+      ]
+    },
+    {
+      "copy" : {
+        "summary" : "Photograph the Old Town by daylight; end near a warm food hall and historic pubs.",
+        "title" : "Old stones. Hot food. Cold beer."
+      },
+      "date" : "2025-11-24",
+      "stops" : [
+        {
+          "copy" : {
+            "actionLabel" : "Walk to the Esplanade",
+            "body" : "Start high, before the streets fill. The castle's outside forecourt is free; the historic interior needs a ticket.",
+            "title" : "Royal Mile and Castle Esplanade"
+          },
+          "flexible" : true,
+          "id" : "d2-castle",
+          "kind" : "sight",
+          "minutes" : 90,
+          "placeId" : "manual:royal-mile",
+          "start" : "09:30"
+        },
+        {
+          "copy" : {
+            "actionLabel" : "Find Oink",
+            "body" : "Photograph the colourful curve, then grab an Oink pork roll with haggis stuffing if you fancy something properly Scottish.",
+            "title" : "Victoria Street and a hog roast"
+          },
+          "flexible" : true,
+          "id" : "d2-oink",
+          "kind" : "meal",
+          "mealSlot" : "lunch",
+          "minutes" : 60,
+          "placeId" : "osm:node/2339288064",
+          "start" : "11:30"
+        },
+        {
+          "copy" : {
+            "actionLabel" : "Walk to the photo spot",
+            "body" : "Explore the little closes and climb The Vennel for the classic castle view. If it is cold, The Bow Bar is a few steps away on West Bow.",
+            "title" : "Grassmarket and The Vennel"
+          },
+          "flexible" : true,
+          "id" : "d2-grassmarket",
+          "kind" : "sight",
+          "minutes" : 60,
+          "placeId" : "osm:way/192212388",
+          "start" : "13:00"
+        },
+        {
+          "alternative" : {
+            "placeId" : "osm:node/10785545157",
+            "reason" : "rain"
+          },
+          "copy" : {
+            "actionLabel" : "Walk to the viewpoint",
+            "body" : "Get up the hill before the 15:53 sunset. It is windy up there. If the weather turns, swap it for a pub.",
+            "title" : "Calton Hill, if skies cooperate"
+          },
+          "flexible" : true,
+          "id" : "d2-calton",
+          "kind" : "sight",
+          "minutes" : 75,
+          "placeId" : "osm:node/1149620440",
+          "start" : "15:10"
+        },
+        {
+          "copy" : {
+            "actionLabel" : "Walk to the food hall",
+            "body" : "Eleven independent kitchens and three bars: an easy dinner of interesting dishes without having to pick one cuisine. Just below Calton Hill.",
+            "title" : "Edinburgh Street Food"
+          },
+          "flexible" : true,
+          "id" : "d2-street-food",
+          "kind" : "meal",
+          "mealSlot" : "dinner",
+          "minutes" : 75,
+          "placeId" : "osm:node/10785545157",
+          "start" : "16:45"
+        },
+        {
+          "copy" : {
+            "actionLabel" : "Walk to the pub",
+            "body" : "Admire the carved interior and ceiling over a Scottish cask ale. The apartment is only a short walk away.",
+            "title" : "One for the road: Guildford Arms"
+          },
+          "flexible" : true,
+          "id" : "d2-guildford",
+          "kind" : "drink",
+          "minutes" : 60,
+          "placeId" : "osm:node/33185107",
+          "start" : "19:00"
+        }
+      ]
+    },
+    {
+      "copy" : {
+        "summary" : "With a 14:30 train there is time for a slow morning, an unhurried coffee and one final photo stop.",
+        "title" : "One last wander. Then home."
+      },
+      "date" : "2025-11-25",
+      "stops" : [
+        {
+          "copy" : {
+            "body" : "Tattie scones, Lorne sausage and morning rolls at the apartment, or pick a nearby cafe. Take it slowly.",
+            "title" : "A proper Scottish breakfast"
+          },
+          "flexible" : true,
+          "id" : "d3-breakfast",
+          "kind" : "meal",
+          "mealSlot" : "breakfast",
+          "minutes" : 60,
+          "placeId" : "manual:stay-new-town",
+          "start" : "08:45"
+        },
+        {
+          "copy" : {
+            "actionLabel" : "Walk to the luggage store",
+            "body" : "Check out before 11:00 and leave your luggage at the test luggage store on Rose Street (published hours 09:00-17:00; check before you go).",
+            "title" : "Check out and leave your bags"
+          },
+          "flexible" : false,
+          "id" : "d3-checkout",
+          "kind" : "logistics",
+          "minutes" : 25,
+          "placeId" : "manual:luggage-rose",
+          "start" : "10:00"
+        },
+        {
+          "copy" : {
+            "actionLabel" : "Walk to Dean Village",
+            "body" : "About 20-25 minutes on foot, then 40-50 minutes photographing the Water of Leith and old stone buildings. Start heading back by 11:45-12:00.",
+            "title" : "Dean Village, camera in hand"
+          },
+          "flexible" : true,
+          "id" : "d3-dean",
+          "kind" : "sight",
+          "minutes" : 75,
+          "placeId" : "osm:relation/18573379",
+          "start" : "10:30"
+        },
+        {
+          "copy" : {
+            "actionLabel" : "Walk back to Queen Street",
+            "body" : "Back in the New Town, keep lunch simple and close to Queen or Rose Street. No last-minute cross-city detours.",
+            "title" : "A quick last bite, or a coffee"
+          },
+          "flexible" : true,
+          "id" : "d3-quick-bite",
+          "kind" : "meal",
+          "mealSlot" : "lunch",
+          "minutes" : 45,
+          "start" : "12:20"
+        },
+        {
+          "copy" : {
+            "actionLabel" : "Walk to Waverley",
+            "body" : "Pick up luggage on Rose Street. Allow 15-20 minutes to walk to Waverley plus a margin for the station entrances, and aim to arrive by 13:45.",
+            "title" : "Collect bags, then Waverley"
+          },
+          "flexible" : false,
+          "id" : "d3-collect",
+          "kind" : "travel",
+          "minutes" : 35,
+          "placeId" : "osm:node/7149998196",
+          "start" : "13:10"
+        },
+        {
+          "copy" : {
+            "body" : "Your return train leaves Waverley at 14:30 and arrives at London King's Cross at 18:52. Check the live platform and service status on the day.",
+            "title" : "Edinburgh to London King's Cross"
+          },
+          "flexible" : false,
+          "id" : "d3-train",
+          "kind" : "travel",
+          "minutes" : 262,
+          "placeId" : "osm:node/7149998196",
+          "start" : "14:30"
+        }
+      ]
+    }
+  ],
+  "id" : "edinburgh-mock",
+  "lists" : [
+    {
+      "caption" : "Go hungry. Leave curious.",
+      "placeIds" : [
+        "osm:node/2441578938",
+        "osm:node/2338447599",
+        "osm:node/10785545157",
+        "osm:node/658120552",
+        "osm:way/5585005"
+      ],
+      "title" : "Eat"
+    },
+    {
+      "caption" : "Classic interiors, interesting pints.",
+      "placeIds" : [
+        "osm:node/1367337816",
+        "osm:node/1367318907",
+        "osm:node/33185107",
+        "osm:node/57543992"
+      ],
+      "title" : "Drink"
+    },
+    {
+      "caption" : "Free views and memorable corners.",
+      "placeIds" : [
+        "osm:way/416314343",
+        "manual:the-vennel",
+        "osm:relation/18573379",
+        "osm:node/1149620440",
+        "manual:castle-esplanade"
+      ],
+      "title" : "Photos"
+    },
+    {
+      "caption" : "A few edible souvenirs for the apartment.",
+      "placeIds" : [
+        "osm:node/4752606949"
+      ],
+      "title" : "Groceries"
+    }
+  ],
+  "places" : {
+    "manual:castle-esplanade" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "The big open forecourt outside Edinburgh Castle is free; the castle interior is ticketed.",
+        "tag" : "Viewpoint"
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "manual:castle-esplanade",
+      "images" : [
+
+      ],
+      "indoor" : false,
+      "kind" : "viewpoint",
+      "location" : {
+        "address" : "Castle Esplanade, Edinburgh EH1 2NG",
+        "approximate" : true,
+        "coordinate" : {
+          "latitude" : 55.9486914,
+          "longitude" : -3.1982744
+        }
+      },
+      "name" : "Castle Esplanade"
+    },
+    "manual:luggage-rose" : {
+      "booking" : {
+        "needed" : false
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : true,
+        "weekly" : [
+          {
+            "close" : "17:00",
+            "open" : "09:00",
+            "weekday" : "monday"
+          },
+          {
+            "close" : "17:00",
+            "open" : "09:00",
+            "weekday" : "tuesday"
+          },
+          {
+            "close" : "17:00",
+            "open" : "09:00",
+            "weekday" : "wednesday"
+          },
+          {
+            "close" : "17:00",
+            "open" : "09:00",
+            "weekday" : "thursday"
+          },
+          {
+            "close" : "17:00",
+            "open" : "09:00",
+            "weekday" : "friday"
+          },
+          {
+            "close" : "17:00",
+            "open" : "09:00",
+            "weekday" : "saturday"
+          },
+          {
+            "close" : "17:00",
+            "open" : "09:00",
+            "weekday" : "sunday"
+          }
+        ]
+      },
+      "id" : "manual:luggage-rose",
+      "images" : [
+
+      ],
+      "indoor" : true,
+      "kind" : "luggage",
+      "location" : {
+        "address" : "Rose Street, Edinburgh EH2",
+        "approximate" : true,
+        "coordinate" : {
+          "latitude" : 55.9520067,
+          "longitude" : -3.2015643
+        }
+      },
+      "name" : "Test Luggage Store"
+    },
+    "manual:royal-mile" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "Start high, before the streets fill.",
+        "tag" : "Old Town"
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "manual:royal-mile",
+      "images" : [
+
+      ],
+      "indoor" : false,
+      "kind" : "street",
+      "location" : {
+        "address" : "Royal Mile, Edinburgh",
+        "approximate" : true,
+        "coordinate" : {
+          "latitude" : 55.9492923,
+          "longitude" : -3.1935672
+        }
+      },
+      "name" : "Royal Mile"
+    },
+    "manual:stay-new-town" : {
+      "booking" : {
+        "needed" : false
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "manual:stay-new-town",
+      "images" : [
+
+      ],
+      "indoor" : true,
+      "kind" : "lodging",
+      "location" : {
+        "address" : "Queen Street, Edinburgh EH2",
+        "approximate" : true,
+        "coordinate" : {
+          "latitude" : 55.95475,
+          "longitude" : -3.1992198
+        }
+      },
+      "name" : "New Town Test Apartment"
+    },
+    "manual:the-vennel" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "The castle framed above the stairway. Strongest in soft daylight or at blue hour.",
+        "tag" : "Castle view"
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "manual:the-vennel",
+      "images" : [
+
+      ],
+      "indoor" : false,
+      "kind" : "street",
+      "location" : {
+        "address" : "The Vennel, Edinburgh EH1 2HU",
+        "approximate" : true,
+        "coordinate" : {
+          "latitude" : 55.947481,
+          "longitude" : -3.1962464
+        }
+      },
+      "name" : "The Vennel"
+    },
+    "osm:node/10785545157" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "Eleven independent kitchens and three bars.",
+        "tag" : "Food hall"
+      },
+      "facts" : [
+        {
+          "checkedAt" : "2025-11-04",
+          "sourceId" : "src-street-food",
+          "text" : "Opens daily from noon. Closing time not confirmed."
+        }
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "osm:node/10785545157",
+      "images" : [
+
+      ],
+      "indoor" : true,
+      "kind" : "foodHall",
+      "location" : {
+        "address" : "Leith Street, Edinburgh EH1 3AU",
+        "approximate" : false,
+        "coordinate" : {
+          "latitude" : 55.9558412,
+          "longitude" : -3.1857072
+        }
+      },
+      "name" : "Edinburgh Street Food"
+    },
+    "osm:node/1149620440" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "Wide skyline compositions and iconic monuments. Exposed and windy, but worth it.",
+        "tag" : "Panorama"
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "osm:node/1149620440",
+      "images" : [
+
+      ],
+      "indoor" : false,
+      "kind" : "viewpoint",
+      "location" : {
+        "address" : "Calton Hill, Edinburgh EH7 5AA",
+        "approximate" : true,
+        "coordinate" : {
+          "latitude" : 55.9555565,
+          "longitude" : -3.1822564
+        }
+      },
+      "name" : "Calton Hill"
+    },
+    "osm:node/1367318907" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "A snug Old Town pub with cask beer and a deep whisky list.",
+        "tag" : "Beer and whisky"
+      },
+      "facts" : [
+        {
+          "checkedAt" : "2025-11-04",
+          "sourceId" : "src-bow-bar",
+          "text" : "Cask beer and a deep whisky list."
+        }
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "osm:node/1367318907",
+      "images" : [
+
+      ],
+      "indoor" : true,
+      "kind" : "pub",
+      "location" : {
+        "address" : "80 West Bow, Edinburgh EH1 2HH",
+        "approximate" : false,
+        "coordinate" : {
+          "latitude" : 55.9484235,
+          "longitude" : -3.1941366
+        }
+      },
+      "name" : "The Bow Bar"
+    },
+    "osm:node/1367337816" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "A beautifully preserved Edwardian pub with an island bar and real ale.",
+        "tag" : "Pub"
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "osm:node/1367337816",
+      "images" : [
+
+      ],
+      "indoor" : true,
+      "kind" : "pub",
+      "location" : {
+        "address" : "3-5 Rose Street, Edinburgh EH2 2PR",
+        "approximate" : false,
+        "coordinate" : {
+          "latitude" : 55.9532705,
+          "longitude" : -3.1946516
+        }
+      },
+      "name" : "The Abbotsford"
+    },
+    "osm:node/2338447599" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "Independent producers, bakes and rotating hot-food stalls.",
+        "tag" : "Sunday market"
+      },
+      "facts" : [
+        {
+          "checkedAt" : "2025-11-04",
+          "sourceId" : "src-markets",
+          "text" : "Sunday only, 10:00-16:00."
+        }
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : true,
+        "weekly" : [
+          {
+            "close" : "16:00",
+            "open" : "10:00",
+            "weekday" : "sunday"
+          }
+        ]
+      },
+      "id" : "osm:node/2338447599",
+      "images" : [
+
+      ],
+      "indoor" : false,
+      "kind" : "market",
+      "location" : {
+        "address" : "Saunders Street, Edinburgh EH3 6TQ",
+        "approximate" : false,
+        "coordinate" : {
+          "latitude" : 55.9576289,
+          "longitude" : -3.208443
+        }
+      },
+      "name" : "Stockbridge Market"
+    },
+    "osm:node/2339288064" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "A local hog-roast roll with your choice of stuffing.",
+        "tag" : "Hog roast"
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "osm:node/2339288064",
+      "images" : [
+
+      ],
+      "indoor" : true,
+      "kind" : "restaurant",
+      "location" : {
+        "address" : "34 Victoria Street, Edinburgh EH1 2JW",
+        "approximate" : false,
+        "coordinate" : {
+          "latitude" : 55.9485886,
+          "longitude" : -3.1942458
+        }
+      },
+      "name" : "Oink Victoria Street"
+    },
+    "osm:node/2441578938" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "A local hog-roast roll with your choice of stuffing: the closest delicious detour.",
+        "tag" : "Quick bite"
+      },
+      "facts" : [
+        {
+          "checkedAt" : "2025-11-04",
+          "sourceId" : "src-oink",
+          "text" : "Open 11:00-17:00 daily, or until sold out."
+        }
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : true,
+        "weekly" : [
+          {
+            "close" : "17:00",
+            "open" : "11:00",
+            "weekday" : "monday"
+          },
+          {
+            "close" : "17:00",
+            "open" : "11:00",
+            "weekday" : "tuesday"
+          },
+          {
+            "close" : "17:00",
+            "open" : "11:00",
+            "weekday" : "wednesday"
+          },
+          {
+            "close" : "17:00",
+            "open" : "11:00",
+            "weekday" : "thursday"
+          },
+          {
+            "close" : "17:00",
+            "open" : "11:00",
+            "weekday" : "friday"
+          },
+          {
+            "close" : "17:00",
+            "open" : "11:00",
+            "weekday" : "saturday"
+          },
+          {
+            "close" : "17:00",
+            "open" : "11:00",
+            "weekday" : "sunday"
+          }
+        ]
+      },
+      "id" : "osm:node/2441578938",
+      "images" : [
+
+      ],
+      "indoor" : true,
+      "kind" : "restaurant",
+      "location" : {
+        "address" : "38 Hanover Street, Edinburgh EH2 2DR",
+        "approximate" : false,
+        "coordinate" : {
+          "latitude" : 55.9529899,
+          "longitude" : -3.1973604
+        }
+      },
+      "name" : "Oink Hanover Street"
+    },
+    "osm:node/33185107" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "Ornate Victorian interior, elegant ceiling, Scottish cask ales.",
+        "tag" : "Best interior"
+      },
+      "facts" : [
+        {
+          "checkedAt" : "2025-11-04",
+          "sourceId" : "src-guildford",
+          "text" : "Scottish cask ales on rotating taps."
+        }
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "osm:node/33185107",
+      "images" : [
+
+      ],
+      "indoor" : true,
+      "kind" : "pub",
+      "location" : {
+        "address" : "1 West Register Street, Edinburgh EH2 2AA",
+        "approximate" : false,
+        "coordinate" : {
+          "latitude" : 55.9536732,
+          "longitude" : -3.1901937
+        }
+      },
+      "name" : "The Guildford Arms"
+    },
+    "osm:node/4752606949" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "A handy grocery stop after the Sunday market.",
+        "tag" : "Groceries"
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "osm:node/4752606949",
+      "images" : [
+
+      ],
+      "indoor" : true,
+      "kind" : "grocery",
+      "location" : {
+        "address" : "36-38 Raeburn Place, Edinburgh EH4 1HN",
+        "approximate" : false,
+        "coordinate" : {
+          "latitude" : 55.9592558,
+          "longitude" : -3.2115094
+        }
+      },
+      "name" : "M&S Food Stockbridge"
+    },
+    "osm:node/57543992" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "A calmer, residential New Town pub near Stockbridge.",
+        "tag" : "Neighbourhood pub"
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "osm:node/57543992",
+      "images" : [
+
+      ],
+      "indoor" : true,
+      "kind" : "pub",
+      "location" : {
+        "address" : "1-3 Cumberland Street, Edinburgh EH3 6RT",
+        "approximate" : false,
+        "coordinate" : {
+          "latitude" : 55.9589659,
+          "longitude" : -3.197166
+        }
+      },
+      "name" : "The Cumberland Bar"
+    },
+    "osm:node/658120552" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "Slow-cooked mains paired with excellent mashed potatoes.",
+        "tag" : "Comfort food"
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "osm:node/658120552",
+      "images" : [
+
+      ],
+      "indoor" : true,
+      "kind" : "restaurant",
+      "location" : {
+        "address" : "9-12 Bank Street, Edinburgh EH1 2LN",
+        "approximate" : false,
+        "coordinate" : {
+          "latitude" : 55.9499235,
+          "longitude" : -3.1931042
+        }
+      },
+      "name" : "Makars Mash Bar"
+    },
+    "osm:node/7149998196" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "Your arrival and return point.",
+        "tag" : "Station"
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "osm:node/7149998196",
+      "images" : [
+
+      ],
+      "indoor" : true,
+      "kind" : "station",
+      "location" : {
+        "address" : "Edinburgh Waverley Station, Edinburgh",
+        "approximate" : false,
+        "coordinate" : {
+          "latitude" : 55.9519018,
+          "longitude" : -3.1904199
+        }
+      },
+      "name" : "Waverley Station"
+    },
+    "osm:relation/18573379" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "Stone houses, bridges and the Water of Leith; a peaceful break from busy streets.",
+        "tag" : "Riverside"
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "osm:relation/18573379",
+      "images" : [
+
+      ],
+      "indoor" : false,
+      "kind" : "neighbourhood",
+      "location" : {
+        "address" : "Dean Village, Edinburgh EH4 3AY",
+        "approximate" : true,
+        "coordinate" : {
+          "latitude" : 55.9522594,
+          "longitude" : -3.2182207
+        }
+      },
+      "name" : "Dean Village"
+    },
+    "osm:way/192212388" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "Explore the little closes below the castle.",
+        "tag" : "Old Town"
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "osm:way/192212388",
+      "images" : [
+
+      ],
+      "indoor" : false,
+      "kind" : "street",
+      "location" : {
+        "address" : "Grassmarket, Edinburgh",
+        "approximate" : true,
+        "coordinate" : {
+          "latitude" : 55.947481,
+          "longitude" : -3.1962464
+        }
+      },
+      "name" : "Grassmarket"
+    },
+    "osm:way/416314343" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "Curved, colourful shopfronts and cobbles; best before the crowds arrive.",
+        "tag" : "Colour"
+      },
+      "facts" : [
+
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : false,
+        "weekly" : [
+
+        ]
+      },
+      "id" : "osm:way/416314343",
+      "images" : [
+
+      ],
+      "indoor" : false,
+      "kind" : "street",
+      "location" : {
+        "address" : "Victoria Street, Edinburgh EH1 2EX",
+        "approximate" : true,
+        "coordinate" : {
+          "latitude" : 55.9486505,
+          "longitude" : -3.1937686
+        }
+      },
+      "name" : "Victoria Street"
+    },
+    "osm:way/5585005" : {
+      "booking" : {
+        "needed" : false
+      },
+      "copy" : {
+        "blurb" : "Street snacks and festive drinks against the lit-up skyline. Free entry; purchases extra.",
+        "tag" : "Winter market"
+      },
+      "facts" : [
+        {
+          "checkedAt" : "2025-11-04",
+          "sourceId" : "src-christmas",
+          "text" : "Free entry. Purchases extra."
+        }
+      ],
+      "hours" : {
+        "exceptions" : [
+
+        ],
+        "hoursKnown" : true,
+        "weekly" : [
+          {
+            "close" : "22:00",
+            "open" : "10:00",
+            "weekday" : "monday"
+          },
+          {
+            "close" : "22:00",
+            "open" : "10:00",
+            "weekday" : "tuesday"
+          },
+          {
+            "close" : "22:00",
+            "open" : "10:00",
+            "weekday" : "wednesday"
+          },
+          {
+            "close" : "22:00",
+            "open" : "10:00",
+            "weekday" : "thursday"
+          },
+          {
+            "close" : "22:00",
+            "open" : "10:00",
+            "weekday" : "friday"
+          },
+          {
+            "close" : "22:00",
+            "open" : "10:00",
+            "weekday" : "saturday"
+          },
+          {
+            "close" : "22:00",
+            "open" : "10:00",
+            "weekday" : "sunday"
+          }
+        ]
+      },
+      "id" : "osm:way/5585005",
+      "images" : [
+
+      ],
+      "indoor" : false,
+      "kind" : "market",
+      "location" : {
+        "address" : "East Princes Street Gardens, Edinburgh",
+        "approximate" : true,
+        "coordinate" : {
+          "latitude" : 55.9513988,
+          "longitude" : -3.1946448
+        }
+      },
+      "name" : "Edinburgh's Christmas"
+    }
+  },
+  "practical" : [
+    {
+      "checkedAt" : "2025-11-04",
+      "sourceId" : "src-mock-notes",
+      "text" : "Late-November Scotland can be cold, wet and windy. A waterproof layer and comfortable shoes beat a formal outfit."
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "sourceId" : "src-sun",
+      "text" : "Sunrise roughly 08:03-08:07, sunset around 15:52-15:54 across the visit. Plan outdoor photos before dark."
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "sourceId" : "src-mock-notes",
+      "text" : "New Town Test Apartment: check-in from 15:00, check-out by 11:00, no lift, so expect stairs. Luggage store on Rose Street, 09:00-17:00 daily."
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "sourceId" : "src-markets",
+      "text" : "Stockbridge Market runs on Sundays, 10:00-16:00."
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "sourceId" : "src-christmas",
+      "text" : "Edinburgh's Christmas runs 15 Nov 2025 to 4 Jan 2026; the main market is generally 10:00-22:00."
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "sourceId" : "src-mock-notes",
+      "text" : "Rain? Edinburgh Street Food indoors, then the Guildford Arms and a browse for Scottish groceries. Still an excellent day."
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "sourceId" : "src-mock-notes",
+      "text" : "999 for emergencies. 111 (NHS 24) for urgent medical advice that is not an emergency."
+    }
+  ],
+  "sources" : [
+    {
+      "checkedAt" : "2025-11-04",
+      "id" : "src-bow-bar",
+      "title" : "Bow Bar",
+      "url" : "https://www.thebowbar.co.uk/"
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "id" : "src-christmas",
+      "title" : "Edinburgh's Christmas",
+      "url" : "https://edinburgh.org/festivals/edinburghs-christmas/"
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "id" : "src-guildford",
+      "title" : "Guildford Arms",
+      "url" : "https://guildfordarms.com/visit"
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "id" : "src-markets",
+      "title" : "Forever Edinburgh markets",
+      "url" : "https://edinburgh.org/things-to-do/markets/"
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "id" : "src-mock-notes",
+      "title" : "Mock planning notes",
+      "url" : "https://example.com/mock-planning-notes"
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "id" : "src-osm",
+      "title" : "© OpenStreetMap contributors",
+      "url" : "https://www.openstreetmap.org/copyright"
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "id" : "src-oink",
+      "title" : "Oink Hanover Street",
+      "url" : "https://www.oinkhogroast.co.uk/shops/hanover-street/"
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "id" : "src-street-food",
+      "title" : "Street Food opening hours",
+      "url" : "https://omniedinburgh.co.uk/brand-directory/edinburgh-street-food"
+    },
+    {
+      "checkedAt" : "2025-11-04",
+      "id" : "src-sun",
+      "title" : "Sunrise & sunset",
+      "url" : "https://www.timeanddate.com/sun/uk/edinburgh?month=11"
+    }
+  ],
+  "status" : "draft",
+  "stay" : {
+    "checkIn" : "15:00",
+    "checkOut" : "11:00",
+    "luggage" : {
+      "closes" : "17:00",
+      "opens" : "09:00",
+      "placeId" : "manual:luggage-rose"
+    },
+    "placeId" : "manual:stay-new-town"
+  },
+  "tasting" : [
+    {
+      "name" : "Lorne sausage",
+      "note" : "Square sausage. Brilliant in a morning roll, especially with a tattie scone."
+    },
+    {
+      "name" : "Haggis, neeps & tatties",
+      "note" : "Peppery, savoury haggis with mashed turnip and potatoes. Order it cooked, not as a souvenir."
+    },
+    {
+      "name" : "Scotch pie or bridie",
+      "note" : "Warm meat pastries from a bakery, ideal when the air is cold."
+    },
+    {
+      "name" : "Black pudding",
+      "note" : "Look for Stornoway black pudding, or try it as part of a Scottish breakfast."
+    },
+    {
+      "name" : "Cullen skink",
+      "note" : "Rich smoked-haddock, potato and onion soup. Made for a wintry day."
+    },
+    {
+      "name" : "Scottish tablet",
+      "note" : "Crumbly, caramel-like and intensely sweet. Buy a small packet first."
+    },
+    {
+      "name" : "Cranachan",
+      "note" : "Cream, toasted oats and raspberries, sometimes with whisky and honey."
+    },
+    {
+      "name" : "A locally brewed pint",
+      "note" : "Scottish cask ale or an Edinburgh lager. It counts as cultural research."
+    }
+  ],
+  "trip" : {
+    "budget" : {
+      "currencyCode" : "GBP",
+      "dailySpend" : "moderate",
+      "stayMaxPerNight" : 150
+    },
+    "dates" : {
+      "end" : "2025-11-25",
+      "start" : "2025-11-23"
+    },
+    "destination" : {
+      "centre" : {
+        "latitude" : 55.9533456,
+        "longitude" : -3.1883749
+      },
+      "countryCode" : "GB",
+      "name" : "Edinburgh",
+      "timeZoneId" : "Europe/London"
+    },
+    "interests" : [
+      "food",
+      "pubs",
+      "photography",
+      "markets"
+    ],
+    "pace" : "unhurried",
+    "party" : {
+      "adults" : 2,
+      "children" : 0,
+      "mobilityNotes" : [
+        "stairs fine"
+      ]
+    },
+    "voice" : "Friendly, unhurried, short sentences and a little wry."
+  },
+  "version" : 1
+}

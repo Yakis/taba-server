@@ -10,7 +10,10 @@ enum SampleGuide {
     static func make(
         trip: Trip = SampleGuide.trip(),
         bookings: [Booking] = [SampleGuide.trainBooking()],
+        stay: Stay = SampleGuide.stay(),
         days: [Day] = [SampleGuide.day()],
+        lists: [PlaceList] = [SampleGuide.coffeeList()],
+        practical: [Fact] = [SampleGuide.sampleFact()],
         places: [String: Place] = SampleGuide.samplePlaces()
     ) -> Guide {
         Guide(
@@ -19,17 +22,12 @@ enum SampleGuide {
             status: .draft,
             trip: trip,
             bookings: bookings,
-            stay: Stay(
-                placeId: hotelId,
-                checkIn: time("15:00"),
-                checkOut: time("10:00"),
-                luggage: LuggageSlot(placeId: hotelId, opens: time("08:00"), closes: time("20:00"))
-            ),
+            stay: stay,
             places: places,
             days: days,
-            lists: [PlaceList(title: "Coffee", caption: "For a slow morning.", placeIds: [cafeId])],
+            lists: lists,
             tasting: [TasteItem(name: "Sample bake", note: "Ask for it warm.")],
-            practical: [Fact(text: "Card payments only.", sourceId: "sample-source", checkedAt: date("2026-11-08"))],
+            practical: practical,
             sources: [
                 Source(
                     id: "sample-source",
@@ -58,13 +56,30 @@ enum SampleGuide {
         )
     }
 
+    static func stay(placeId: String = hotelId, luggagePlaceId: String = hotelId) -> Stay {
+        Stay(
+            placeId: placeId,
+            checkIn: time("15:00"),
+            checkOut: time("10:00"),
+            luggage: LuggageSlot(placeId: luggagePlaceId, opens: time("08:00"), closes: time("20:00"))
+        )
+    }
+
+    static func coffeeList() -> PlaceList {
+        PlaceList(title: "Coffee", caption: "For a slow morning.", placeIds: [cafeId])
+    }
+
+    static func sampleFact(sourceId: String = "sample-source") -> Fact {
+        Fact(text: "Card payments only.", sourceId: sourceId, checkedAt: date("2026-11-08"))
+    }
+
     static func samplePlaces() -> [String: Place] {
         [cafeId: cafe(), marketId: market(), hotelId: hotel()]
     }
 
-    static func cafe(closesAt: String = "17:00") -> Place {
+    static func cafe(id: String = cafeId, closesAt: String = "17:00", sourceId: String = "sample-source") -> Place {
         Place(
-            id: cafeId,
+            id: id,
             name: "Sample Cafe",
             kind: .cafe,
             location: PlaceLocation(
@@ -81,7 +96,9 @@ enum SampleGuide {
             booking: PlaceBooking(needed: false, url: nil),
             indoor: true,
             images: [ImageRef(url: "https://example.com/cafe.jpg", credit: "Example Photographer")],
-            facts: [Fact(text: "Closed on public holidays.", sourceId: "sample-source", checkedAt: date("2026-11-08"))],
+            facts: [
+                Fact(text: "Closed on public holidays.", sourceId: sourceId, checkedAt: date("2026-11-08"))
+            ],
             copy: PlaceCopy(tag: "Coffee", blurb: "A quiet room near the market.")
         )
     }
@@ -141,24 +158,29 @@ enum SampleGuide {
         )
     }
 
-    static func day(stops: [Stop] = SampleGuide.stops()) -> Day {
+    static func day(on text: String = "2026-11-22", stops: [Stop] = SampleGuide.stops()) -> Day {
         Day(
-            date: date("2026-11-22"),
+            date: date(text),
             copy: DayCopy(title: "Arrival", summary: "Settle in and eat well."),
             stops: stops
         )
     }
 
-    static func sightStop(id: String, minutes: Int) -> Stop {
+    static func sightStop(
+        id: String,
+        minutes: Int,
+        placeId: String? = SampleGuide.marketId,
+        alternative: StopAlternative? = nil
+    ) -> Stop {
         Stop(
             id: id,
             kind: .sight,
             mealSlot: nil,
-            placeId: marketId,
+            placeId: placeId,
             start: time("15:00"),
             minutes: minutes,
             flexible: false,
-            alternative: nil,
+            alternative: alternative,
             copy: StopCopy(title: "Sight", body: "A sight.", actionLabel: nil),
             legFromPrevious: nil
         )
@@ -235,33 +257,9 @@ enum SampleGuide {
                     ]
                 )
             ],
-            lists: [PlaceList(title: "Coffee", caption: "For a slow morning.", placeIds: [cafeId])],
+            lists: [coffeeList()],
             tasting: [TasteItem(name: "Sample bake", note: "Ask for it warm.")],
             notes: "Draft for testing only."
         )
-    }
-
-    // MARK: - Fixture helpers. These trap on bad input, which is fine because the inputs are literals.
-
-    static func date(_ text: String) -> LocalDate {
-        guard let value = LocalDate(text) else { preconditionFailure("Bad fixture date \(text)") }
-        return value
-    }
-
-    static func time(_ text: String) -> LocalTime {
-        guard let value = LocalTime(text) else { preconditionFailure("Bad fixture time \(text)") }
-        return value
-    }
-
-    static func dateTime(_ text: String) -> LocalDateTime {
-        guard let value = LocalDateTime(text) else { preconditionFailure("Bad fixture date-time \(text)") }
-        return value
-    }
-
-    static func coordinate(_ latitude: Double, _ longitude: Double) -> Coordinate {
-        guard let value = Coordinate(latitude: latitude, longitude: longitude) else {
-            preconditionFailure("Bad fixture coordinate \(latitude), \(longitude)")
-        }
-        return value
     }
 }

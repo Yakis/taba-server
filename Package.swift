@@ -16,7 +16,8 @@ let package = Package(
         ),
         .testTarget(
             name: "GuideKitTests",
-            dependencies: ["GuideKit"]
+            dependencies: ["GuideKit"],
+            resources: [.copy("Fixtures")]
         )
     ],
     swiftLanguageModes: [.v6]

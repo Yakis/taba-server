@@ -21,7 +21,7 @@ extension Guide {
                 problems.append(.stopMinutesNotPositive(stopId: stop.id))
             }
         }
-        return problems
+        return problems + referenceProblems
     }
 
     /// Throws `GuideStructureError` listing every problem, if there are any.

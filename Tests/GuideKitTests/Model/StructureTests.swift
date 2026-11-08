@@ -10,27 +10,24 @@ struct StructureTests {
 
     @Test func flagsPlaceKeyThatDoesNotMatchItsId() {
         var places = SampleGuide.samplePlaces()
-        places.removeValue(forKey: SampleGuide.cafeId)
-        places["manual:typo"] = SampleGuide.cafe()
+        places[SampleGuide.cafeId] = SampleGuide.cafe(id: "manual:typo")
         let guide = SampleGuide.make(places: places)
-        #expect(guide.structureProblems == [.placeKeyMismatch(key: "manual:typo", placeId: SampleGuide.cafeId)])
+        #expect(guide.structureProblems == [.placeKeyMismatch(key: SampleGuide.cafeId, placeId: "manual:typo")])
     }
 
     @Test func validateStructureThrowsEveryProblem() throws {
         var places = SampleGuide.samplePlaces()
-        places.removeValue(forKey: SampleGuide.cafeId)
-        places["manual:typo"] = SampleGuide.cafe()
+        places[SampleGuide.cafeId] = SampleGuide.cafe(id: "manual:typo")
         let guide = SampleGuide.make(places: places)
         let error = try #require(throws: GuideStructureError.self) {
             try guide.validateStructure()
         }
-        #expect(error.problems == [.placeKeyMismatch(key: "manual:typo", placeId: SampleGuide.cafeId)])
+        #expect(error.problems == [.placeKeyMismatch(key: SampleGuide.cafeId, placeId: "manual:typo")])
     }
 
     @Test func decoderAcceptsWhatValidationRejects() throws {
         var places = SampleGuide.samplePlaces()
-        places.removeValue(forKey: SampleGuide.cafeId)
-        places["manual:typo"] = SampleGuide.cafe()
+        places[SampleGuide.cafeId] = SampleGuide.cafe(id: "manual:typo")
         let guide = SampleGuide.make(places: places)
         let decoded = try roundTrip(guide)
         #expect(decoded == guide)
@@ -38,8 +35,9 @@ struct StructureTests {
     }
 
     @Test func flagsTripThatEndsBeforeItStarts() {
+        // The sample day (22 Nov) also falls outside a trip that runs 24 Nov back to 22 Nov.
         let guide = SampleGuide.make(trip: SampleGuide.trip(start: "2026-11-24", end: "2026-11-22"))
-        #expect(guide.structureProblems == [.tripEndsBeforeStart])
+        #expect(guide.structureProblems.contains(.tripEndsBeforeStart))
     }
 
     @Test func flagsPriceLevelOutsideOneToFour() {
