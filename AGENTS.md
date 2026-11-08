@@ -125,4 +125,5 @@ continue without asking the owner what happened.
 
 ## Current state
 
-M1 steps 1 and 2 are done. Next is M1 step 3, prompt wiring (`docs/PLAN.md`).
+M1 steps 1–3 are done. `PipelineKit` loads the bundled prompts, builds checked inputs and screens copy.
+Next is M1 step 4, a whole guide from one command (`docs/PLAN.md`); no live pipeline run yet.

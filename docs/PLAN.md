@@ -79,7 +79,8 @@ Each step is reviewed, then committed on its own.
    geocoding single places gives odd area names (an Old Town café came back as "Abbeyhill"). Step 3 should
    name a whole cluster, for example by the most common suburb or quarter among its places, at a zoom that
    gives Old Town / New Town / Stockbridge style names.
-3. **Prompt wiring.** A new library target `PipelineKit` (depends on GuideKit, SourcesKit, ResponsesKit).
+3. **Prompt wiring.** Done. `PipelineKit` depends on GuideKit, SourcesKit and ResponsesKit; the reviewed
+   root `Prompts/` files are bundled without moving them. Plan and write prompts are version 2.
    - `PromptLibrary`: loads `Prompts/*.md` as package resources (move `Prompts/` into the target if SwiftPM
      needs it, and update paths in the docs), parses the front matter (id, version, role, output, effort,
      tools) and returns the body below it.
@@ -97,8 +98,10 @@ Each step is reviewed, then committed on its own.
    - `CopyChecker`: ids present, banned phrases from `write.md`, emoji, more than one exclamation mark, word
      limits, and every time, date, price and number in the copy must appear in the input.
 
-   Done when: golden-file tests show the plan, write and repair inputs for the Edinburgh fixture (reviewed
-   by hand against the prompts), `CopyChecker` tests cover each rule, and the four checks pass.
+   Verified: Edinburgh research, plan, write, repair payload and full repair-message goldens reviewed against
+   the prompts; every copy-check rule covered; all four checks pass (442 tests across the package suites).
+   Learned for step 4: use stable cluster ids for area walks and preserve draft stop ids through writing;
+   numeric copy checks are conservative lexical screening, not proof of a claim's truth.
 4. **Whole guide from one command.** A `taba` executable: `taba build --destination ... --from ... --to ...
    [--stay ...] [--model ...]` on the Mac runs steps 2 to 9 with the live sources and the ChatGPT
    credentials. It writes `probe-output/runs/<timestamp>/guide.json` and `run.json`. The run record holds:
