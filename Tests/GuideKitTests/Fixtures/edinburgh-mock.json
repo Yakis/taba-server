@@ -7,12 +7,14 @@
       "id" : "booking-train-out",
       "kind" : "train",
       "notes" : "Direct service. Allow time for station entrances and finding your platform.",
-      "to" : "Edinburgh Waverley"
+      "to" : "Edinburgh Waverley",
+      "toPlaceId" : "osm:node/7149998196"
     },
     {
       "arrives" : "2025-11-25T18:52",
       "departs" : "2025-11-25T14:30",
       "from" : "Edinburgh Waverley",
+      "fromPlaceId" : "osm:node/7149998196",
       "id" : "booking-train-back",
       "kind" : "train",
       "notes" : "Check the live platform and service status on the day.",

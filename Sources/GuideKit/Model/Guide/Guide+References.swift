@@ -7,6 +7,14 @@ extension Guide {
         if let luggage = stay.luggage {
             placeReferences.append((luggage.placeId, "stay luggage"))
         }
+        for booking in bookings {
+            if let placeId = booking.fromPlaceId {
+                placeReferences.append((placeId, "booking \(booking.id) from"))
+            }
+            if let placeId = booking.toPlaceId {
+                placeReferences.append((placeId, "booking \(booking.id) to"))
+            }
+        }
         for list in lists {
             placeReferences += list.placeIds.map { (placeId: $0, from: "list \(list.title)") }
         }

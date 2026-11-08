@@ -151,7 +151,9 @@ enum SampleGuide {
             id: "booking-train-out",
             kind: .train,
             from: "Sample Station",
+            fromPlaceId: nil,
             to: "Sampleburgh Central",
+            toPlaceId: nil,
             departs: dateTime(departs),
             arrives: dateTime(arrives),
             notes: "Check the platform on the day."
