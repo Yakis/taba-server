@@ -1,0 +1,21 @@
+# SwiftPM
+.build/
+.swiftpm/
+Packages/
+*.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/
+
+# Xcode
+DerivedData/
+build/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+*.xccheckout
+
+# macOS
+.DS_Store
+
+# Local secrets and environment files (keys are read from environment variables)
+.env
+.env.*
+*.key

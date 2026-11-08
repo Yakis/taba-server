@@ -1,0 +1,9 @@
+excluded:
+  - .build
+  - .swiftpm
+  - DerivedData
+
+opt_in_rules:
+  - closure_spacing
+  - empty_count
+  - sorted_imports
