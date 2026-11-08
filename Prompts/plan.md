@@ -113,10 +113,14 @@ planned, ordered by `walkFromStay`. Leave a list empty when no candidates fit.
 
 Return only the JSON object matching the schema.
 
+- Each day carries its `date` (`YYYY-MM-DD`), as given in `days`.
 - Stop ids are `d<day>-s<stop>`, such as `d1-s3`, numbered in time order.
 - `start` is local time `HH:MM`. `minutes` is how long the stop lasts.
 - `reason`: at most 20 words on why this stop is here at this time. The writer and the developer read it. The
   traveller never sees it as it is.
 - `findingIds`: the findings this stop relies on, or an empty list.
 - `theme`: a working theme of at most 8 words. The writer turns it into the day's title.
+- `skippedMeals`: each meal left out on purpose, with its `date`, `slot` and a short `reason`. Empty when
+  every meal is planned.
 - `openQuestions`: things the traveller should check or decide, in plain words, one per item.
+- `changes`: leave empty. It is only used when fixing a plan.

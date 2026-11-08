@@ -67,7 +67,8 @@ calm.
   words, starting with a verb, for the directions button, such as "Walk to the market"; `null` for rest
   stops). When a stop has a rain alternative, the body mentions it. A flexible stop's body says what to do if
   it doesn't work out.
-- Each place: `tag` (at most 3 words, such as "Best interior") and `blurb` (one sentence, at most 25 words).
+- Each place except the stay, the luggage store and stations: `tag` (at most 3 words, such as "Best
+  interior") and `blurb` (one sentence, at most 25 words).
 - Each list: `title` (at most 4 words) and `caption` (one sentence, at most 15 words).
 - `tasting`: 6–8 items, each with `name` and `note` (one sentence, at most 18 words).
 - `notes`: `weather`, `light`, `backupPlan` and `rules`, one or two sentences each. `rules` is a short, kind
@@ -88,5 +89,5 @@ everyone!" Banned phrases, claims with no source, and nothing practical.
 
 # Output
 
-Return only the JSON object matching the schema. Include every day, stop, place and list from the input, with
-their ids exactly as given.
+Return only the JSON object matching the schema. Include every day (by its `date`), stop, place and list
+the schema asks for, with their ids exactly as given.
