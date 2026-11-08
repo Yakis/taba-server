@@ -1,15 +1,22 @@
-/// One stop in a plan draft. Has no id, legs or checks: those are added when the guide is assembled.
+/// One timed stop in a plan. The `id` is the planner's (`d<day>-s<n>`); assembly renumbers stops in time order.
 public struct PlanDraftStop: Hashable, Sendable, Codable {
+    public let id: String
+    /// A candidate place id, or nil for a stop with no place (a station transfer, or a meal "somewhere near").
     public let placeId: String?
     public let kind: StopKind
+    /// Only set for meal stops.
     public let mealSlot: MealSlot?
     public let start: LocalTime
     public let minutes: Int
     public let flexible: Bool
     public let alternative: StopAlternative?
-    public let copy: StopCopy
+    /// At most 20 words on why the stop is here at this time. Read by the writer and the developer, not the traveller.
+    public let reason: String
+    /// The findings this stop relies on, or an empty list.
+    public let findingIds: [String]
 
     public init(
+        id: String,
         placeId: String?,
         kind: StopKind,
         mealSlot: MealSlot?,
@@ -17,8 +24,10 @@ public struct PlanDraftStop: Hashable, Sendable, Codable {
         minutes: Int,
         flexible: Bool,
         alternative: StopAlternative?,
-        copy: StopCopy
+        reason: String,
+        findingIds: [String]
     ) {
+        self.id = id
         self.placeId = placeId
         self.kind = kind
         self.mealSlot = mealSlot
@@ -26,6 +35,7 @@ public struct PlanDraftStop: Hashable, Sendable, Codable {
         self.minutes = minutes
         self.flexible = flexible
         self.alternative = alternative
-        self.copy = copy
+        self.reason = reason
+        self.findingIds = findingIds
     }
 }

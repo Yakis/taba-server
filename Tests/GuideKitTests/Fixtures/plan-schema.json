@@ -1,0 +1,276 @@
+{
+  "additionalProperties" : false,
+  "properties" : {
+    "changes" : {
+      "items" : {
+        "type" : "string"
+      },
+      "type" : "array"
+    },
+    "days" : {
+      "items" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "date" : {
+            "type" : "string"
+          },
+          "stops" : {
+            "items" : {
+              "additionalProperties" : false,
+              "properties" : {
+                "alternative" : {
+                  "anyOf" : [
+                    {
+                      "additionalProperties" : false,
+                      "properties" : {
+                        "placeId" : {
+                          "enum" : [
+                            "manual:castle-esplanade",
+                            "manual:luggage-rose",
+                            "manual:royal-mile",
+                            "manual:stay-new-town",
+                            "manual:the-vennel",
+                            "osm:node/10785545157",
+                            "osm:node/1149620440",
+                            "osm:node/1367318907",
+                            "osm:node/1367337816",
+                            "osm:node/2338447599",
+                            "osm:node/2339288064",
+                            "osm:node/2441578938",
+                            "osm:node/33185107",
+                            "osm:node/4752606949",
+                            "osm:node/57543992",
+                            "osm:node/658120552",
+                            "osm:node/7149998196",
+                            "osm:relation/18573379",
+                            "osm:way/192212388",
+                            "osm:way/416314343",
+                            "osm:way/5585005"
+                          ],
+                          "type" : "string"
+                        },
+                        "reason" : {
+                          "enum" : [
+                            "rain",
+                            "closed",
+                            "tired"
+                          ],
+                          "type" : "string"
+                        }
+                      },
+                      "required" : [
+                        "placeId",
+                        "reason"
+                      ],
+                      "type" : "object"
+                    },
+                    {
+                      "type" : "null"
+                    }
+                  ]
+                },
+                "findingIds" : {
+                  "items" : {
+                    "type" : "string"
+                  },
+                  "type" : "array"
+                },
+                "flexible" : {
+                  "type" : "boolean"
+                },
+                "id" : {
+                  "type" : "string"
+                },
+                "kind" : {
+                  "enum" : [
+                    "sight",
+                    "meal",
+                    "drink",
+                    "rest",
+                    "travel",
+                    "logistics"
+                  ],
+                  "type" : "string"
+                },
+                "mealSlot" : {
+                  "anyOf" : [
+                    {
+                      "enum" : [
+                        "breakfast",
+                        "lunch",
+                        "dinner"
+                      ],
+                      "type" : "string"
+                    },
+                    {
+                      "type" : "null"
+                    }
+                  ]
+                },
+                "minutes" : {
+                  "type" : "integer"
+                },
+                "placeId" : {
+                  "anyOf" : [
+                    {
+                      "enum" : [
+                        "manual:castle-esplanade",
+                        "manual:luggage-rose",
+                        "manual:royal-mile",
+                        "manual:stay-new-town",
+                        "manual:the-vennel",
+                        "osm:node/10785545157",
+                        "osm:node/1149620440",
+                        "osm:node/1367318907",
+                        "osm:node/1367337816",
+                        "osm:node/2338447599",
+                        "osm:node/2339288064",
+                        "osm:node/2441578938",
+                        "osm:node/33185107",
+                        "osm:node/4752606949",
+                        "osm:node/57543992",
+                        "osm:node/658120552",
+                        "osm:node/7149998196",
+                        "osm:relation/18573379",
+                        "osm:way/192212388",
+                        "osm:way/416314343",
+                        "osm:way/5585005"
+                      ],
+                      "type" : "string"
+                    },
+                    {
+                      "type" : "null"
+                    }
+                  ]
+                },
+                "reason" : {
+                  "type" : "string"
+                },
+                "start" : {
+                  "type" : "string"
+                }
+              },
+              "required" : [
+                "id",
+                "placeId",
+                "kind",
+                "mealSlot",
+                "start",
+                "minutes",
+                "flexible",
+                "alternative",
+                "reason",
+                "findingIds"
+              ],
+              "type" : "object"
+            },
+            "type" : "array"
+          },
+          "theme" : {
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "date",
+          "theme",
+          "stops"
+        ],
+        "type" : "object"
+      },
+      "type" : "array"
+    },
+    "lists" : {
+      "items" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "key" : {
+            "enum" : [
+              "eat",
+              "drink",
+              "photos",
+              "groceries"
+            ],
+            "type" : "string"
+          },
+          "placeIds" : {
+            "items" : {
+              "enum" : [
+                "manual:castle-esplanade",
+                "manual:luggage-rose",
+                "manual:royal-mile",
+                "manual:stay-new-town",
+                "manual:the-vennel",
+                "osm:node/10785545157",
+                "osm:node/1149620440",
+                "osm:node/1367318907",
+                "osm:node/1367337816",
+                "osm:node/2338447599",
+                "osm:node/2339288064",
+                "osm:node/2441578938",
+                "osm:node/33185107",
+                "osm:node/4752606949",
+                "osm:node/57543992",
+                "osm:node/658120552",
+                "osm:node/7149998196",
+                "osm:relation/18573379",
+                "osm:way/192212388",
+                "osm:way/416314343",
+                "osm:way/5585005"
+              ],
+              "type" : "string"
+            },
+            "type" : "array"
+          }
+        },
+        "required" : [
+          "key",
+          "placeIds"
+        ],
+        "type" : "object"
+      },
+      "type" : "array"
+    },
+    "openQuestions" : {
+      "items" : {
+        "type" : "string"
+      },
+      "type" : "array"
+    },
+    "skippedMeals" : {
+      "items" : {
+        "additionalProperties" : false,
+        "properties" : {
+          "date" : {
+            "type" : "string"
+          },
+          "reason" : {
+            "type" : "string"
+          },
+          "slot" : {
+            "enum" : [
+              "breakfast",
+              "lunch",
+              "dinner"
+            ],
+            "type" : "string"
+          }
+        },
+        "required" : [
+          "date",
+          "slot",
+          "reason"
+        ],
+        "type" : "object"
+      },
+      "type" : "array"
+    }
+  },
+  "required" : [
+    "days",
+    "lists",
+    "skippedMeals",
+    "openQuestions",
+    "changes"
+  ],
+  "type" : "object"
+}

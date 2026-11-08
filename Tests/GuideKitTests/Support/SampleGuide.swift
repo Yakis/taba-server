@@ -14,7 +14,10 @@ enum SampleGuide {
         days: [Day] = [SampleGuide.day()],
         lists: [PlaceList] = [SampleGuide.coffeeList()],
         practical: [Fact] = [SampleGuide.sampleFact()],
-        places: [String: Place] = SampleGuide.samplePlaces()
+        places: [String: Place] = SampleGuide.samplePlaces(),
+        hero: GuideHero? = SampleGuide.hero(),
+        notes: GuideNotes? = SampleGuide.notes(),
+        openQuestions: [String]? = ["Check the platform on the day."]
     ) -> Guide {
         Guide(
             id: "sample-guide",
@@ -35,7 +38,10 @@ enum SampleGuide {
                     title: "Sample page",
                     checkedAt: date("2026-11-08")
                 )
-            ]
+            ],
+            hero: hero,
+            notes: notes,
+            openQuestions: openQuestions
         )
     }
 
@@ -66,7 +72,7 @@ enum SampleGuide {
     }
 
     static func coffeeList() -> PlaceList {
-        PlaceList(title: "Coffee", caption: "For a slow morning.", placeIds: [cafeId])
+        PlaceList(title: "Coffee", caption: "For a slow morning.", placeIds: [cafeId], key: .drink)
     }
 
     static func sampleFact(sourceId: String = "sample-source") -> Fact {
@@ -227,41 +233,5 @@ enum SampleGuide {
                 legFromPrevious: nil
             )
         ]
-    }
-
-    static func planDraft() -> PlanDraft {
-        PlanDraft(
-            days: [
-                PlanDraftDay(
-                    date: date("2026-11-22"),
-                    copy: DayCopy(title: "Arrival", summary: "Settle in."),
-                    stops: [
-                        PlanDraftStop(
-                            placeId: cafeId,
-                            kind: .meal,
-                            mealSlot: .lunch,
-                            start: time("13:15"),
-                            minutes: 60,
-                            flexible: true,
-                            alternative: StopAlternative(placeId: marketId, reason: .closed),
-                            copy: StopCopy(title: "Lunch", body: "Soup and bread.", actionLabel: nil)
-                        ),
-                        PlanDraftStop(
-                            placeId: nil,
-                            kind: .rest,
-                            mealSlot: nil,
-                            start: time("17:00"),
-                            minutes: 30,
-                            flexible: true,
-                            alternative: nil,
-                            copy: StopCopy(title: "Rest", body: "Put your feet up.", actionLabel: nil)
-                        )
-                    ]
-                )
-            ],
-            lists: [coffeeList()],
-            tasting: [TasteItem(name: "Sample bake", note: "Ask for it warm.")],
-            notes: "Draft for testing only."
-        )
     }
 }

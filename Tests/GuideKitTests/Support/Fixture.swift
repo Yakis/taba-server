@@ -13,6 +13,18 @@ enum Fixture {
         }
         return try Data(contentsOf: url)
     }
+
+    /// The golden plan schema, as text. Compared byte for byte, so a change to the schema shows up in review.
+    static func planSchemaText() throws -> String {
+        guard let url = Bundle.module.url(
+            forResource: "plan-schema",
+            withExtension: "json",
+            subdirectory: "Fixtures"
+        ) else {
+            throw MissingFixtureError()
+        }
+        return try String(contentsOf: url, encoding: .utf8)
+    }
 }
 
 struct MissingFixtureError: Error {}

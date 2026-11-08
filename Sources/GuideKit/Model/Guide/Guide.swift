@@ -13,6 +13,12 @@ public struct Guide: Hashable, Sendable, Codable {
     public let tasting: [TasteItem]
     public let practical: [Fact]
     public let sources: [Source]
+    /// The title block. Omitted until the copy is written.
+    public let hero: GuideHero?
+    /// Practical notes for the trip. Omitted until the copy is written.
+    public let notes: GuideNotes?
+    /// Things the traveller should check or decide. Omitted when there are none.
+    public let openQuestions: [String]?
 
     public init(
         id: String,
@@ -26,7 +32,10 @@ public struct Guide: Hashable, Sendable, Codable {
         lists: [PlaceList],
         tasting: [TasteItem],
         practical: [Fact],
-        sources: [Source]
+        sources: [Source],
+        hero: GuideHero? = nil,
+        notes: GuideNotes? = nil,
+        openQuestions: [String]? = nil
     ) {
         self.id = id
         self.version = version
@@ -40,5 +49,8 @@ public struct Guide: Hashable, Sendable, Codable {
         self.tasting = tasting
         self.practical = practical
         self.sources = sources
+        self.hero = hero
+        self.notes = notes
+        self.openQuestions = openQuestions
     }
 }
