@@ -15,6 +15,7 @@ public struct FoursquarePlace: Decodable, Sendable, Hashable {
     public let dateClosed: String?
     public let hours: FoursquareHours?
     public let rating: Double?
+    public let website: String?
 
     enum CodingKeys: String, CodingKey {
         case fsqPlaceId = "fsq_place_id"
@@ -26,6 +27,7 @@ public struct FoursquarePlace: Decodable, Sendable, Hashable {
         case dateClosed = "date_closed"
         case hours
         case rating
+        case website
     }
 
     public init(from decoder: any Decoder) throws {
@@ -39,6 +41,7 @@ public struct FoursquarePlace: Decodable, Sendable, Hashable {
         dateClosed = try? container.decodeIfPresent(String.self, forKey: .dateClosed)
         hours = try? container.decodeIfPresent(FoursquareHours.self, forKey: .hours)
         rating = try? container.decodeIfPresent(Double.self, forKey: .rating)
+        website = try? container.decodeIfPresent(String.self, forKey: .website)
     }
 }
 
