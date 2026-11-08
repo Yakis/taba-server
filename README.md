@@ -23,3 +23,13 @@ swiftlint lint --quiet
 ```
 
 API keys and tokens are read from environment variables at runtime. They are never stored in this repository.
+
+## Privacy
+
+This repository is public, so secrets and personal trip data never go in it. After cloning, enable the pre-commit scan:
+
+```sh
+git config core.hooksPath scripts/hooks
+```
+
+`scripts/privacy-scan.sh --staged` runs on every commit. Run `scripts/privacy-scan.sh --all` before pushing.

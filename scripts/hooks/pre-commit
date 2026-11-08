@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+# Runs the privacy scan on staged changes. Enabled with: git config core.hooksPath scripts/hooks
+set -euo pipefail
+exec "$(git rev-parse --show-toplevel)/scripts/privacy-scan.sh" --staged

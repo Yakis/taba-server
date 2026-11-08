@@ -19,3 +19,39 @@ xcuserdata/
 .env
 .env.*
 *.key
+
+# Keys and certificates (APNs and Apple Maps keys are .p8 files)
+*.p8
+*.p12
+*.pem
+*.cer
+*.mobileprovision
+*.keystore
+.envrc
+
+# Local credentials and secrets (ChatGPT sign-in, provider keys)
+credentials/
+credentials.json
+*chatgpt*.json
+secrets/
+*.secret
+*.secrets
+
+# Local data: databases, dumps, guide exports and probe output with real trips
+*.sqlite
+*.sqlite-*
+*.db
+*.dump
+*.sql.gz
+pgdata/
+exports/
+probe-output/
+private/
+*.local.json
+docker-compose.override.yml
+
+# Logs and editor state
+*.log
+.claude/settings.local.json
+.vscode/
+.idea/
