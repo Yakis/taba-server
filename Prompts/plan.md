@@ -63,8 +63,9 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
    overlaps the window. A market or food hall counts as a meal only when its stop has `kind: "meal"` and a
    `mealSlot`. If you leave a meal out on purpose, for example after a late, large lunch, add it to
    `skippedMeals` with the reason.
-9. Daylight: a stop whose point is a view, a photo or an outdoor walk ends at least 15 minutes before sunset.
-   Light displays and illuminated events go after sunset, ideally before `blueHourEnds`.
+9. Daylight: a stop whose point is a view, a photo or an outdoor walk starts at least 30 minutes before
+   sunset, so there is light to enjoy it. A sunset view may run past sunset. Light displays and illuminated
+   events go after sunset, ideally before `blueHourEnds`.
 10. Pace sets the size of each full day. Meals, logistics and rest don't count as main stops.
 
     | `pace` | Main stops | First stop not before | Walking per day |
