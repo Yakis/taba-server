@@ -1,0 +1,122 @@
+import Foundation
+import FoursquareKit
+import GuideKit
+import SourcesKit
+import Testing
+
+struct FoursquarePlacesSourceTests {
+    private let checkedAt = Samples.date("2026-11-08")
+    private let centre = Samples.coordinate(55.9533, -3.1883)
+    private let cafeCategory = "63be6904847c3692a84b9bb6"
+    private let pubCategory = "4bf58dd8d48988d11b941735"
+
+    private var cafeResponse: String {
+        HitJSON.search([
+            HitJSON.place(
+                id: "a1", name: "Cafe Alpha", latitude: 55.95340, longitude: -3.18830,
+                category: "Cafes, Coffee, and Tea Houses", categoryId: cafeCategory
+            ),
+            HitJSON.place(
+                id: "b2", name: "Cafe Beta", latitude: 55.95360, longitude: -3.18810,
+                category: "Cafes, Coffee, and Tea Houses", categoryId: cafeCategory,
+                website: "https://example.com/beta"
+            )
+        ])
+    }
+
+    private var pubResponse: String {
+        HitJSON.search([
+            HitJSON.place(
+                id: "b2", name: "Cafe Beta", latitude: 55.95360, longitude: -3.18810,
+                category: "Pubs", categoryId: pubCategory, website: "https://example.com/beta"
+            ),
+            HitJSON.place(
+                id: "c3", name: "Bow Bar Pub", latitude: 55.95400, longitude: -3.18900,
+                category: "Pubs", categoryId: pubCategory, dateClosed: "2025-01-01"
+            )
+        ])
+    }
+
+    /// Answers cafe and pub searches by their category id.
+    private func fetcher(pubStatus: Int = 200) -> RecordingFetcher {
+        let cafe = cafeResponse
+        let pub = pubResponse
+        return RecordingFetcher { request in
+            let ids = Samples.query(request)["fsq_category_ids"] ?? ""
+            if ids == self.cafeCategory {
+                return Samples.response(cafe)
+            }
+            return Samples.response(pubStatus == 200 ? pub : "{}", status: pubStatus)
+        }
+    }
+
+    @Test func placesFromSeveralKindsAreDeduplicatedByFoursquareId() async {
+        let source = FoursquarePlacesSource(fetcher: fetcher(), apiKey: "test-key-not-real")
+        let report = await source.sweep(kinds: [.cafe, .pub], around: centre, checkedAt: checkedAt)
+        #expect(report.places.map(\.id) == ["fsq:a1", "fsq:b2"])
+        #expect(report.sweeps.allSatisfy { $0.failure == nil })
+    }
+
+    @Test func closedPlacesAreSkipped() async {
+        let source = FoursquarePlacesSource(fetcher: fetcher(), apiKey: "test-key-not-real")
+        let report = await source.sweep(kinds: [.pub], around: centre, checkedAt: checkedAt)
+        #expect(!report.places.contains { $0.id == "fsq:c3" })
+    }
+
+    @Test func aWebsiteBecomesAFactAndHoursStayUnknown() async throws {
+        let source = FoursquarePlacesSource(fetcher: fetcher(), apiKey: "test-key-not-real")
+        let report = await source.sweep(kinds: [.cafe], around: centre, checkedAt: checkedAt)
+        let beta = try #require(report.places.first { $0.id == "fsq:b2" })
+        #expect(beta.facts == [Fact(
+            text: "Website: https://example.com/beta",
+            sourceId: FoursquarePlacesSource.sourceId,
+            checkedAt: checkedAt
+        )])
+        let alpha = try #require(report.places.first { $0.id == "fsq:a1" })
+        #expect(alpha.facts.isEmpty)
+        #expect(!alpha.hours.hoursKnown)
+        #expect(alpha.kind == .cafe)
+    }
+
+    @Test func aFailedKindIsReportedAndTheOthersStillRun() async {
+        let source = FoursquarePlacesSource(fetcher: fetcher(pubStatus: 429), apiKey: "test-key-not-real")
+        let report = await source.sweep(kinds: [.cafe, .pub], around: centre, checkedAt: checkedAt)
+        #expect(report.places.map(\.id) == ["fsq:a1", "fsq:b2"])
+        let pub = report.sweeps.first { $0.kind == .pub }
+        #expect(pub?.failure?.contains("429") == true)
+        #expect(report.sweeps.first { $0.kind == .cafe }?.failure == nil)
+    }
+
+    @Test func aKindWithNoCategoryIsReportedNotSearched() async {
+        let recorder = fetcher()
+        let source = FoursquarePlacesSource(fetcher: recorder, apiKey: "test-key-not-real")
+        let report = await source.sweep(kinds: [.other], around: centre, checkedAt: checkedAt)
+        #expect(report.places.isEmpty)
+        #expect(report.sweeps.first?.failure != nil)
+        #expect(await recorder.requests.isEmpty)
+    }
+
+    @Test func searchesSendTheCategoryAndTheVersionHeaderAndNoKeyInTheURL() async throws {
+        let recorder = fetcher()
+        let source = FoursquarePlacesSource(fetcher: recorder, apiKey: "test-key-not-real")
+        _ = await source.sweep(kinds: [.cafe], around: centre, limit: 10, checkedAt: checkedAt)
+        let request = try #require(await recorder.requests.first)
+        #expect(request.value(forHTTPHeaderField: "X-Places-Api-Version") == "2025-06-17")
+        #expect(request.value(forHTTPHeaderField: "Authorization") == "Bearer test-key-not-real")
+        #expect(Samples.query(request)["fsq_category_ids"] == cafeCategory)
+        #expect(Samples.query(request)["limit"] == "10")
+        #expect(!(request.url?.absoluteString.contains("test-key-not-real") ?? true))
+    }
+
+    @Test func aHitWithoutACoordinateIsLeftOut() async {
+        let category = "{\"fsq_category_id\":\"\(cafeCategory)\",\"name\":\"Cafe\"}"
+        let noPoint = HitJSON.search([
+            "{\"fsq_place_id\":\"np1\",\"name\":\"Nowhere Cafe\",\"categories\":[\(category)]}"
+        ])
+        let recorder = RecordingFetcher { _ in Samples.response(noPoint) }
+        let source = FoursquarePlacesSource(fetcher: recorder, apiKey: "test-key-not-real")
+        let report = await source.sweep(kinds: [.cafe], around: centre, checkedAt: checkedAt)
+        #expect(report.places.isEmpty)
+        #expect(report.sweeps.first?.returned == 1)
+    }
+}
