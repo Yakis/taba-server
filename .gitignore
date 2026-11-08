@@ -30,10 +30,10 @@ xcuserdata/
 .envrc
 
 # Local credentials and secrets (ChatGPT sign-in, provider keys)
-credentials/
+/credentials/
 credentials.json
 *chatgpt*.json
-secrets/
+/secrets/
 *.secret
 *.secrets
 
@@ -43,10 +43,10 @@ secrets/
 *.db
 *.dump
 *.sql.gz
-pgdata/
-exports/
-probe-output/
-private/
+/pgdata/
+/exports/
+/probe-output/
+/private/
 *.local.json
 docker-compose.override.yml
 
