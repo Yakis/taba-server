@@ -72,11 +72,13 @@ Each step is reviewed, then committed on its own.
 
 1. **Plan/copy split, schemas, assembler.** Done. `PlanDraft`, `GuideCopy`, `ResearchResult`, the strict
    `JSONSchema` builder (ids are enums, so the model can only pick given ids), `GuideAssembler`.
-2. **Data sources (`SourcesKit`).** In progress on branch `m1-sources`: HTTP seam, `PlaceMatcher` (best of N
-   Foursquare hits), Foursquare sweep, OSM `OpeningHoursParser` and `OverpassHoursSource`, Open-Meteo
-   weather, Nominatim geocoder, `taba-sources-probe`. Open fixes: Overpass filter on `opening_hours`, 90 s
-   query timeout, one retry, chunks of 25, never fatal; probe continues past a failing source; typical
-   weather from the last 3 years with a rain chance.
+2. **Data sources (`SourcesKit`).** Done. HTTP seam, `PlaceMatcher` (best of N Foursquare hits), Foursquare
+   sweep, OSM `OpeningHoursParser` and `OverpassHoursSource` (batches of 25, 90 s, one retry, never fatal),
+   Open-Meteo weather (forecast, or the last 3 years for typical weather), Nominatim geocoder,
+   `taba-sources-probe`. Live Edinburgh run: hours for 14 of 20 places in 45 s. Known weakness: reverse
+   geocoding single places gives odd area names (an Old Town café came back as "Abbeyhill"). Step 3 should
+   name a whole cluster, for example by the most common suburb or quarter among its places, at a zoom that
+   gives Old Town / New Town / Stockbridge style names.
 3. **Prompt wiring.** Load `Prompts/*.md` (front matter: id, version, role, output, effort, tools).
    Build each step's input JSON exactly as the prompt describes: third-party text under `external`, hours per
    date as open periods or `closed` / `always` / `unknown`, day windows from arrivals and departures, areas

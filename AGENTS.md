@@ -43,7 +43,7 @@ This repo is public, because the ChatGPT plan route requires an open-source clie
 | `Sources/GuideKit` | Shared model (`Guide`, places, plan, bookings, AI outputs), `PlanChecker`, `SunTimes`, `JSONSchema` builders, `GuideAssembler`. Foundation only, must build on Linux |
 | `Sources/FoursquareKit`, `Sources/FoursquareProbe` | Foursquare wire types and mapping; `foursquare-probe` tool |
 | `Sources/ResponsesKit`, `Sources/TabaChatGPT` | Sign in with ChatGPT (PKCE, ID-token verification), credentials, Responses API streaming client; `taba-chatgpt sign-in` and `taba-chatgpt probe --model <slug>` |
-| `Sources/SourcesKit`, `Sources/SourcesProbe` | Data sources (branch `m1-sources` until merged): place matching, OSM hours, weather, geocoding; `taba-sources-probe` |
+| `Sources/SourcesKit`, `Sources/SourcesProbe` | Data sources: place matching, OSM hours, weather, geocoding; `taba-sources-probe` |
 | `Prompts/` | The AI prompts, versioned with front matter. See `Prompts/README.md` |
 | `Tests/` | Swift Testing. `Tests/GuideKitTests/Fixtures/edinburgh-mock.json` is the benchmark trip |
 | `scripts/` | `privacy-scan.sh`, `hooks/pre-commit` |
@@ -92,6 +92,4 @@ All four must pass before a commit.
 
 ## Current state
 
-See the M1 steps in `docs/PLAN.md`. At the time of writing, M1 step 2 (`SourcesKit`) was in progress in a
-separate worktree on branch `m1-sources`. Merge it into `main` once its fixes pass the four checks and the
-live `taba-sources-probe` run works.
+See the M1 steps in `docs/PLAN.md`. M1 steps 1 and 2 are done. Next is step 3, prompt wiring.
