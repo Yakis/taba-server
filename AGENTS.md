@@ -1,10 +1,15 @@
 # AGENTS.md
 
-Instructions for coding agents working on TABA. Read this, then `docs/PLAN.md` (what we are building, the
-pipeline, milestones and the next steps) and `Prompts/README.md` (how the AI prompts work).
+Instructions for coding agents working on TABA. At the start of every session, read:
 
-If `private/HANDOFF.md` exists, read it too. It holds the owner's infrastructure details and current state.
-The `private/` folder is gitignored and must never be committed.
+1. this file;
+2. `private/HANDOFF.md`, if it exists: the current state, the next actions, and the owner's
+   infrastructure details. The `private/` folder is gitignored and must never be committed;
+3. `docs/PLAN.md`: what we are building, the pipeline, the milestones, and each step's "done when";
+4. `Prompts/README.md`, before touching anything AI-related.
+
+Then check `git status` and `git log --oneline -5` against the handoff's `Now` section before you change
+anything. Keep the handoff current as you go (see "Handoff routine" below).
 
 ## The repo is public
 
@@ -90,6 +95,34 @@ All four must pass before a commit.
 - Overpass can take about a minute. Never let it fail a guide.
 - An empty id list makes an empty JSON Schema enum, which OpenAI rejects. The schema builders throw instead.
 
+## Handoff routine (do this without being asked)
+
+Work may move between agents and tools at any time: Claude Code, Pi, or another session. The handoff keeps
+the next agent from starting cold. Update it at every one of these moments, without waiting to be asked:
+
+- when a step from `docs/PLAN.md` is finished and committed;
+- before you stop for any reason: the owner ends the session, your context or budget is running low, or you
+  are blocked on the owner;
+- after any change outside this repo, such as the VPS, DNS, Keychain or credentials.
+
+What to update:
+
+1. **`docs/PLAN.md`:** mark the step done and add one line on anything learned that changes later steps.
+   Public, so no personal or infrastructure details.
+2. **`AGENTS.md`, "Current state" below:** two or three lines saying where things stand. Public too.
+3. **`private/HANDOFF.md`** (gitignored, never committed). Keep its sections current:
+   - `Now`: what is finished, what is in progress, and the exact state of the working tree (uncommitted
+     files, branches, worktrees, local commits not yet pushed).
+   - `Next`: the next step from the plan, the first concrete actions, and anything to check first.
+   - `Waiting on the owner`: questions or actions only the owner can take.
+   - `Log`: add a dated entry (newest first): what was done, commit hashes, live runs and their results,
+     and decisions with the reason for each.
+   - The reference sections (owner, credentials, hosting): edit them when they change.
+4. Commit the public doc changes, `docs: update handoff after <step>`. Never commit `private/`.
+
+A handoff is good when a new agent can read `AGENTS.md`, `docs/PLAN.md` and `private/HANDOFF.md` and
+continue without asking the owner what happened.
+
 ## Current state
 
-See the M1 steps in `docs/PLAN.md`. M1 steps 1 and 2 are done. Next is step 3, prompt wiring.
+M1 steps 1 and 2 are done. Next is M1 step 3, prompt wiring (`docs/PLAN.md`).

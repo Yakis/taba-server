@@ -79,26 +79,64 @@ Each step is reviewed, then committed on its own.
    geocoding single places gives odd area names (an Old Town café came back as "Abbeyhill"). Step 3 should
    name a whole cluster, for example by the most common suburb or quarter among its places, at a zoom that
    gives Old Town / New Town / Stockbridge style names.
-3. **Prompt wiring.** Load `Prompts/*.md` (front matter: id, version, role, output, effort, tools).
-   Build each step's input JSON exactly as the prompt describes: third-party text under `external`, hours per
-   date as open periods or `closed` / `always` / `unknown`, day windows from arrivals and departures, areas
-   and `areaWalkMinutes` from clustering candidates and naming clusters by reverse geocoding. Repair message
-   = `repair.md` text + issues + measured legs, sent with `plan.md` as instructions. Copy checks: ids,
-   banned phrases, emoji, exclamation marks, word limits, and every time, date, price and number in the copy
-   must appear in the input.
-4. **Whole guide from one command.** `taba build --destination ... --from ... --to ...` on the Mac runs
-   steps 2 to 9 and writes the guide JSON plus a run record (prompt ids and versions, model, timings,
-   issues, repair rounds). First real Edinburgh run, compared with the hand-made guide.
-5. **Server.** Hummingbird 2 service: one swift-jobs job per pipeline step (each saves its result and queues
-   the next), Postgres via PostgresNIO and postgres-migrations, a single app token (hummingbird-auth),
-   progress over SSE, APNs push later. Use AsyncHTTPClient on the server: `URLSession.bytes` does not exist
-   on Linux.
-6. **Deploy.** Docker image (static Linux SDK binary; the base image needs `tzdata` and `ca-certificates`),
-   a Compose service and Postgres on the VPS, ChatGPT credentials moved over SSH, a tailnet-only HTTPS host
-   in front.
-7. **Model comparison.** On the Edinburgh trip: plan-check errors on the first answer, repair rounds, meals,
-   daylight, train buffer, walking against pace, unsourced numbers in copy, banned phrases, time per step,
-   and a human read. Candidates: gpt-6.1-sol, gpt-6-astra, gpt-6-luna.
+3. **Prompt wiring.** A new library target `PipelineKit` (depends on GuideKit, SourcesKit, ResponsesKit).
+   - `PromptLibrary`: loads `Prompts/*.md` as package resources (move `Prompts/` into the target if SwiftPM
+     needs it, and update paths in the docs), parses the front matter (id, version, role, output, effort,
+     tools) and returns the body below it.
+   - Areas: cluster candidates (about 500 m), name each cluster by the most common suburb or quarter among
+     its places' reverse-geocoded names (see the weakness in step 2), and compute `areaWalkMinutes` between
+     cluster centres with the WalkTimes.
+   - Input builders that produce exactly the JSON each prompt describes, with sorted keys:
+     - research input;
+     - plan input: day windows from arrivals and departures, hours per date as periods or `closed` /
+       `always` / `unknown`, third-party text under `external`;
+     - repair message: `repair.md` text, then the issues and measured legs as JSON, sent with `plan.md` as
+       the instructions;
+     - write input: the assembled plan, places with facts, light, findings, stay, anchors, lists and open
+       questions.
+   - `CopyChecker`: ids present, banned phrases from `write.md`, emoji, more than one exclamation mark, word
+     limits, and every time, date, price and number in the copy must appear in the input.
+
+   Done when: golden-file tests show the plan, write and repair inputs for the Edinburgh fixture (reviewed
+   by hand against the prompts), `CopyChecker` tests cover each rule, and the four checks pass.
+4. **Whole guide from one command.** A `taba` executable: `taba build --destination ... --from ... --to ...
+   [--stay ...] [--model ...]` on the Mac runs steps 2 to 9 with the live sources and the ChatGPT
+   credentials. It writes `probe-output/runs/<timestamp>/guide.json` and `run.json`. The run record holds:
+   prompt ids and versions, model, time per step, every AI answer, plan-check issues per round, repair
+   rounds and copy-check results.
+
+   Done when: one real Edinburgh run (23–25 Nov 2025 dates, mock stay) finishes, the guide passes
+   `validateStructure`, there are no plan-check errors after repair, and a short comparison with the
+   hand-made guide is written to the run folder for the owner to read.
+5. **Server.** Hummingbird 2 service:
+   - one swift-jobs job per pipeline step, each saving its result and queuing the next;
+   - Postgres via PostgresNIO and postgres-migrations;
+   - a single app token (hummingbird-auth);
+   - progress over SSE;
+   - endpoints: create trip, trip status, get guide, progress stream.
+
+   Use AsyncHTTPClient on the server, because `URLSession.bytes` does not exist on Linux: put it behind the
+   `HTTPFetching` seam and the ResponsesKit transport.
+
+   Done when: the service builds for Linux in Docker, runs locally against a local Postgres, and builds the
+   Edinburgh guide through the API.
+6. **Deploy.** Docker image: a static Linux SDK binary, on a base image with `tzdata` and `ca-certificates`.
+   A Compose service plus Postgres on the VPS, listening on host port 18090. ChatGPT credentials moved over
+   SSH. The tailnet-only HTTPS host already exists (see the private handoff).
+
+   Done when: `https://travel.nanodev.uk` answers a health check over the tailnet, returns 403 publicly,
+   and builds a guide through the API. The owner has to agree to the VPS change first.
+7. **Model comparison.** On the Edinburgh trip, measure:
+   - plan-check errors on the first answer, and repair rounds;
+   - meals, daylight and the train buffer;
+   - walking against the pace;
+   - unsourced numbers in the copy, and banned phrases;
+   - time per step;
+   - a human read by the owner.
+
+   Candidates: gpt-6.1-sol, gpt-6-astra, gpt-6-luna.
+
+   Done when: a results table is in `docs/` and the default model and effort per step are set in config.
 
 ## Decisions already made
 
