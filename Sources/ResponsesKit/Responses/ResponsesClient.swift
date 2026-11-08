@@ -27,9 +27,8 @@ public struct URLSessionStreamTransport: StreamTransport {
         let (lines, continuation) = AsyncThrowingStream<String, any Error>.makeStream()
         let reader = Task {
             do {
-                for try await line in bytes.lines {
-                    continuation.yield(line)
-                }
+                // Not `bytes.lines`: it drops empty lines, and empty lines are what end each SSE event.
+                try await StreamLines.split(bytes) { continuation.yield($0) }
                 continuation.finish()
             } catch {
                 continuation.finish(throwing: error)
