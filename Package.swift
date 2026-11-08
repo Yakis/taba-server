@@ -9,6 +9,7 @@ let package = Package(
     ],
     products: [
         .library(name: "GuideKit", targets: ["GuideKit"]),
+        .library(name: "PipelineKit", targets: ["PipelineKit"]),
         .executable(name: "foursquare-probe", targets: ["FoursquareProbe"]),
         .executable(name: "taba-chatgpt", targets: ["TabaChatGPT"]),
         .library(name: "SourcesKit", targets: ["SourcesKit"]),
@@ -20,6 +21,16 @@ let package = Package(
     targets: [
         .target(
             name: "GuideKit"
+        ),
+        .target(
+            name: "PipelineKit",
+            dependencies: ["GuideKit", "SourcesKit", "ResponsesKit"],
+            path: ".",
+            exclude: ["AGENTS.md", "CLAUDE.md", "README.md", "docs", "private", "probe-output", "scripts", "Tests",
+                      "Sources/GuideKit", "Sources/FoursquareKit", "Sources/FoursquareProbe", "Sources/ResponsesKit",
+                      "Sources/TabaChatGPT", "Sources/SourcesKit", "Sources/SourcesProbe"],
+            sources: ["Sources/PipelineKit"],
+            resources: [.copy("Prompts")]
         ),
         .target(
             name: "FoursquareKit",
@@ -47,6 +58,11 @@ let package = Package(
         .executableTarget(
             name: "SourcesProbe",
             dependencies: ["SourcesKit", "FoursquareKit", "GuideKit"]
+        ),
+        .testTarget(
+            name: "PipelineKitTests",
+            dependencies: ["PipelineKit", "GuideKit", "SourcesKit", "ResponsesKit"],
+            resources: [.copy("Fixtures")]
         ),
         .testTarget(
             name: "SourcesKitTests",

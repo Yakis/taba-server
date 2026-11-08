@@ -1,0 +1,83 @@
+{
+  "issues" : [
+    {
+      "date" : "2025-11-23",
+      "kind" : "tightGap",
+      "message" : "The walk takes 21 minutes.",
+      "severity" : "error",
+      "stopId" : "d1-market"
+    }
+  ],
+  "legs" : [
+    {
+      "fromStopId" : "d1-arrive",
+      "minutes" : 21,
+      "toStopId" : "d1-market"
+    },
+    {
+      "fromStopId" : "d1-market",
+      "minutes" : 11,
+      "toStopId" : "d1-bags"
+    },
+    {
+      "fromStopId" : "d1-bags",
+      "minutes" : 8,
+      "toStopId" : "d1-christmas"
+    },
+    {
+      "fromStopId" : "d1-christmas",
+      "minutes" : 4,
+      "toStopId" : "d1-pint"
+    },
+    {
+      "fromStopId" : "d2-castle",
+      "minutes" : 2,
+      "toStopId" : "d2-oink"
+    },
+    {
+      "fromStopId" : "d2-oink",
+      "minutes" : 3,
+      "toStopId" : "d2-grassmarket"
+    },
+    {
+      "fromStopId" : "d2-grassmarket",
+      "minutes" : 21,
+      "toStopId" : "d2-calton"
+    },
+    {
+      "fromStopId" : "d2-calton",
+      "minutes" : 4,
+      "toStopId" : "d2-street-food"
+    },
+    {
+      "fromStopId" : "d2-street-food",
+      "minutes" : 6,
+      "toStopId" : "d2-guildford"
+    },
+    {
+      "fromStopId" : "d3-breakfast",
+      "minutes" : 6,
+      "toStopId" : "d3-checkout"
+    },
+    {
+      "fromStopId" : "d3-checkout",
+      "minutes" : 17,
+      "toStopId" : "d3-dean"
+    },
+    {
+      "fromStopId" : "d3-dean",
+      "minutes" : null,
+      "toStopId" : "d3-quick-bite"
+    },
+    {
+      "fromStopId" : "d3-quick-bite",
+      "minutes" : null,
+      "toStopId" : "d3-collect"
+    },
+    {
+      "fromStopId" : "d3-collect",
+      "minutes" : 1,
+      "toStopId" : "d3-train"
+    }
+  ]
+}

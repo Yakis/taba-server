@@ -1,0 +1,336 @@
+import Foundation
+import GuideKit
+import ResponsesKit
+import SourcesKit
+
+/// Independent measured inputs. Area integration can populate these without coupling the builders to clustering.
+public struct PipelineInputMeasurements: Sendable {
+    public let areas: [String: String]
+    public let areaLabels: [String: String]
+    public let walkFromStay: [String: Int]
+    public let areaWalkMinutes: JSONValue
+    public let alwaysOpenPlaceIDs: Set<String>
+    /// Walk from the arrival to the first planned stop and from the last stop to departure.
+    public let arrivalWalkMinutes: Int
+    public let departureWalkMinutes: Int
+    public let arrivalMarginMinutes: Int
+    public let departureMarginMinutes: Int
+
+    public init(areas: [String: String], walkFromStay: [String: Int], areaWalkMinutes: JSONValue,
+                arrivalWalkMinutes: Int, departureWalkMinutes: Int,
+                arrivalMarginMinutes: Int = 0, departureMarginMinutes: Int = 30,
+                alwaysOpenPlaceIDs: Set<String> = []) {
+        self.areas = areas
+        self.areaLabels = areas
+        self.walkFromStay = walkFromStay
+        self.areaWalkMinutes = areaWalkMinutes
+        self.alwaysOpenPlaceIDs = alwaysOpenPlaceIDs
+        self.arrivalWalkMinutes = arrivalWalkMinutes
+        self.departureWalkMinutes = departureWalkMinutes
+        self.arrivalMarginMinutes = arrivalMarginMinutes
+        self.departureMarginMinutes = departureMarginMinutes
+    }
+
+    public init(areas: Areas, places: [String: Place], stayWalks: [String: Int],
+                arrivalWalkMinutes: Int, departureWalkMinutes: Int,
+                arrivalMarginMinutes: Int = 0, departureMarginMinutes: Int = 30,
+                alwaysOpenPlaceIDs: Set<String> = []) {
+        var ids: [String: String] = [:]
+        var labels: [String: String] = [:]
+        var matrix: [String: [String: JSONValue]] = [:]
+        for cluster in areas.clusters {
+            matrix[cluster.id] = [cluster.id: .integer(0)]
+            for id in cluster.candidateIDs where places[id] != nil {
+                ids[id] = cluster.id
+                labels[id] = cluster.name ?? cluster.id
+            }
+        }
+        for walk in areas.walks {
+            matrix[walk.fromAreaID, default: [:]][walk.toAreaID] = .integer(walk.minutes)
+        }
+        self.areas = ids
+        self.areaLabels = labels
+        self.walkFromStay = stayWalks
+        self.areaWalkMinutes = .object(matrix.mapValues { .object($0) })
+        self.arrivalWalkMinutes = arrivalWalkMinutes
+        self.departureWalkMinutes = departureWalkMinutes
+        self.arrivalMarginMinutes = arrivalMarginMinutes
+        self.departureMarginMinutes = departureMarginMinutes
+        self.alwaysOpenPlaceIDs = alwaysOpenPlaceIDs
+    }
+}
+
+public enum PipelineInputError: Error, Equatable {
+    case invalidDateRange
+    case invalidWindow(LocalDate)
+    case missingArea(String)
+    case missingWalk(String)
+    case missingPlace(String)
+    case invalidTimeZone(String)
+    case invalidMeasurement
+    case missingLeg(String)
+    case invalidUTF8
+}
+
+/// A conversation can be passed to a future Responses transport without losing repair history.
+public enum PipelineMessageRole: String, Sendable { case user, assistant }
+
+public struct PipelineConversation: Sendable, Equatable {
+    public struct Message: Sendable, Equatable {
+        public let role: PipelineMessageRole
+        public let content: String
+        public init(role: PipelineMessageRole, content: String) { self.role = role; self.content = content }
+    }
+    public let instructions: String
+    public let messages: [Message]
+    public init(instructions: String, messages: [Message]) {
+        self.instructions = instructions
+        self.messages = messages
+    }
+    public func appendingRepair(previousAssistant: String, repairText: String, payload: String) -> Self {
+        Self(instructions: instructions, messages: messages + [
+            Message(role: .assistant, content: previousAssistant),
+            Message(role: .user, content: repairText + "\n\n" + payload)
+        ])
+    }
+}
+
+/// Builds the exact JSON values sent to the prompts. Serialize with `json` for deterministic key order.
+public enum PipelineInputBuilder {
+    public static func json(_ value: JSONValue) throws -> String {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        guard let text = String(data: try encoder.encode(value), encoding: .utf8) else {
+            throw PipelineInputError.invalidUTF8
+        }
+        return text
+    }
+
+    private static func value<T: Encodable>(_ item: T) throws -> JSONValue {
+        try JSONDecoder().decode(JSONValue.self, from: JSONEncoder().encode(item))
+    }
+    private static func optional<T: Encodable>(_ item: T?) throws -> JSONValue {
+        guard let item else { return .null }
+        return try value(item)
+    }
+    private static func dates(_ trip: Trip) throws -> [LocalDate] {
+        guard trip.dates.start <= trip.dates.end else { throw PipelineInputError.invalidDateRange }
+        var date = trip.dates.start
+        var result: [LocalDate] = []
+        while date <= trip.dates.end {
+            result.append(date)
+            if date == trip.dates.end { break }
+            guard let next = date.adding(days: 1), next > date else { throw PipelineInputError.invalidDateRange }
+            date = next
+        }
+        return result
+    }
+    private static func trip(_ trip: Trip, writing: Bool, locale: String) throws -> JSONValue {
+        var object: [String: JSONValue] = [
+            "destination": try value(trip.destination), "dates": try value(trip.dates),
+            "party": try value(trip.party), "pace": try value(trip.pace),
+            "interests": try value(trip.interests)
+        ]
+        if writing {
+            object["voice"] = .string(trip.voice)
+            object["locale"] = .string(locale)
+        } else {
+            object["dailySpend"] = try value(trip.budget.dailySpend)
+        }
+        return .object(object)
+    }
+
+    public static func research(trip: Trip, stayArea: String) throws -> JSONValue {
+        .object(["destination": try value(trip.destination), "dates": try value(trip.dates),
+                 "stayArea": .string(stayArea), "interests": try value(trip.interests)])
+    }
+
+    /// Hours include the previous day's carry-over, except where today's explicit closure overrides it.
+    public static func hours(_ hours: OpeningHours, on date: LocalDate, always: Bool = false) -> JSONValue {
+        let exception = hours.exceptions.first { $0.date == date }
+        if exception?.closed == true { return .string("closed") }
+        if always && exception == nil { return .string("always") }
+        if !hours.hoursKnown && exception == nil { return .string("unknown") }
+        func periods(_ day: LocalDate) -> [TimePeriod] {
+            if let exception = hours.exceptions.first(where: { $0.date == day }) {
+                return exception.closed ? [] : exception.periods
+            }
+            return hours.weekly.filter { $0.weekday == day.weekday }.map { TimePeriod(open: $0.open, close: $0.close) }
+        }
+        if hours.exceptions.contains(where: { $0.date == date && $0.closed }) { return .string("closed") }
+        var result = periods(date).map { "\($0.open)-\($0.close)" }
+        if exception == nil, let previous = date.adding(days: -1) {
+            result += periods(previous).filter { $0.close <= $0.open && $0.close.minutesSinceMidnight > 0 }
+                .map { "00:00-\($0.close)" }
+        }
+        if result.contains("00:00-00:00") { return .string("always") }
+        return result.isEmpty ? .string("closed") : .array(result.sorted().map { .string($0) })
+    }
+
+    private static func findings(_ findings: [ResearchFinding]) throws -> JSONValue {
+        .array(try findings.map { finding in
+            var fields = try value(finding).objectValue ?? [:]
+            fields.removeValue(forKey: "summary")
+            fields.removeValue(forKey: "title")
+            fields.removeValue(forKey: "times")
+            fields.removeValue(forKey: "placeName")
+            fields.removeValue(forKey: "address")
+            fields.removeValue(forKey: "sourceTitle")
+            fields["startDate"] = try optional(finding.startDate)
+            fields["endDate"] = try optional(finding.endDate)
+            fields["external"] = .object([
+                "title": .string(finding.title), "summary": .string(finding.summary),
+                "times": try optional(finding.times), "placeName": try optional(finding.placeName),
+                "address": try optional(finding.address), "sourceTitle": .string(finding.sourceTitle)
+            ])
+            return .object(fields)
+        })
+    }
+
+    private static func anchors(_ guide: Guide) throws -> JSONValue {
+        let bookings: [JSONValue] = try guide.bookings.map { booking in
+            var fields = try value(booking).objectValue ?? [:]
+            fields.removeValue(forKey: "notes")
+            fields["external"] = .object(["notes": try optional(booking.notes)])
+            return .object(fields)
+        }
+        return .object(["bookings": .array(bookings), "stay": try value(guide.stay)])
+    }
+    private static func weather(_ day: DayWeather?) -> JSONValue {
+        guard let day else { return .null }
+        return .object(["rainChance": day.rainChance.map(JSONValue.integer) ?? .null,
+                        "tempMax": day.tempMax.map(JSONValue.number) ?? .null,
+                        "tempMin": day.tempMin.map(JSONValue.number) ?? .null,
+                        "summary": .string(day.summary), "isForecast": .bool(day.isForecast)])
+    }
+    private static func light(_ date: LocalDate, trip: Trip, weather: [DayWeather]) throws -> [String: JSONValue] {
+        guard let sun = SunTimes.compute(date: date, at: trip.destination.centre,
+                                         timeZoneId: trip.destination.timeZoneId) else {
+            throw PipelineInputError.invalidTimeZone(trip.destination.timeZoneId)
+        }
+        return ["date": try value(date), "sunrise": try optional(sun.sunrise),
+                "sunset": try optional(sun.sunset), "blueHourEnds": try optional(sun.blueHourEnds),
+                "weather": self.weather(weather.first { $0.date == date })]
+    }
+    private static func window(
+        _ date: LocalDate, guide: Guide, measurements: PipelineInputMeasurements
+    ) throws -> JSONValue {
+        let nums = [measurements.arrivalWalkMinutes, measurements.departureWalkMinutes,
+                    measurements.arrivalMarginMinutes, measurements.departureMarginMinutes]
+        guard nums.allSatisfy({ (0...1439).contains($0) }) else { throw PipelineInputError.invalidMeasurement }
+        var start = 0
+        var end = 1439
+        let transit = guide.bookings.filter { [.train, .flight, .bus].contains($0.kind) }
+        func local(_ id: String?, _ name: String) -> Bool {
+            if let id, guide.places[id] != nil { return true }
+            return name.localizedCaseInsensitiveContains(guide.trip.destination.name)
+        }
+        let arrivals = transit.filter { local($0.toPlaceId, $0.to) && !local($0.fromPlaceId, $0.from) }
+        let departures = transit.filter { local($0.fromPlaceId, $0.from) && !local($0.toPlaceId, $0.to) }
+        if date == guide.trip.dates.start,
+           let arrival = arrivals.filter({ $0.arrives.date == date }).min(by: { $0.arrives < $1.arrives }) {
+            start = arrival.arrives.time.minutesSinceMidnight
+                + measurements.arrivalWalkMinutes + measurements.arrivalMarginMinutes
+        }
+        if date == guide.trip.dates.end,
+           let departure = departures.filter({ $0.departs.date == date }).min(by: { $0.departs < $1.departs }) {
+            end = departure.departs.time.minutesSinceMidnight
+                - measurements.departureWalkMinutes - measurements.departureMarginMinutes
+        }
+        guard let first = LocalTime(minutesSinceMidnight: start),
+              let last = LocalTime(minutesSinceMidnight: end), first <= last else {
+            throw PipelineInputError.invalidWindow(date)
+        }
+        return .object(["start": try value(first), "end": try value(last)])
+    }
+    private static func place(_ place: Place, dates: [LocalDate], measurements: PipelineInputMeasurements,
+                              writing: Bool) throws -> JSONValue {
+        guard let area = measurements.areas[place.id] else { throw PipelineInputError.missingArea(place.id) }
+        guard let walk = measurements.walkFromStay[place.id], walk >= 0 else {
+            throw PipelineInputError.missingWalk(place.id)
+        }
+        let hoursByDate = Dictionary(uniqueKeysWithValues: dates.map {
+            ($0.description, hours(place.hours, on: $0, always: measurements.alwaysOpenPlaceIDs.contains(place.id)))
+        })
+        var result: [String: JSONValue] = [
+            "id": .string(place.id), "name": .string(place.name), "kind": try value(place.kind),
+            "area": .string(area), "areaName": .string(measurements.areaLabels[place.id] ?? area),
+            "walkFromStay": .integer(walk), "hours": .object(hoursByDate),
+            "priceLevel": try optional(place.priceLevel), "bookingNeeded": .bool(place.booking.needed),
+            "indoor": .bool(place.indoor)
+        ]
+        if writing {
+            result["address"] = try optional(place.location.address)
+            result["external"] = .object(["facts": try value(place.facts)])
+        }
+        return .object(result)
+    }
+    public static func plan(guide: Guide, measurements: PipelineInputMeasurements, weather: [DayWeather],
+                            findings research: [ResearchFinding], requests: JSONValue) throws -> JSONValue {
+        let dates = try dates(guide.trip)
+        let days: [JSONValue] = try dates.map { date in
+            var result = try light(date, trip: guide.trip, weather: weather)
+            result["weekday"] = try value(date.weekday)
+            result["window"] = try window(date, guide: guide, measurements: measurements)
+            return .object(result)
+        }
+        let places = try guide.places.values.sorted { $0.id < $1.id }.map {
+            try place($0, dates: dates, measurements: measurements, writing: false)
+        }
+        return .object(["trip": try trip(guide.trip, writing: false, locale: ""), "anchors": try anchors(guide),
+                        "days": .array(days), "areaWalkMinutes": measurements.areaWalkMinutes,
+                        "candidates": .array(places), "findings": try findings(research), "requests": requests])
+    }
+    // Locale and research are independent of the checked plan and its measurements.
+    // swiftlint:disable:next function_parameter_count
+    public static func write(
+        guide: Guide, draft: PlanDraft, measurements: PipelineInputMeasurements,
+        weather: [DayWeather], findings research: [ResearchFinding], locale: String
+    ) throws -> JSONValue {
+        let dates = try dates(guide.trip)
+        let days: [JSONValue] = try draft.days.map { day in
+            guard let assembledDay = guide.days.first(where: { $0.date == day.date }),
+                  assembledDay.stops.count == day.stops.count else {
+                throw PipelineInputError.missingLeg(day.date.description)
+            }
+            let ordered = day.stops.enumerated().sorted {
+                $0.element.start == $1.element.start ? $0.offset < $1.offset : $0.element.start < $1.element.start
+            }.map(\.element)
+            let stops: [JSONValue] = try zip(ordered, assembledDay.stops).map { stop, assembled in
+                guard stop.start == assembled.start, stop.placeId == assembled.placeId else {
+                    throw PipelineInputError.missingLeg(stop.id)
+                }
+                var fields = try value(stop).objectValue ?? [:]
+                fields["placeId"] = try optional(stop.placeId)
+                fields["mealSlot"] = try optional(stop.mealSlot)
+                fields["alternative"] = try optional(stop.alternative)
+                fields["walkFromPrevious"] = assembled.legFromPrevious.map { .integer($0.minutes) } ?? .null
+                return .object(fields)
+            }
+            return .object(["date": try value(day.date), "theme": .string(day.theme), "stops": .array(stops)])
+        }
+        let ids = Set(draft.days.flatMap(\.stops).flatMap { [$0.placeId, $0.alternative?.placeId].compactMap { $0 } }
+                      + draft.lists.flatMap(\.placeIds))
+        let places = try ids.sorted().map { id in
+            guard let item = guide.places[id] else { throw PipelineInputError.missingPlace(id) }
+            return try place(item, dates: dates, measurements: measurements, writing: true)
+        }
+        return .object(["trip": try trip(guide.trip, writing: true, locale: locale), "days": .array(days),
+                        "light": .array(try dates.map {
+                            .object(try light($0, trip: guide.trip, weather: weather))
+                        }),
+                        "places": .array(places), "findings": try findings(research), "stay": try value(guide.stay),
+                        "anchors": try anchors(guide), "lists": try value(draft.lists),
+                        "openQuestions": try value(draft.openQuestions),
+                        "external": .object(["practical": try value(guide.practical),
+                                             "sources": try value(guide.sources)])])
+    }
+    public static func repair(issues: [PlanIssue], legs: JSONValue) throws -> String {
+        let entries: [JSONValue] = try issues.map { issue in
+            .object(["severity": try value(issue.severity), "kind": try value(issue.kind),
+                     "date": try value(issue.date), "stopId": try optional(issue.stopId),
+                     "message": .string(issue.message)])
+        }
+        return try json(.object(["issues": .array(entries), "legs": legs]))
+    }
+}

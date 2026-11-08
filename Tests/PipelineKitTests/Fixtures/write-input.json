@@ -1,0 +1,1062 @@
+{
+  "anchors" : {
+    "bookings" : [
+      {
+        "arrives" : "2025-11-23T12:29",
+        "departs" : "2025-11-23T08:00",
+        "external" : {
+          "notes" : "Direct service. Allow time for station entrances and finding your platform."
+        },
+        "from" : "London King's Cross",
+        "id" : "booking-train-out",
+        "kind" : "train",
+        "to" : "Edinburgh Waverley",
+        "toPlaceId" : "osm:node/7149998196"
+      },
+      {
+        "arrives" : "2025-11-25T18:52",
+        "departs" : "2025-11-25T14:30",
+        "external" : {
+          "notes" : "Check the live platform and service status on the day."
+        },
+        "from" : "Edinburgh Waverley",
+        "fromPlaceId" : "osm:node/7149998196",
+        "id" : "booking-train-back",
+        "kind" : "train",
+        "to" : "London King's Cross"
+      }
+    ],
+    "stay" : {
+      "checkIn" : "15:00",
+      "checkOut" : "11:00",
+      "luggage" : {
+        "closes" : "17:00",
+        "opens" : "09:00",
+        "placeId" : "manual:luggage-rose"
+      },
+      "placeId" : "manual:stay-new-town"
+    }
+  },
+  "days" : [
+    {
+      "date" : "2025-11-23",
+      "stops" : [
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : false,
+          "id" : "d1-arrive",
+          "kind" : "travel",
+          "mealSlot" : null,
+          "minutes" : 20,
+          "placeId" : "osm:node/7149998196",
+          "reason" : "fixture",
+          "start" : "12:29",
+          "walkFromPrevious" : null
+        },
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : true,
+          "id" : "d1-market",
+          "kind" : "meal",
+          "mealSlot" : "lunch",
+          "minutes" : 90,
+          "placeId" : "osm:node/2338447599",
+          "reason" : "fixture",
+          "start" : "13:15",
+          "walkFromPrevious" : 21
+        },
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : false,
+          "id" : "d1-bags",
+          "kind" : "logistics",
+          "mealSlot" : null,
+          "minutes" : 60,
+          "placeId" : "manual:stay-new-town",
+          "reason" : "fixture",
+          "start" : "15:00",
+          "walkFromPrevious" : 11
+        },
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : true,
+          "id" : "d1-christmas",
+          "kind" : "sight",
+          "mealSlot" : null,
+          "minutes" : 90,
+          "placeId" : "osm:way/5585005",
+          "reason" : "fixture",
+          "start" : "16:30",
+          "walkFromPrevious" : 8
+        },
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : true,
+          "id" : "d1-pint",
+          "kind" : "drink",
+          "mealSlot" : null,
+          "minutes" : 60,
+          "placeId" : "osm:node/1367337816",
+          "reason" : "fixture",
+          "start" : "19:00",
+          "walkFromPrevious" : 4
+        }
+      ],
+      "theme" : "Market first. Magic later."
+    },
+    {
+      "date" : "2025-11-24",
+      "stops" : [
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : true,
+          "id" : "d2-castle",
+          "kind" : "sight",
+          "mealSlot" : null,
+          "minutes" : 90,
+          "placeId" : "manual:royal-mile",
+          "reason" : "fixture",
+          "start" : "09:30",
+          "walkFromPrevious" : null
+        },
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : true,
+          "id" : "d2-oink",
+          "kind" : "meal",
+          "mealSlot" : "lunch",
+          "minutes" : 60,
+          "placeId" : "osm:node/2339288064",
+          "reason" : "fixture",
+          "start" : "11:30",
+          "walkFromPrevious" : 2
+        },
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : true,
+          "id" : "d2-grassmarket",
+          "kind" : "sight",
+          "mealSlot" : null,
+          "minutes" : 60,
+          "placeId" : "osm:way/192212388",
+          "reason" : "fixture",
+          "start" : "13:00",
+          "walkFromPrevious" : 3
+        },
+        {
+          "alternative" : {
+            "placeId" : "osm:node/10785545157",
+            "reason" : "rain"
+          },
+          "findingIds" : [
+
+          ],
+          "flexible" : true,
+          "id" : "d2-calton",
+          "kind" : "sight",
+          "mealSlot" : null,
+          "minutes" : 75,
+          "placeId" : "osm:node/1149620440",
+          "reason" : "fixture",
+          "start" : "15:10",
+          "walkFromPrevious" : 21
+        },
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : true,
+          "id" : "d2-street-food",
+          "kind" : "meal",
+          "mealSlot" : "dinner",
+          "minutes" : 75,
+          "placeId" : "osm:node/10785545157",
+          "reason" : "fixture",
+          "start" : "16:45",
+          "walkFromPrevious" : 4
+        },
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : true,
+          "id" : "d2-guildford",
+          "kind" : "drink",
+          "mealSlot" : null,
+          "minutes" : 60,
+          "placeId" : "osm:node/33185107",
+          "reason" : "fixture",
+          "start" : "19:00",
+          "walkFromPrevious" : 6
+        }
+      ],
+      "theme" : "Old stones. Hot food. Cold beer."
+    },
+    {
+      "date" : "2025-11-25",
+      "stops" : [
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : true,
+          "id" : "d3-breakfast",
+          "kind" : "meal",
+          "mealSlot" : "breakfast",
+          "minutes" : 60,
+          "placeId" : "manual:stay-new-town",
+          "reason" : "fixture",
+          "start" : "08:45",
+          "walkFromPrevious" : null
+        },
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : false,
+          "id" : "d3-checkout",
+          "kind" : "logistics",
+          "mealSlot" : null,
+          "minutes" : 25,
+          "placeId" : "manual:luggage-rose",
+          "reason" : "fixture",
+          "start" : "10:00",
+          "walkFromPrevious" : 6
+        },
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : true,
+          "id" : "d3-dean",
+          "kind" : "sight",
+          "mealSlot" : null,
+          "minutes" : 75,
+          "placeId" : "osm:relation/18573379",
+          "reason" : "fixture",
+          "start" : "10:30",
+          "walkFromPrevious" : 17
+        },
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : true,
+          "id" : "d3-quick-bite",
+          "kind" : "meal",
+          "mealSlot" : "lunch",
+          "minutes" : 45,
+          "placeId" : null,
+          "reason" : "fixture",
+          "start" : "12:20",
+          "walkFromPrevious" : null
+        },
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : false,
+          "id" : "d3-collect",
+          "kind" : "travel",
+          "mealSlot" : null,
+          "minutes" : 35,
+          "placeId" : "osm:node/7149998196",
+          "reason" : "fixture",
+          "start" : "13:10",
+          "walkFromPrevious" : null
+        },
+        {
+          "alternative" : null,
+          "findingIds" : [
+
+          ],
+          "flexible" : false,
+          "id" : "d3-train",
+          "kind" : "travel",
+          "mealSlot" : null,
+          "minutes" : 262,
+          "placeId" : "osm:node/7149998196",
+          "reason" : "fixture",
+          "start" : "14:30",
+          "walkFromPrevious" : 1
+        }
+      ],
+      "theme" : "One last wander. Then home."
+    }
+  ],
+  "external" : {
+    "practical" : [
+      {
+        "checkedAt" : "2025-11-04",
+        "sourceId" : "src-mock-notes",
+        "text" : "Late-November Scotland can be cold, wet and windy. A waterproof layer and comfortable shoes beat a formal outfit."
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "sourceId" : "src-sun",
+        "text" : "Sunrise roughly 08:03-08:07, sunset around 15:52-15:54 across the visit. Plan outdoor photos before dark."
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "sourceId" : "src-mock-notes",
+        "text" : "New Town Test Apartment: check-in from 15:00, check-out by 11:00, no lift, so expect stairs. Luggage store on Rose Street, 09:00-17:00 daily."
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "sourceId" : "src-markets",
+        "text" : "Stockbridge Market runs on Sundays, 10:00-16:00."
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "sourceId" : "src-christmas",
+        "text" : "Edinburgh's Christmas runs 15 Nov 2025 to 4 Jan 2026; the main market is generally 10:00-22:00."
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "sourceId" : "src-mock-notes",
+        "text" : "Rain? Edinburgh Street Food indoors, then the Guildford Arms and a browse for Scottish groceries. Still an excellent day."
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "sourceId" : "src-mock-notes",
+        "text" : "999 for emergencies. 111 (NHS 24) for urgent medical advice that is not an emergency."
+      }
+    ],
+    "sources" : [
+      {
+        "checkedAt" : "2025-11-04",
+        "id" : "src-bow-bar",
+        "title" : "Bow Bar",
+        "url" : "https://www.thebowbar.co.uk/"
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "id" : "src-christmas",
+        "title" : "Edinburgh's Christmas",
+        "url" : "https://edinburgh.org/festivals/edinburghs-christmas/"
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "id" : "src-guildford",
+        "title" : "Guildford Arms",
+        "url" : "https://guildfordarms.com/visit"
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "id" : "src-markets",
+        "title" : "Forever Edinburgh markets",
+        "url" : "https://edinburgh.org/things-to-do/markets/"
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "id" : "src-mock-notes",
+        "title" : "Mock planning notes",
+        "url" : "https://example.com/mock-planning-notes"
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "id" : "src-osm",
+        "title" : "© OpenStreetMap contributors",
+        "url" : "https://www.openstreetmap.org/copyright"
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "id" : "src-oink",
+        "title" : "Oink Hanover Street",
+        "url" : "https://www.oinkhogroast.co.uk/shops/hanover-street/"
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "id" : "src-street-food",
+        "title" : "Street Food opening hours",
+        "url" : "https://omniedinburgh.co.uk/brand-directory/edinburgh-street-food"
+      },
+      {
+        "checkedAt" : "2025-11-04",
+        "id" : "src-sun",
+        "title" : "Sunrise & sunset",
+        "url" : "https://www.timeanddate.com/sun/uk/edinburgh?month=11"
+      }
+    ]
+  },
+  "findings" : [
+    {
+      "confidence" : "high",
+      "endDate" : null,
+      "external" : {
+        "address" : null,
+        "placeName" : "Market",
+        "sourceTitle" : "Market website",
+        "summary" : "Outdoor stalls",
+        "times" : "10:00–16:00",
+        "title" : "Sunday market"
+      },
+      "id" : "market",
+      "kind" : "event",
+      "onTripDates" : true,
+      "startDate" : "2025-11-23",
+      "url" : "https://example.com/market"
+    }
+  ],
+  "light" : [
+    {
+      "blueHourEnds" : "16:36",
+      "date" : "2025-11-23",
+      "sunrise" : "08:05",
+      "sunset" : "15:53",
+      "weather" : {
+        "isForecast" : true,
+        "rainChance" : 30,
+        "summary" : "Cloudy with showers",
+        "tempMax" : 9,
+        "tempMin" : 4
+      }
+    },
+    {
+      "blueHourEnds" : "16:35",
+      "date" : "2025-11-24",
+      "sunrise" : "08:07",
+      "sunset" : "15:51",
+      "weather" : {
+        "isForecast" : true,
+        "rainChance" : 50,
+        "summary" : "Cloudy with showers",
+        "tempMax" : 9,
+        "tempMin" : 4
+      }
+    },
+    {
+      "blueHourEnds" : "16:34",
+      "date" : "2025-11-25",
+      "sunrise" : "08:09",
+      "sunset" : "15:50",
+      "weather" : {
+        "isForecast" : true,
+        "rainChance" : 70,
+        "summary" : "Cloudy with showers",
+        "tempMax" : 9,
+        "tempMin" : 4
+      }
+    }
+  ],
+  "lists" : [
+    {
+      "key" : "eat",
+      "placeIds" : [
+        "osm:node/2441578938",
+        "osm:node/2338447599",
+        "osm:node/10785545157",
+        "osm:node/658120552",
+        "osm:way/5585005"
+      ]
+    },
+    {
+      "key" : "drink",
+      "placeIds" : [
+        "osm:node/1367337816",
+        "osm:node/1367318907",
+        "osm:node/33185107",
+        "osm:node/57543992"
+      ]
+    },
+    {
+      "key" : "photos",
+      "placeIds" : [
+        "osm:way/416314343",
+        "manual:the-vennel",
+        "osm:relation/18573379",
+        "osm:node/1149620440",
+        "manual:castle-esplanade"
+      ]
+    },
+    {
+      "key" : "groceries",
+      "placeIds" : [
+        "osm:node/4752606949"
+      ]
+    }
+  ],
+  "openQuestions" : [
+    "Check opening hours"
+  ],
+  "places" : [
+    {
+      "address" : "Castle Esplanade, Edinburgh EH1 2NG",
+      "area" : "manual:castle-esplanade",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "manual:castle-esplanade",
+      "indoor" : false,
+      "kind" : "viewpoint",
+      "name" : "Castle Esplanade",
+      "priceLevel" : null,
+      "walkFromStay" : 11
+    },
+    {
+      "address" : "Rose Street, Edinburgh EH2",
+      "area" : "manual:castle-esplanade",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : [
+          "09:00-17:00"
+        ],
+        "2025-11-24" : [
+          "09:00-17:00"
+        ],
+        "2025-11-25" : [
+          "09:00-17:00"
+        ]
+      },
+      "id" : "manual:luggage-rose",
+      "indoor" : true,
+      "kind" : "luggage",
+      "name" : "Test Luggage Store",
+      "priceLevel" : null,
+      "walkFromStay" : 6
+    },
+    {
+      "address" : "Royal Mile, Edinburgh",
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "manual:royal-mile",
+      "indoor" : false,
+      "kind" : "street",
+      "name" : "Royal Mile",
+      "priceLevel" : null,
+      "walkFromStay" : 12
+    },
+    {
+      "address" : "Queen Street, Edinburgh EH2",
+      "area" : "manual:stay-new-town",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "manual:stay-new-town",
+      "indoor" : true,
+      "kind" : "lodging",
+      "name" : "New Town Test Apartment",
+      "priceLevel" : null,
+      "walkFromStay" : 1
+    },
+    {
+      "address" : "The Vennel, Edinburgh EH1 2HU",
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "manual:the-vennel",
+      "indoor" : false,
+      "kind" : "street",
+      "name" : "The Vennel",
+      "priceLevel" : null,
+      "walkFromStay" : 14
+    },
+    {
+      "address" : "Leith Street, Edinburgh EH1 3AU",
+      "area" : "osm:node/10785545157",
+      "areaName" : "Calton Hill",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+          {
+            "checkedAt" : "2025-11-04",
+            "sourceId" : "src-street-food",
+            "text" : "Opens daily from noon. Closing time not confirmed."
+          }
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/10785545157",
+      "indoor" : true,
+      "kind" : "foodHall",
+      "name" : "Edinburgh Street Food",
+      "priceLevel" : null,
+      "walkFromStay" : 14
+    },
+    {
+      "address" : "Calton Hill, Edinburgh EH7 5AA",
+      "area" : "osm:node/10785545157",
+      "areaName" : "Calton Hill",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/1149620440",
+      "indoor" : false,
+      "kind" : "viewpoint",
+      "name" : "Calton Hill",
+      "priceLevel" : null,
+      "walkFromStay" : 18
+    },
+    {
+      "address" : "80 West Bow, Edinburgh EH1 2HH",
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+          {
+            "checkedAt" : "2025-11-04",
+            "sourceId" : "src-bow-bar",
+            "text" : "Cask beer and a deep whisky list."
+          }
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/1367318907",
+      "indoor" : true,
+      "kind" : "pub",
+      "name" : "The Bow Bar",
+      "priceLevel" : null,
+      "walkFromStay" : 13
+    },
+    {
+      "address" : "3-5 Rose Street, Edinburgh EH2 2PR",
+      "area" : "manual:stay-new-town",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/1367337816",
+      "indoor" : true,
+      "kind" : "pub",
+      "name" : "The Abbotsford",
+      "priceLevel" : null,
+      "walkFromStay" : 6
+    },
+    {
+      "address" : "Saunders Street, Edinburgh EH3 6TQ",
+      "area" : "osm:node/2338447599",
+      "areaName" : "Stockbridge",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+          {
+            "checkedAt" : "2025-11-04",
+            "sourceId" : "src-markets",
+            "text" : "Sunday only, 10:00-16:00."
+          }
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : [
+          "10:00-16:00"
+        ],
+        "2025-11-24" : "closed",
+        "2025-11-25" : "closed"
+      },
+      "id" : "osm:node/2338447599",
+      "indoor" : false,
+      "kind" : "market",
+      "name" : "Stockbridge Market",
+      "priceLevel" : null,
+      "walkFromStay" : 11
+    },
+    {
+      "address" : "34 Victoria Street, Edinburgh EH1 2JW",
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/2339288064",
+      "indoor" : true,
+      "kind" : "restaurant",
+      "name" : "Oink Victoria Street",
+      "priceLevel" : null,
+      "walkFromStay" : 13
+    },
+    {
+      "address" : "38 Hanover Street, Edinburgh EH2 2DR",
+      "area" : "manual:castle-esplanade",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+          {
+            "checkedAt" : "2025-11-04",
+            "sourceId" : "src-oink",
+            "text" : "Open 11:00-17:00 daily, or until sold out."
+          }
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : [
+          "11:00-17:00"
+        ],
+        "2025-11-24" : [
+          "11:00-17:00"
+        ],
+        "2025-11-25" : [
+          "11:00-17:00"
+        ]
+      },
+      "id" : "osm:node/2441578938",
+      "indoor" : true,
+      "kind" : "restaurant",
+      "name" : "Oink Hanover Street",
+      "priceLevel" : null,
+      "walkFromStay" : 4
+    },
+    {
+      "address" : "1 West Register Street, Edinburgh EH2 2AA",
+      "area" : "osm:node/33185107",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+          {
+            "checkedAt" : "2025-11-04",
+            "sourceId" : "src-guildford",
+            "text" : "Scottish cask ales on rotating taps."
+          }
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/33185107",
+      "indoor" : true,
+      "kind" : "pub",
+      "name" : "The Guildford Arms",
+      "priceLevel" : null,
+      "walkFromStay" : 10
+    },
+    {
+      "address" : "36-38 Raeburn Place, Edinburgh EH4 1HN",
+      "area" : "osm:node/2338447599",
+      "areaName" : "Stockbridge",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/4752606949",
+      "indoor" : true,
+      "kind" : "grocery",
+      "name" : "M&S Food Stockbridge",
+      "priceLevel" : null,
+      "walkFromStay" : 15
+    },
+    {
+      "address" : "1-3 Cumberland Street, Edinburgh EH3 6RT",
+      "area" : "osm:node/57543992",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/57543992",
+      "indoor" : true,
+      "kind" : "pub",
+      "name" : "The Cumberland Bar",
+      "priceLevel" : null,
+      "walkFromStay" : 8
+    },
+    {
+      "address" : "9-12 Bank Street, Edinburgh EH1 2LN",
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/658120552",
+      "indoor" : true,
+      "kind" : "restaurant",
+      "name" : "Makars Mash Bar",
+      "priceLevel" : null,
+      "walkFromStay" : 11
+    },
+    {
+      "address" : "Edinburgh Waverley Station, Edinburgh",
+      "area" : "osm:node/33185107",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/7149998196",
+      "indoor" : true,
+      "kind" : "station",
+      "name" : "Waverley Station",
+      "priceLevel" : null,
+      "walkFromStay" : 11
+    },
+    {
+      "address" : "Dean Village, Edinburgh EH4 3AY",
+      "area" : "osm:relation/18573379",
+      "areaName" : "Dean Village",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:relation/18573379",
+      "indoor" : false,
+      "kind" : "neighbourhood",
+      "name" : "Dean Village",
+      "priceLevel" : null,
+      "walkFromStay" : 20
+    },
+    {
+      "address" : "Grassmarket, Edinburgh",
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:way/192212388",
+      "indoor" : false,
+      "kind" : "street",
+      "name" : "Grassmarket",
+      "priceLevel" : null,
+      "walkFromStay" : 14
+    },
+    {
+      "address" : "Victoria Street, Edinburgh EH1 2EX",
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:way/416314343",
+      "indoor" : false,
+      "kind" : "street",
+      "name" : "Victoria Street",
+      "priceLevel" : null,
+      "walkFromStay" : 13
+    },
+    {
+      "address" : "East Princes Street Gardens, Edinburgh",
+      "area" : "manual:castle-esplanade",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "external" : {
+        "facts" : [
+          {
+            "checkedAt" : "2025-11-04",
+            "sourceId" : "src-christmas",
+            "text" : "Free entry. Purchases extra."
+          }
+        ]
+      },
+      "hours" : {
+        "2025-11-23" : [
+          "10:00-22:00"
+        ],
+        "2025-11-24" : [
+          "10:00-22:00"
+        ],
+        "2025-11-25" : [
+          "10:00-22:00"
+        ]
+      },
+      "id" : "osm:way/5585005",
+      "indoor" : false,
+      "kind" : "market",
+      "name" : "Edinburgh's Christmas",
+      "priceLevel" : null,
+      "walkFromStay" : 8
+    }
+  ],
+  "stay" : {
+    "checkIn" : "15:00",
+    "checkOut" : "11:00",
+    "luggage" : {
+      "closes" : "17:00",
+      "opens" : "09:00",
+      "placeId" : "manual:luggage-rose"
+    },
+    "placeId" : "manual:stay-new-town"
+  },
+  "trip" : {
+    "dates" : {
+      "end" : "2025-11-25",
+      "start" : "2025-11-23"
+    },
+    "destination" : {
+      "centre" : {
+        "latitude" : 55.953345599999999,
+        "longitude" : -3.1883748999999999
+      },
+      "countryCode" : "GB",
+      "name" : "Edinburgh",
+      "timeZoneId" : "Europe/London"
+    },
+    "interests" : [
+      "food",
+      "pubs",
+      "photography",
+      "markets"
+    ],
+    "locale" : "en-GB",
+    "pace" : "unhurried",
+    "party" : {
+      "adults" : 2,
+      "children" : 0,
+      "mobilityNotes" : [
+        "stairs fine"
+      ]
+    },
+    "voice" : "Friendly, unhurried, short sentences and a little wry."
+  }
+}

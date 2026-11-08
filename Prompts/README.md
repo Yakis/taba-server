@@ -25,8 +25,7 @@ Everything else is code: places, walking times, sun times, weather, checks, asse
    them.
 3. **Planning and writing are separate calls.** The plan has no prose, only a short `reason` for each stop.
    The writer gets the checked plan and writes everything. A repair never rewrites prose, and a change of voice
-   never moves a stop. (`PlanDraft` in GuideKit still holds copy fields. They move to `GuideCopy` when the
-   prompts are wired in.)
+   never moves a stop. `PlanDraft` holds the plan and `GuideCopy` holds the prose.
 4. **Instructions are fixed. Trip data goes in the input.** Each file's text is sent unchanged as the request's
    `instructions`, with no trip data in it, so the provider can cache it. Everything about the trip is one JSON
    object in the input message.
@@ -36,6 +35,13 @@ Everything else is code: places, walking times, sun times, weather, checks, asse
    where a value doesn't apply, no extra keys.
 7. **Hard rules first.** Rules are ordered: hard constraints, then quality, then taste. When rules conflict,
    the earlier one wins and the AI says what it gave up in `openQuestions`.
+
+## Packaging and pipeline wiring
+
+The reviewed files remain in the root `Prompts/` directory. SwiftPM copies that directory as a `PipelineKit`
+resource, and `PromptLibrary` loads the bundled files rather than maintaining separate copies. `PipelineKit`
+provides prompt loading, area clustering, input builders, request construction and copy checks; the complete
+server pipeline is still in progress.
 
 ## Request shape (Responses API, ChatGPT plan route)
 
@@ -48,7 +54,8 @@ Everything else is code: places, walking times, sun times, weather, checks, asse
   sends tools.
 - A repair keeps `plan.md` as its instructions, so the cached prefix stays the same. The input grows to: the
   original user message, the previous plan as an assistant message, then a user message made of `repair.md`'s
-  text followed by the issues JSON. There are at most two repair rounds.
+  text followed by the issues JSON. Repair requests default to the repair prompt's effort; initial plan
+  requests use the plan prompt's effort. There are at most two repair rounds.
 
 ## What code checks on every answer
 

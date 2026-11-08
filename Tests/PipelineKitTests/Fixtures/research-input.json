@@ -1,0 +1,22 @@
+{
+  "dates" : {
+    "end" : "2025-11-25",
+    "start" : "2025-11-23"
+  },
+  "destination" : {
+    "centre" : {
+      "latitude" : 55.953345599999999,
+      "longitude" : -3.1883748999999999
+    },
+    "countryCode" : "GB",
+    "name" : "Edinburgh",
+    "timeZoneId" : "Europe/London"
+  },
+  "interests" : [
+    "food",
+    "pubs",
+    "photography",
+    "markets"
+  ],
+  "stayArea" : "Old Town"
+}

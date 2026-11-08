@@ -55,7 +55,8 @@ public struct NominatimGeocoder: Sendable {
     }
 
     /// The neighbourhood, suburb or quarter name at a point, or nil when there is none, or nothing is found there.
-    public func areaName(near coordinate: Coordinate) async throws -> String? {
+    /// Set `preferSuburbOrQuarter` for naming larger clusters rather than individual places.
+    public func areaName(near coordinate: Coordinate, preferSuburbOrQuarter: Bool = false) async throws -> String? {
         let items = [
             URLQueryItem(name: "lat", value: String(format: "%.6f", coordinate.latitude)),
             URLQueryItem(name: "lon", value: String(format: "%.6f", coordinate.longitude)),
@@ -70,7 +71,8 @@ public struct NominatimGeocoder: Sendable {
         }
         let result = try decode(NominatimReverseResponse.self, from: response)
         guard let address = result.address else { return nil }
-        for key in Self.areaKeys {
+        let keys = preferSuburbOrQuarter ? ["suburb", "quarter", "neighbourhood"] : Self.areaKeys
+        for key in keys {
             if let name = address[key]?.text, !name.isEmpty {
                 return name
             }

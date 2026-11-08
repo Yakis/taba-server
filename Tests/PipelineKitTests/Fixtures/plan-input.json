@@ -1,0 +1,588 @@
+{
+  "anchors" : {
+    "bookings" : [
+      {
+        "arrives" : "2025-11-23T12:29",
+        "departs" : "2025-11-23T08:00",
+        "external" : {
+          "notes" : "Direct service. Allow time for station entrances and finding your platform."
+        },
+        "from" : "London King's Cross",
+        "id" : "booking-train-out",
+        "kind" : "train",
+        "to" : "Edinburgh Waverley",
+        "toPlaceId" : "osm:node/7149998196"
+      },
+      {
+        "arrives" : "2025-11-25T18:52",
+        "departs" : "2025-11-25T14:30",
+        "external" : {
+          "notes" : "Check the live platform and service status on the day."
+        },
+        "from" : "Edinburgh Waverley",
+        "fromPlaceId" : "osm:node/7149998196",
+        "id" : "booking-train-back",
+        "kind" : "train",
+        "to" : "London King's Cross"
+      }
+    ],
+    "stay" : {
+      "checkIn" : "15:00",
+      "checkOut" : "11:00",
+      "luggage" : {
+        "closes" : "17:00",
+        "opens" : "09:00",
+        "placeId" : "manual:luggage-rose"
+      },
+      "placeId" : "manual:stay-new-town"
+    }
+  },
+  "areaWalkMinutes" : {
+    "manual:castle-esplanade" : {
+      "manual:castle-esplanade" : 0,
+      "manual:royal-mile" : 7,
+      "manual:stay-new-town" : 6,
+      "osm:node/33185107" : 9,
+      "osm:node/57543992" : 14,
+      "osm:node/2338447599" : 18,
+      "osm:node/10785545157" : 17,
+      "osm:relation/18573379" : 21
+    },
+    "manual:royal-mile" : {
+      "manual:castle-esplanade" : 7,
+      "manual:royal-mile" : 0,
+      "manual:stay-new-town" : 11,
+      "osm:node/33185107" : 9,
+      "osm:node/57543992" : 20,
+      "osm:node/2338447599" : 24,
+      "osm:node/10785545157" : 17,
+      "osm:relation/18573379" : 25
+    },
+    "manual:stay-new-town" : {
+      "manual:castle-esplanade" : 6,
+      "manual:royal-mile" : 11,
+      "manual:stay-new-town" : 0,
+      "osm:node/33185107" : 8,
+      "osm:node/57543992" : 9,
+      "osm:node/2338447599" : 16,
+      "osm:node/10785545157" : 14,
+      "osm:relation/18573379" : 22
+    },
+    "osm:node/33185107" : {
+      "manual:castle-esplanade" : 9,
+      "manual:royal-mile" : 9,
+      "manual:stay-new-town" : 8,
+      "osm:node/33185107" : 0,
+      "osm:node/57543992" : 14,
+      "osm:node/2338447599" : 23,
+      "osm:node/10785545157" : 9,
+      "osm:relation/18573379" : 29
+    },
+    "osm:node/57543992" : {
+      "manual:castle-esplanade" : 14,
+      "manual:royal-mile" : 20,
+      "manual:stay-new-town" : 9,
+      "osm:node/33185107" : 14,
+      "osm:node/57543992" : 0,
+      "osm:node/2338447599" : 13,
+      "osm:node/10785545157" : 15,
+      "osm:relation/18573379" : 25
+    },
+    "osm:node/2338447599" : {
+      "manual:castle-esplanade" : 18,
+      "manual:royal-mile" : 24,
+      "manual:stay-new-town" : 16,
+      "osm:node/33185107" : 23,
+      "osm:node/57543992" : 13,
+      "osm:node/2338447599" : 0,
+      "osm:node/10785545157" : 27,
+      "osm:relation/18573379" : 14
+    },
+    "osm:node/10785545157" : {
+      "manual:castle-esplanade" : 17,
+      "manual:royal-mile" : 17,
+      "manual:stay-new-town" : 14,
+      "osm:node/33185107" : 9,
+      "osm:node/57543992" : 15,
+      "osm:node/2338447599" : 27,
+      "osm:node/10785545157" : 0,
+      "osm:relation/18573379" : 36
+    },
+    "osm:relation/18573379" : {
+      "manual:castle-esplanade" : 21,
+      "manual:royal-mile" : 25,
+      "manual:stay-new-town" : 22,
+      "osm:node/33185107" : 29,
+      "osm:node/57543992" : 25,
+      "osm:node/2338447599" : 14,
+      "osm:node/10785545157" : 36,
+      "osm:relation/18573379" : 0
+    }
+  },
+  "candidates" : [
+    {
+      "area" : "manual:castle-esplanade",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "manual:castle-esplanade",
+      "indoor" : false,
+      "kind" : "viewpoint",
+      "name" : "Castle Esplanade",
+      "priceLevel" : null,
+      "walkFromStay" : 11
+    },
+    {
+      "area" : "manual:castle-esplanade",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : [
+          "09:00-17:00"
+        ],
+        "2025-11-24" : [
+          "09:00-17:00"
+        ],
+        "2025-11-25" : [
+          "09:00-17:00"
+        ]
+      },
+      "id" : "manual:luggage-rose",
+      "indoor" : true,
+      "kind" : "luggage",
+      "name" : "Test Luggage Store",
+      "priceLevel" : null,
+      "walkFromStay" : 6
+    },
+    {
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "manual:royal-mile",
+      "indoor" : false,
+      "kind" : "street",
+      "name" : "Royal Mile",
+      "priceLevel" : null,
+      "walkFromStay" : 12
+    },
+    {
+      "area" : "manual:stay-new-town",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "manual:stay-new-town",
+      "indoor" : true,
+      "kind" : "lodging",
+      "name" : "New Town Test Apartment",
+      "priceLevel" : null,
+      "walkFromStay" : 1
+    },
+    {
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "manual:the-vennel",
+      "indoor" : false,
+      "kind" : "street",
+      "name" : "The Vennel",
+      "priceLevel" : null,
+      "walkFromStay" : 14
+    },
+    {
+      "area" : "osm:node/10785545157",
+      "areaName" : "Calton Hill",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/10785545157",
+      "indoor" : true,
+      "kind" : "foodHall",
+      "name" : "Edinburgh Street Food",
+      "priceLevel" : null,
+      "walkFromStay" : 14
+    },
+    {
+      "area" : "osm:node/10785545157",
+      "areaName" : "Calton Hill",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/1149620440",
+      "indoor" : false,
+      "kind" : "viewpoint",
+      "name" : "Calton Hill",
+      "priceLevel" : null,
+      "walkFromStay" : 18
+    },
+    {
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/1367318907",
+      "indoor" : true,
+      "kind" : "pub",
+      "name" : "The Bow Bar",
+      "priceLevel" : null,
+      "walkFromStay" : 13
+    },
+    {
+      "area" : "manual:stay-new-town",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/1367337816",
+      "indoor" : true,
+      "kind" : "pub",
+      "name" : "The Abbotsford",
+      "priceLevel" : null,
+      "walkFromStay" : 6
+    },
+    {
+      "area" : "osm:node/2338447599",
+      "areaName" : "Stockbridge",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : [
+          "10:00-16:00"
+        ],
+        "2025-11-24" : "closed",
+        "2025-11-25" : "closed"
+      },
+      "id" : "osm:node/2338447599",
+      "indoor" : false,
+      "kind" : "market",
+      "name" : "Stockbridge Market",
+      "priceLevel" : null,
+      "walkFromStay" : 11
+    },
+    {
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/2339288064",
+      "indoor" : true,
+      "kind" : "restaurant",
+      "name" : "Oink Victoria Street",
+      "priceLevel" : null,
+      "walkFromStay" : 13
+    },
+    {
+      "area" : "manual:castle-esplanade",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : [
+          "11:00-17:00"
+        ],
+        "2025-11-24" : [
+          "11:00-17:00"
+        ],
+        "2025-11-25" : [
+          "11:00-17:00"
+        ]
+      },
+      "id" : "osm:node/2441578938",
+      "indoor" : true,
+      "kind" : "restaurant",
+      "name" : "Oink Hanover Street",
+      "priceLevel" : null,
+      "walkFromStay" : 4
+    },
+    {
+      "area" : "osm:node/33185107",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/33185107",
+      "indoor" : true,
+      "kind" : "pub",
+      "name" : "The Guildford Arms",
+      "priceLevel" : null,
+      "walkFromStay" : 10
+    },
+    {
+      "area" : "osm:node/2338447599",
+      "areaName" : "Stockbridge",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/4752606949",
+      "indoor" : true,
+      "kind" : "grocery",
+      "name" : "M&S Food Stockbridge",
+      "priceLevel" : null,
+      "walkFromStay" : 15
+    },
+    {
+      "area" : "osm:node/57543992",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/57543992",
+      "indoor" : true,
+      "kind" : "pub",
+      "name" : "The Cumberland Bar",
+      "priceLevel" : null,
+      "walkFromStay" : 8
+    },
+    {
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/658120552",
+      "indoor" : true,
+      "kind" : "restaurant",
+      "name" : "Makars Mash Bar",
+      "priceLevel" : null,
+      "walkFromStay" : 11
+    },
+    {
+      "area" : "osm:node/33185107",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:node/7149998196",
+      "indoor" : true,
+      "kind" : "station",
+      "name" : "Waverley Station",
+      "priceLevel" : null,
+      "walkFromStay" : 11
+    },
+    {
+      "area" : "osm:relation/18573379",
+      "areaName" : "Dean Village",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:relation/18573379",
+      "indoor" : false,
+      "kind" : "neighbourhood",
+      "name" : "Dean Village",
+      "priceLevel" : null,
+      "walkFromStay" : 20
+    },
+    {
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:way/192212388",
+      "indoor" : false,
+      "kind" : "street",
+      "name" : "Grassmarket",
+      "priceLevel" : null,
+      "walkFromStay" : 14
+    },
+    {
+      "area" : "manual:royal-mile",
+      "areaName" : "Old Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : "unknown",
+        "2025-11-24" : "unknown",
+        "2025-11-25" : "unknown"
+      },
+      "id" : "osm:way/416314343",
+      "indoor" : false,
+      "kind" : "street",
+      "name" : "Victoria Street",
+      "priceLevel" : null,
+      "walkFromStay" : 13
+    },
+    {
+      "area" : "manual:castle-esplanade",
+      "areaName" : "New Town",
+      "bookingNeeded" : false,
+      "hours" : {
+        "2025-11-23" : [
+          "10:00-22:00"
+        ],
+        "2025-11-24" : [
+          "10:00-22:00"
+        ],
+        "2025-11-25" : [
+          "10:00-22:00"
+        ]
+      },
+      "id" : "osm:way/5585005",
+      "indoor" : false,
+      "kind" : "market",
+      "name" : "Edinburgh's Christmas",
+      "priceLevel" : null,
+      "walkFromStay" : 8
+    }
+  ],
+  "days" : [
+    {
+      "blueHourEnds" : "16:36",
+      "date" : "2025-11-23",
+      "sunrise" : "08:05",
+      "sunset" : "15:53",
+      "weather" : {
+        "isForecast" : true,
+        "rainChance" : 30,
+        "summary" : "Cloudy with showers",
+        "tempMax" : 9,
+        "tempMin" : 4
+      },
+      "weekday" : "sunday",
+      "window" : {
+        "end" : "23:59",
+        "start" : "12:39"
+      }
+    },
+    {
+      "blueHourEnds" : "16:35",
+      "date" : "2025-11-24",
+      "sunrise" : "08:07",
+      "sunset" : "15:51",
+      "weather" : {
+        "isForecast" : true,
+        "rainChance" : 50,
+        "summary" : "Cloudy with showers",
+        "tempMax" : 9,
+        "tempMin" : 4
+      },
+      "weekday" : "monday",
+      "window" : {
+        "end" : "23:59",
+        "start" : "00:00"
+      }
+    },
+    {
+      "blueHourEnds" : "16:34",
+      "date" : "2025-11-25",
+      "sunrise" : "08:09",
+      "sunset" : "15:50",
+      "weather" : {
+        "isForecast" : true,
+        "rainChance" : 70,
+        "summary" : "Cloudy with showers",
+        "tempMax" : 9,
+        "tempMin" : 4
+      },
+      "weekday" : "tuesday",
+      "window" : {
+        "end" : "13:48",
+        "start" : "00:00"
+      }
+    }
+  ],
+  "findings" : [
+    {
+      "confidence" : "high",
+      "endDate" : null,
+      "external" : {
+        "address" : null,
+        "placeName" : "Market",
+        "sourceTitle" : "Market website",
+        "summary" : "Outdoor stalls",
+        "times" : "10:00–16:00",
+        "title" : "Sunday market"
+      },
+      "id" : "market",
+      "kind" : "event",
+      "onTripDates" : true,
+      "startDate" : "2025-11-23",
+      "url" : "https://example.com/market"
+    }
+  ],
+  "requests" : {
+
+  },
+  "trip" : {
+    "dailySpend" : "moderate",
+    "dates" : {
+      "end" : "2025-11-25",
+      "start" : "2025-11-23"
+    },
+    "destination" : {
+      "centre" : {
+        "latitude" : 55.953345599999999,
+        "longitude" : -3.1883748999999999
+      },
+      "countryCode" : "GB",
+      "name" : "Edinburgh",
+      "timeZoneId" : "Europe/London"
+    },
+    "interests" : [
+      "food",
+      "pubs",
+      "photography",
+      "markets"
+    ],
+    "pace" : "unhurried",
+    "party" : {
+      "adults" : 2,
+      "children" : 0,
+      "mobilityNotes" : [
+        "stairs fine"
+      ]
+    }
+  }
+}

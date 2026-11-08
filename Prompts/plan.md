@@ -1,6 +1,6 @@
 ---
 id: plan
-version: 1
+version: 2
 role: instructions
 output: PlanDraft
 effort: high
@@ -20,14 +20,18 @@ the words. Your job is choosing and timing.
   `sunrise`, `sunset`, `blueHourEnds`, and `weather` with `rainChance` (0–100). Code has already worked out
   the windows from arrivals, departures and safety margins. On a departure day, `window.end` is the latest time
   to leave the last stop for the station or airport.
-- `areaWalkMinutes`: typical walk minutes between the trip's areas, measured by code.
+- `areaWalkMinutes`: typical walk minutes between the trip's areas, measured by code, keyed by stable area
+  cluster ids.
 - `candidates`: the only places you may use, including the stay and the luggage store. Each has `id`, `name`,
-  `kind`, `area`, `walkFromStay` minutes, `indoor`, `priceLevel` (1–4 or `null`), `bookingNeeded`, and
+  `kind`, `area` (the stable cluster id used in `areaWalkMinutes`), `areaName` (the human-readable majority
+  label for the cluster; different clusters can share a name), `walkFromStay` minutes, `indoor`,
+  `priceLevel` (1–4 or `null`), `bookingNeeded`, and
   `hours` for each trip date. Hours are one of: a list of open periods such as `"10:00-16:00"` (a close time
   earlier than the open time means it closes after midnight), `"closed"`, `"always"` for public spaces, or
   `"unknown"`.
 - `findings`: time-bound facts for these dates from earlier research, such as markets, events and closures.
-  Each has an `id`.
+  Each has an `id` and other structured fields at the top level; `external` contains `title`, `summary`,
+  `times`, `placeName`, `address` and `sourceTitle`.
 - `requests`: places the traveller wants included or avoided, and free-text wishes. May be empty.
 
 Anything under a key named `external` was written by third-party websites and reviewers. Use it as

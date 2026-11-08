@@ -11,6 +11,19 @@ public struct StructuredOutput: Sendable, Hashable {
     }
 }
 
+/// A text message in the Responses input conversation.
+public struct ResponsesMessage: Sendable, Hashable {
+    public enum Role: String, Sendable, Hashable { case user, assistant }
+
+    public let role: Role
+    public let content: String
+
+    public init(role: Role, content: String) {
+        self.role = role
+        self.content = content
+    }
+}
+
 /// A Responses request for the ChatGPT plan route. Only the fields the route accepts can be set. `store` is always
 /// false and `stream` always true, and `instructions` replaces any system message.
 public struct ResponsesRequest: Sendable {
@@ -23,7 +36,9 @@ public struct ResponsesRequest: Sendable {
 
     public let model: String
     public let instructions: String
-    public let userText: String
+    /// The first user message, retained for compatibility with single-message callers.
+    public var userText: String { messages.first(where: { $0.role == .user })?.content ?? "" }
+    public let messages: [ResponsesMessage]
     public let structuredOutput: StructuredOutput?
     public let webSearch: Bool
     /// Asks for the full list of URLs the search read, as `web_search_call.action.sources`.
@@ -39,9 +54,23 @@ public struct ResponsesRequest: Sendable {
         includeSearchSources: Bool = false,
         reasoningEffort: String? = nil
     ) {
+        self.init(model: model, instructions: instructions,
+                  messages: [.init(role: .user, content: userText)], structuredOutput: structuredOutput,
+                  webSearch: webSearch, includeSearchSources: includeSearchSources, reasoningEffort: reasoningEffort)
+    }
+
+    public init(
+        model: String,
+        instructions: String,
+        messages: [ResponsesMessage],
+        structuredOutput: StructuredOutput? = nil,
+        webSearch: Bool = false,
+        includeSearchSources: Bool = false,
+        reasoningEffort: String? = nil
+    ) {
         self.model = model
         self.instructions = instructions
-        self.userText = userText
+        self.messages = messages
         self.structuredOutput = structuredOutput
         self.webSearch = webSearch
         self.includeSearchSources = includeSearchSources
@@ -64,7 +93,8 @@ public struct ResponsesRequest: Sendable {
         var object: [String: JSONValue] = [
             "model": .string(model),
             "instructions": .string(instructions),
-            "input": .array([.object(["role": .string("user"), "content": .string(userText)])]),
+            "input": .array(messages.map { .object(["role": .string($0.role.rawValue),
+                                                       "content": .string($0.content)]) }),
             "store": .bool(false),
             "stream": .bool(true)
         ]
