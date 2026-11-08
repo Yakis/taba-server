@@ -9,7 +9,11 @@ let package = Package(
     ],
     products: [
         .library(name: "GuideKit", targets: ["GuideKit"]),
-        .executable(name: "foursquare-probe", targets: ["FoursquareProbe"])
+        .executable(name: "foursquare-probe", targets: ["FoursquareProbe"]),
+        .executable(name: "taba-chatgpt", targets: ["TabaChatGPT"])
+    ],
+    dependencies: [
+        .package(url: "https://github.com/apple/swift-crypto.git", from: "5.1.1")
     ],
     targets: [
         .target(
@@ -23,6 +27,17 @@ let package = Package(
             name: "FoursquareProbe",
             dependencies: ["FoursquareKit", "GuideKit"]
         ),
+        .target(
+            name: "ResponsesKit",
+            dependencies: [
+                .product(name: "Crypto", package: "swift-crypto"),
+                .product(name: "_CryptoExtras", package: "swift-crypto")
+            ]
+        ),
+        .executableTarget(
+            name: "TabaChatGPT",
+            dependencies: ["ResponsesKit", "GuideKit"]
+        ),
         .testTarget(
             name: "GuideKitTests",
             dependencies: ["GuideKit"],
@@ -31,6 +46,10 @@ let package = Package(
         .testTarget(
             name: "FoursquareProbeTests",
             dependencies: ["FoursquareKit", "GuideKit"]
+        ),
+        .testTarget(
+            name: "ResponsesKitTests",
+            dependencies: ["ResponsesKit"]
         )
     ],
     swiftLanguageModes: [.v6]
