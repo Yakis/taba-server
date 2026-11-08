@@ -7,3 +7,12 @@ opt_in_rules:
   - closure_spacing
   - empty_count
   - sorted_imports
+
+identifier_name:
+  excluded:
+    # Booking.from and Booking.to mirror the trip contract's field names.
+    - to
+    # Built-in exclusions, restated because setting `excluded` replaces the defaults.
+    - id
+    - URL
+    - GlobalAPIKey
