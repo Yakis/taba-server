@@ -88,7 +88,11 @@ struct GuideAssemblyTests {
         )
     }
 
-    private func assemble(_ draft: PlanDraft, _ copy: GuideCopy) -> AssemblyResult {
+    private func assemble(
+        _ draft: PlanDraft,
+        _ copy: GuideCopy,
+        weather: [LocalDate: DayOutlook] = [:]
+    ) -> AssemblyResult {
         let facts = TripFacts(
             trip: SampleGuide.trip(),
             bookings: [],
@@ -101,8 +105,34 @@ struct GuideAssemblyTests {
             id: "sample",
             facts: facts,
             draft: draft,
-            copy: copy
+            copy: copy,
+            weather: weather
         )
+    }
+
+    private static let sunnyOutlook = DayOutlook(
+        summary: "Bright and cold",
+        highCelsius: 6,
+        lowCelsius: 1,
+        rainChance: 10,
+        isForecast: true
+    )
+
+    @Test func weatherLandsOnItsDay() {
+        let weather = [SampleGuide.date("2026-11-22"): Self.sunnyOutlook]
+        let result = assemble(outOfOrderDraft(), completeCopy(), weather: weather)
+        #expect(result.guide.days[0].weather == Self.sunnyOutlook)
+    }
+
+    @Test func dayWithNoWeatherEntryGetsNone() {
+        let weather = [SampleGuide.date("2026-11-23"): Self.sunnyOutlook]
+        let result = assemble(outOfOrderDraft(), completeCopy(), weather: weather)
+        #expect(result.guide.days[0].weather == nil)
+    }
+
+    @Test func weatherDefaultsToNoneForEveryDay() {
+        let result = assemble(outOfOrderDraft(), completeCopy())
+        #expect(result.guide.days.allSatisfy { $0.weather == nil })
     }
 
     @Test func stopsAreSortedByTimeAndRenumbered() {

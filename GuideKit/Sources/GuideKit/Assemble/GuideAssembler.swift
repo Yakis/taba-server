@@ -11,11 +11,20 @@ public struct GuideAssembler: Sendable {
 
     /// Builds a draft guide version 1. Copy problems are returned, not thrown: the guide is still built, with empty
     /// text where copy is missing.
-    public func assemble(id: String, facts: TripFacts, draft: PlanDraft, copy: GuideCopy) -> AssemblyResult {
+    ///
+    /// `weather` is the expected weather keyed by date. A day with no entry gets no weather, and the default leaves
+    /// every day without weather.
+    public func assemble(
+        id: String,
+        facts: TripFacts,
+        draft: PlanDraft,
+        copy: GuideCopy,
+        weather: [LocalDate: DayOutlook] = [:]
+    ) -> AssemblyResult {
         var problems: [AssemblyProblem] = []
         let matched = Self.matchCopy(draft: draft, copy: copy, places: facts.places, problems: &problems)
         let places = Self.placesWithCopy(facts.places, referenced: matched.placeIds, copy: matched.places)
-        let built = buildDays(draft: draft, matched: matched, places: places)
+        let built = buildDays(draft: draft, matched: matched, places: places, weather: weather)
         let lists = draft.lists.map { draftList -> PlaceList in
             let text = matched.lists[draftList.key]
             return PlaceList(

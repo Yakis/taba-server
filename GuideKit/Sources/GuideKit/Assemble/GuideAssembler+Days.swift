@@ -1,10 +1,12 @@
 extension GuideAssembler {
     /// The plan's days in date order. Each day's stops are sorted by time and renumbered `d<day>-s<n>`, and each
-    /// stop gets a walk leg from the stop before it when both have places. Also returns the plan-to-guide stop ids.
+    /// stop gets a walk leg from the stop before it when both have places. Each day takes its weather from `weather`
+    /// by date. Also returns the plan-to-guide stop ids.
     func buildDays(
         draft: PlanDraft,
         matched: MatchedCopy,
-        places: [String: Place]
+        places: [String: Place],
+        weather: [LocalDate: DayOutlook] = [:]
     ) -> (days: [Day], stopIds: [String: String]) {
         var days: [Day] = []
         var stopIds: [String: String] = [:]
@@ -30,7 +32,7 @@ extension GuideAssembler {
                 previousPlace = place
             }
             let copy = matched.days[draftDay.date] ?? Self.emptyDayCopy
-            days.append(Day(date: draftDay.date, copy: copy, stops: stops))
+            days.append(Day(date: draftDay.date, copy: copy, stops: stops, weather: weather[draftDay.date]))
         }
         return (days, stopIds)
     }
