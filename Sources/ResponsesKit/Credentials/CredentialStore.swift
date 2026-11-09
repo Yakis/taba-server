@@ -1,6 +1,8 @@
 import Foundation
 #if canImport(Glibc)
 import Glibc
+#elseif canImport(Musl)
+import Musl
 #endif
 
 public enum CredentialStoreError: Error, Sendable, Equatable {
@@ -61,7 +63,7 @@ public struct CredentialStore: Sendable {
         }
         guard let data = try? Self.encoder.encode(file) else { throw .writeFailed }
         let temporary = directory.appendingPathComponent(".\(url.lastPathComponent).\(UUID().uuidString).tmp")
-        #if canImport(Glibc)
+        #if canImport(Glibc) || canImport(Musl)
         // Create with restrictive permissions from the first instant, then atomically replace.
         let descriptor = open(temporary.path, O_WRONLY | O_CREAT | O_EXCL, mode_t(0o600))
         guard descriptor >= 0 else { throw .writeFailed }
@@ -92,7 +94,7 @@ public struct CredentialStore: Sendable {
         #endif
     }
 
-    #if canImport(Glibc)
+    #if canImport(Glibc) || canImport(Musl)
     private static func writeAll(_ data: Data, to descriptor: Int32) -> Bool {
         data.withUnsafeBytes { bytes in
             var offset = 0

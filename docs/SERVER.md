@@ -1,10 +1,10 @@
-# Local TABA server
+# TABA server
 
-The server is implemented for M1 step 5. Linux release builds and a local Postgres/API benchmark using
+The server is implemented for M1 step 5 and deployed in step 6 (see "Deployment" below). Linux release builds and a local Postgres/API benchmark using
 recorded Edinburgh answers have passed. A live Edinburgh build through the API on 2025 dates with mock facts finished in about 10 minutes (research 3 min, plan 2, check with two repairs 2, write 1.5): structurally valid, no plan errors or warnings after repair, one copy flag, which was a checker false positive (now fixed).
 Native x86-64 Linux verification also passed in an isolated, resource-limited VPS workspace, including
 Postgres/API restart persistence. No production services or public ports were changed.
-Nothing here deploys the service; production static-SDK packaging and hosting belong to step 6.
+The deployment image is a static Linux binary; see "Deployment".
 
 ## Components
 
@@ -136,15 +136,14 @@ reviews, failure privacy, backend termination, cancellation, recovery, and stale
 TABA_TEST_POSTGRES=1 swift test --filter PostgresTripStoreTests
 ```
 
-Linux release build:
+Linux release build (the same static image as deployment, for the Mac's own architecture):
 
 ```sh
-docker build -t taba-local:step5 .
+docker build -t taba-local:static .
 ```
 
-The image currently uses the full Swift runtime base. This is a verification image, not the planned small
-static-SDK deployment image. BuildKit keeps compilation in a reusable cache; check Docker's free space
-before a first build. Never prune images, volumes or build cache without owner approval.
+BuildKit keeps compilation in a reusable cache; check Docker's free space before a first build. Never prune
+images, volumes or build cache without owner approval.
 
 ### Offline Edinburgh API replay
 
@@ -171,3 +170,35 @@ passed. Restarting both Postgres and the API preserved the completed guide, seve
 unchanged counts of seven checkpoints, 15 progress events and 14 private evidence records for the first
 build. Test containers were stopped afterwards; the seven pre-existing service containers retained their
 identities and health. Real provider keys and sign-in credentials were not transferred.
+
+## Deployment
+
+The `Dockerfile` builds a fully static binary with the Swift Static Linux SDK (musl) and puts it on a small
+Alpine image with `tzdata` and `ca-certificates` (about 100 MB, against 5 GB for the old full-runtime image).
+The build stage runs on the builder's own architecture and cross-compiles, so an arm64 Mac builds the
+x86-64 server image without emulation:
+
+```sh
+docker buildx build --platform linux/amd64 -t taba-server:<tag> --load .
+```
+
+The Static SDK version and checksum in the `Dockerfile` must match the Swift compiler of the build image
+exactly (swift.org lists both). Code that imports `Glibc` needs a `Musl` branch too
+(`#elseif canImport(Musl)`). The image has a health check (`wget` on `/health`, BusyBox is in the base).
+
+Production runs as two Compose services next to the host's other apps:
+
+- `taba-postgres` (`postgres:17-alpine`) on an internal-only network, data on a host folder;
+- `taba-server` on that network plus an ordinary one for its outbound calls, published only on the host's
+  loopback port `18090`, read-only root filesystem with a small `/tmp`, all capabilities dropped,
+  `stop_grace_period: 60s` (workers get 30 seconds to finish a stage), memory capped at 1 GB.
+
+The image is copied over SSH (`docker save | ssh <host> docker load`) and pinned by image ID; nothing is
+pulled from a registry at start. Secrets (app token, Foursquare key, database password) live in root-only
+env files on the host, written over SSH stdin. The ChatGPT sign-in file sits in a host folder owned by the
+container user (65532), mounted writable because a token refresh replaces the file. A reverse proxy
+terminates TLS for a tailnet-only host name and refuses public requests with 403. Backups take a `pg_dump`
+of the database rather than its live files.
+
+To update: build a new image, `docker save | docker load` it on the host, change the pinned image ID in the
+host's Compose configuration, and apply it; only `taba-server` is recreated.
