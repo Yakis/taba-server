@@ -102,15 +102,37 @@ Each step is reviewed, then committed on its own.
    the prompts; every copy-check rule covered; all four checks pass (442 tests across the package suites).
    Learned for step 4: use stable cluster ids for area walks and preserve draft stop ids through writing;
    numeric copy checks are conservative lexical screening, not proof of a claim's truth.
-4. **Whole guide from one command.** A `taba` executable: `taba build --destination ... --from ... --to ...
+4. **Whole guide from one command.** Done (reviewed, committed and live-verified). A `taba` executable: `taba build --destination ... --from ... --to ...
    [--stay ...] [--model ...]` on the Mac runs steps 2 to 9 with the live sources and the ChatGPT
    credentials. It writes `probe-output/runs/<timestamp>/guide.json` and `run.json`. The run record holds:
    prompt ids and versions, model, time per step, every AI answer, plan-check issues per round, repair
    rounds and copy-check results.
 
-   Done when: one real Edinburgh run (23–25 Nov 2025 dates, mock stay) finishes, the guide passes
-   `validateStructure`, there are no plan-check errors after repair, and a short comparison with the
-   hand-made guide is written to the run folder for the owner to read.
+   Verified: the live Edinburgh mock run (23–25 Nov 2025) completed in about eight minutes using
+   `gpt-6.1-sol`: three AI calls, no repairs or retries, structural validation passed, and zero initial or
+   final plan-check issues. The run folder contains the guide, full evidence and a comparison with the
+   mocked hand-made guide. All four repository checks pass (469 offline tests; new files also privacy-scanned).
+   Seven conservative numeric-copy flags were reviewed: ordinary ordinals and times already present inside
+   supplied hours/date-times. The original flags remain in the run record.
+
+   Reproduce on the Mac after ChatGPT sign-in, with `FOURSQUARE_API_KEY` supplied securely:
+
+   ```sh
+   swift run taba build --destination Edinburgh --from 2025-11-23 --to 2025-11-25 \
+     --facts Tests/GuideKitTests/Fixtures/edinburgh-mock.json
+   ```
+
+   `--facts` reads a Guide as a facts scaffold (trip, stay, bookings, places, practical facts and sources),
+   not as a prewritten plan or copy. Without it, `--stay` names the base; omitting the stay uses an explicitly
+   approximate, unbooked destination-centre placeholder. Check-in/out and budget defaults are recorded as
+   assumptions. `--model` overrides the provisional default; `--out` must name a new directory. Only the
+   existing ChatGPT sign-in route is used. Source requests are capped, OSM remains nonfatal, research
+   suggestions must resolve and be measured, and decode/copy retries and plan repairs are bounded.
+
+   Learned for step 5: persist copy review flags separately from validation success and expose them to the
+   reader. A historical benchmark uses current provider data plus mock facts, not verified historical hours;
+   numerical screening and source-URL membership cannot prove factual truth. Unclassified boundary transport
+   bookings fail before AI calls; resolve station/airport endpoints rather than silently dropping travel cutoffs.
 5. **Server.** Hummingbird 2 service:
    - one swift-jobs job per pipeline step, each saving its result and queuing the next;
    - Postgres via PostgresNIO and postgres-migrations;

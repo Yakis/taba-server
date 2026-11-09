@@ -125,5 +125,6 @@ continue without asking the owner what happened.
 
 ## Current state
 
-M1 steps 1–3 are done. `PipelineKit` loads the bundled prompts, builds checked inputs and screens copy.
-Next is M1 step 4, a whole guide from one command (`docs/PLAN.md`); no live pipeline run yet.
+M1 steps 1–4 are reviewed and committed. `taba build` produced the Edinburgh mock guide with no plan
+issues; copy review flags and a comparison are saved beside its run record. Ambiguous boundary bookings fail safely.
+Next is M1 step 5, the server (`docs/PLAN.md`); no server or deployment changes yet.
