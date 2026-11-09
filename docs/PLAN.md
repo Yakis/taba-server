@@ -216,7 +216,7 @@ The first guide built through the app had sound picks but serious gaps. Each fix
 | Q2 | Weather on each day: `GuideAssembler` copies the fetched `DayWeather` onto `Day.weather` (see the follow-up above) | Assembled guides carry `weather` on every day the forecast or archive covers; the fixture still round-trips | done |
 | Q3 | Bus or taxi for long legs: a leg over a set walking time becomes `transit` with an estimated ride time; the pace check counts walking only; the plan input and `plan.md` say how to reach a far-out stay | A stay 10 km out gives ride legs of minutes, not walks of hours, and no pace warning from them | done |
 | Q4 | Interests steer the search: each interest adds Foursquare categories (music venues, markets, …); research findings with a venue are resolved as places so the plan can schedule them | A date-specific event with a venue can appear as a stop | done |
-| Q5 | Less repeated copy: `write.md` says unknown hours once in the notes, and on a stop only when it matters | Fewer than a third of stop bodies mention checking hours on a trip with mostly unknown hours | |
+| Q5 | Less repeated copy: `write.md` says unknown hours once in the notes, and on a stop only when it matters | Fewer than a third of stop bodies mention checking hours on a trip with mostly unknown hours | done |
 | Q5b | Model choice: a trip may name its AI model from a short allowed list (Sol, Terra, Luna on the ChatGPT plan, slugs checked against the account first); `GET /models` tells the app what is offered; the guide records which model made it; the app has a picker in its server settings | A trip built with each model shows which model made it | |
 | Q6 | Rebuild the same trip and compare | The owner judges it good | |
 
@@ -230,6 +230,8 @@ pair (36 walk minutes) became a 16-minute ride.
 Q4: interest searches in `BuildKit/InterestSearches.swift`; new `PlaceKind.venue`; research.md v2; dated event venues are
 added as suggestions in code too. Candidates cap 150. Foursquare category ids for the new searches are not yet checked
 live: the Q6 run's `foursquareSweep` evidence shows what each returned.
+Q5: write.md v4; the app and page already show "Hours not confirmed" per stop, so stop bodies only mention checks
+that would make the visit fail.
 
 Later, if the AI turns out to be the weak link: a second AI provider with its own key, switchable from the app's
 settings. A paid key needs the owner's yes.
