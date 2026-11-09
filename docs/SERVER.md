@@ -39,7 +39,7 @@ in the process environment. Do not put real tokens in this repository or command
 | `DB_USER`, `DB_NAME` | `taba`, `taba` |
 | `DB_PASSWORD` | `taba-local-only` — local development only |
 | `FOURSQUARE_API_KEY` | Required for live mode; obtain securely from Keychain. Only free fields are used. |
-| `TABA_MODEL` | Provisional `gpt-6.1-sol` |
+| `TABA_MODEL` | The default model for new trips; `gpt-6.1-sol` when unset (deployed: `gpt-6.1-terra`) |
 | `TABA_CHATGPT_CREDENTIALS` | Existing writable sign-in credentials file; otherwise the normal default path |
 | `TABA_REPLAY_DIRECTORY` | Absent means live mode. Present means offline replay; empty or invalid paths fail startup. |
 
