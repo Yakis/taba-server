@@ -61,7 +61,7 @@ After a guide exists: re-check 3 days before the trip (hours, weather, closures)
 |---|---|---|
 | M0 | GuideKit model, Edinburgh fixture, plan checks, sun times, prompts, Foursquare probe, ChatGPT sign-in and probe | done |
 | M1 | Pipeline on the server (below) | in progress |
-| M2 | App reads and shares guides (steps in `docs/APP.md`): guide view, day timeline with walk legs, day map, place detail, offline cache, PDF and HTML export. Built against the Edinburgh fixture | |
+| M2 | App reads and shares guides (steps in the `taba-ios` repo, `docs/PLAN.md`): guide view, day timeline with walk legs, day map, place detail, offline cache, PDF and HTML export. Built against the Edinburgh fixture | |
 | M3 | App makes guides: new-trip form, live progress, push notification. On the phone through TestFlight | |
 | M4 | Family and a living guide: iCloud sharing, edit a day, ticket import, re-check before the trip, rain swaps | |
 | M5 | Later: hotel shortlist within budget, spend totals, widget, Live Activity, illustrations | |

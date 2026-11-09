@@ -126,5 +126,5 @@ continue without asking the owner what happened.
 ## Current state
 
 M1 steps 1–5 are done; a live Edinburgh build through the server API passed. Next: M1 step 6 (deploy,
-needs the owner's yes) and M2, the iOS app (`docs/APP.md`, not started). See `docs/SERVER.md` and
-`private/HANDOFF.md` before continuing.
+needs the owner's yes) and M2, the iOS app, which lives in `../taba-ios` (see `docs/APP.md`). Its first
+step moves GuideKit into `GuideKit/` here. See `docs/SERVER.md` and `private/HANDOFF.md` first.
