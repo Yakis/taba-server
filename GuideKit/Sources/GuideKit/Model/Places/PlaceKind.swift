@@ -6,6 +6,8 @@ public enum PlaceKind: String, CaseIterable, Hashable, Sendable, Codable {
     case restaurant
     case pub
     case bar
+    /// A music or performance venue: a concert hall, a jazz club or a live music room.
+    case venue
     case viewpoint
     case street
     case neighbourhood

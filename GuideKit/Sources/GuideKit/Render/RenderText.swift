@@ -125,6 +125,7 @@ enum RenderText {
         case .restaurant: "Restaurant"
         case .pub: "Pub"
         case .bar: "Bar"
+        case .venue: "Music venue"
         case .viewpoint: "Viewpoint"
         case .street: "Street"
         case .neighbourhood: "Neighbourhood"
