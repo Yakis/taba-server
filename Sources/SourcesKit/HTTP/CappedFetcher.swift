@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Wraps another fetcher and refuses to send more than `limit` requests, so a run cannot exceed its budget.
 public actor CappedFetcher: HTTPFetching {

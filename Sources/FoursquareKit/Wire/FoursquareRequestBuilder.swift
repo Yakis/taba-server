@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// The inputs to a place search: an optional name, a point and radius, optional categories, and a limit.
 public struct SearchParameters: Sendable, Hashable {

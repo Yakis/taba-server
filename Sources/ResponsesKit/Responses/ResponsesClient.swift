@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// The status and body lines of a streamed response. Tests replace the transport with recorded lines.
 public struct StreamResponse: Sendable {
@@ -15,6 +18,7 @@ public protocol StreamTransport: Sendable {
     func stream(for request: URLRequest) async throws -> StreamResponse
 }
 
+#if !os(Linux)
 /// The production transport, on URLSession. Body lines are read as they arrive.
 public struct URLSessionStreamTransport: StreamTransport {
     public init() {}
@@ -38,6 +42,18 @@ public struct URLSessionStreamTransport: StreamTransport {
         return StreamResponse(status: http.statusCode, lines: lines)
     }
 }
+#else
+/// Linux requires an injected streaming transport; URLSession has no streaming bytes API there.
+public struct URLSessionStreamTransport: StreamTransport {
+    public enum Unavailable: Error { case injectStreamingTransport }
+
+    public init() {}
+
+    public func stream(for request: URLRequest) async throws -> StreamResponse {
+        throw Unavailable.injectStreamingTransport
+    }
+}
+#endif
 
 /// What one inference call produced. `rawBody` is the response body only, never headers.
 public struct ResponsesOutcome: Sendable, Equatable {

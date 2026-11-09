@@ -31,6 +31,21 @@ public struct PipelineInputMeasurements: Sendable {
         self.departureMarginMinutes = departureMarginMinutes
     }
 
+    /// Reconstructs a measured input without losing the distinction between area IDs and labels.
+    public init(areas: [String: String], areaLabels: [String: String], walkFromStay: [String: Int],
+                areaWalkMinutes: JSONValue, alwaysOpenPlaceIDs: Set<String>, arrivalWalkMinutes: Int,
+                departureWalkMinutes: Int, arrivalMarginMinutes: Int, departureMarginMinutes: Int) {
+        self.areas = areas
+        self.areaLabels = areaLabels
+        self.walkFromStay = walkFromStay
+        self.areaWalkMinutes = areaWalkMinutes
+        self.alwaysOpenPlaceIDs = alwaysOpenPlaceIDs
+        self.arrivalWalkMinutes = arrivalWalkMinutes
+        self.departureWalkMinutes = departureWalkMinutes
+        self.arrivalMarginMinutes = arrivalMarginMinutes
+        self.departureMarginMinutes = departureMarginMinutes
+    }
+
     public init(areas: Areas, places: [String: Place], stayWalks: [String: Int],
                 arrivalWalkMinutes: Int, departureWalkMinutes: Int,
                 arrivalMarginMinutes: Int = 0, departureMarginMinutes: Int = 30,
@@ -73,10 +88,10 @@ public enum PipelineInputError: Error, Equatable {
 }
 
 /// A conversation can be passed to a future Responses transport without losing repair history.
-public enum PipelineMessageRole: String, Sendable { case user, assistant }
+public enum PipelineMessageRole: String, Sendable, Codable { case user, assistant }
 
-public struct PipelineConversation: Sendable, Equatable {
-    public struct Message: Sendable, Equatable {
+public struct PipelineConversation: Sendable, Equatable, Codable {
+    public struct Message: Sendable, Equatable, Codable {
         public let role: PipelineMessageRole
         public let content: String
         public init(role: PipelineMessageRole, content: String) { self.role = role; self.content = content }

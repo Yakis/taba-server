@@ -22,6 +22,13 @@ public enum GuidePipelineError: Error, Sendable {
     case copyErrors([CopyCheckIssue])
     case assemblyProblems([AssemblyProblem])
 }
+/// The inputs accepted after research and candidate preparation.
+public struct ResearchedPipeline: Sendable {
+    public let facts: TripFacts
+    public let measurements: PipelineInputMeasurements
+    public let verified: VerifiedResearch
+}
+
 /// Offline orchestration. Transport, persistence and source preparation are supplied by the caller.
 public struct GuidePipeline: Sendable {
     public typealias Send = @Sendable (ResponsesRequest) async throws -> ResponsesResult
@@ -52,20 +59,54 @@ public struct GuidePipeline: Sendable {
         }
     }
 
-    // swiftlint:disable:next function_parameter_count function_body_length cyclomatic_complexity
+    // swiftlint:disable:next function_parameter_count
     private func execute(
         id: String, model: String, facts: TripFacts, measurements: PipelineInputMeasurements,
         weather: [DayWeather], stayArea: String, locale: String, requests: JSONValue,
         resolveSuggestion: SuggestionResolver?, prepareCandidates: CandidatePreparer?,
         send: @escaping Send, evidence: @escaping EvidenceSink
     ) async throws -> Guide {
-        try validateBoundaryBookings(facts)
-        let planPrompt = try PromptLibrary.load("plan")
-        let repairPrompt = try PromptLibrary.load("repair")
-        let writePrompt = try PromptLibrary.load("write")
-        let researched = try await research(
+        let researched = try await researchStage(
             model: model, facts: facts, measurements: measurements, stayArea: stayArea,
             resolveSuggestion: resolveSuggestion, prepareCandidates: prepareCandidates, send: send, evidence: evidence)
+        let draft = try await planStage(id: id, model: model, researched: researched, weather: weather,
+                                        requests: requests, send: send, evidence: evidence)
+        return try await writeStage(id: id, model: model, researched: researched, draft: draft,
+                                    weather: weather, locale: locale, send: send, evidence: evidence)
+    }
+
+    // Runs and verifies research, including preparation of any admitted suggestions.
+    // swiftlint:disable:next function_parameter_count
+    public func researchStage(
+        model: String, facts: TripFacts, measurements: PipelineInputMeasurements, stayArea: String,
+        resolveSuggestion: SuggestionResolver? = nil, prepareCandidates: CandidatePreparer? = nil,
+        send: Send, evidence: EvidenceSink
+    ) async throws -> ResearchedPipeline {
+        try validateBoundaryBookings(facts)
+        return try await research(model: model, facts: facts, measurements: measurements, stayArea: stayArea,
+                                  resolveSuggestion: resolveSuggestion, prepareCandidates: prepareCandidates,
+                                  send: send, evidence: evidence)
+    }
+
+    // Backwards-compatible combined plan and check stages.
+    // swiftlint:disable:next function_parameter_count
+    public func planStage(
+        id: String, model: String, researched: ResearchedPipeline, weather: [DayWeather],
+        requests: JSONValue = .object([:]), send: Send, evidence: EvidenceSink
+    ) async throws -> PlanDraft {
+        let planned = try await initialPlanStage(id: id, model: model, researched: researched, weather: weather,
+                                                 requests: requests, send: send, evidence: evidence)
+        return try await checkStage(id: id, model: model, researched: researched, planned: planned,
+                                    send: send, evidence: evidence)
+    }
+
+    // Requests the initial plan without checking or repairing it.
+    // swiftlint:disable:next function_parameter_count
+    public func initialPlanStage(
+        id: String, model: String, researched: ResearchedPipeline, weather: [DayWeather],
+        requests: JSONValue = .object([:]), send: Send, evidence: EvidenceSink
+    ) async throws -> PlannedPipeline {
+        let planPrompt = try PromptLibrary.load("plan")
         let facts = researched.facts
         let measurements = researched.measurements
         let verified = researched.verified
@@ -78,19 +119,35 @@ public struct GuidePipeline: Sendable {
             !key.isEmpty && key == key.trimmingCharacters(in: .whitespacesAndNewlines) && key == place.id
         }) else { throw GuidePipelineError.invalidPlan("Malformed candidate IDs") }
         let planSchema = try output("plan", PlanDraft.schema(candidateIds: facts.places.keys.sorted()))
-        var conversation = PipelineConversation(instructions: planPrompt.body, messages: [
+        let conversation = PipelineConversation(instructions: planPrompt.body, messages: [
             .init(role: .user, content: try PipelineInputBuilder.json(planInput))
         ])
+        let request = try conversation.request(model: model, structuredOutput: planSchema,
+                                               reasoningEffort: planPrompt.effort)
+        let (draft, response): (PlanDraft, ResponsesResult) = try await decoded(
+            request, prompt: planPrompt, step: "plan", send: send, evidence: evidence)
+        return PlannedPipeline(draft: draft, previousAssistant: response.text,
+                               conversation: conversation, planInput: planInput)
+    }
+
+    // Checks the saved initial answer and makes at most two repairs, preserving the original conversation.
+    // swiftlint:disable:next function_parameter_count
+    public func checkStage(
+        id: String, model: String, researched: ResearchedPipeline, planned: PlannedPipeline,
+        send: Send, evidence: EvidenceSink
+    ) async throws -> PlanDraft {
+        let facts = researched.facts
+        let verified = researched.verified
+        let repairPrompt = try PromptLibrary.load("repair")
+        let planSchema = try output("plan", PlanDraft.schema(candidateIds: facts.places.keys.sorted()))
+        var conversation = planned.conversation
+        var draft = planned.draft
+        var previousAssistant = planned.previousAssistant
         let assembler = GuideAssembler(walkTimes: walkTimes)
         let checker = PlanChecker(walkTimes: walkTimes)
-        var accepted: PlanDraft?
         for round in 0...2 {
-            let effort = round == 0 ? planPrompt.effort : repairPrompt.effort
-            let request = try conversation.request(model: model, structuredOutput: planSchema, reasoningEffort: effort)
-            let (draft, response): (PlanDraft, ResponsesResult) = try await decoded(
-                request, prompt: round == 0 ? planPrompt : repairPrompt,
-                step: round == 0 ? "plan" : "repair\(round)", send: send, evidence: evidence)
-            let problems = draftProblems(draft, facts: facts, findings: verified.result.findings, planInput: planInput)
+            let problems = draftProblems(draft, facts: facts, findings: verified.result.findings,
+                                         planInput: planned.planInput)
             let withTransit = addTransit(draft, facts: facts)
             var issues = problems
             if problems.isEmpty {
@@ -105,16 +162,45 @@ public struct GuidePipeline: Sendable {
             await evidence(.plan(round: round, issues: issues))
             if !issues.contains(where: { $0.severity != .info })
                 || (round == 2 && !issues.contains(where: { $0.severity == .error })) {
-                accepted = withTransit
-                break
+                return withTransit
             }
             guard round < 2 else { throw GuidePipelineError.planErrors(issues) }
             let legs = measuredLegs(withTransit, facts: facts)
             let payload = try PipelineInputBuilder.repair(issues: issues, legs: legs)
-            conversation = conversation.appendingRepair(previousAssistant: response.text,
+            conversation = conversation.appendingRepair(previousAssistant: previousAssistant,
                                                         repairText: repairPrompt.body, payload: payload)
+            let request = try conversation.request(model: model, structuredOutput: planSchema,
+                                                   reasoningEffort: repairPrompt.effort)
+            let (repaired, response): (PlanDraft, ResponsesResult) = try await decoded(
+                request, prompt: repairPrompt, step: "repair\(round + 1)", send: send, evidence: evidence)
+            draft = repaired
+            previousAssistant = response.text
         }
-        guard let draft = accepted else { throw GuidePipelineError.invalidPlan("No accepted plan") }
+        throw GuidePipelineError.invalidPlan("No accepted plan")
+    }
+
+    // Backwards-compatible combined copy and assembly stages.
+    // swiftlint:disable:next function_parameter_count
+    public func writeStage(
+        id: String, model: String, researched: ResearchedPipeline, draft: PlanDraft,
+        weather: [DayWeather], locale: String = "en-GB", send: Send, evidence: EvidenceSink
+    ) async throws -> Guide {
+        let copy = try await copyStage(id: id, model: model, researched: researched, draft: draft,
+                                       weather: weather, locale: locale, send: send, evidence: evidence)
+        return try await assembleStage(id: id, researched: researched, draft: draft, copy: copy, evidence: evidence)
+    }
+
+    // Writes and checks copy without marking the guide complete.
+    // swiftlint:disable:next function_parameter_count
+    public func copyStage(
+        id: String, model: String, researched: ResearchedPipeline, draft: PlanDraft,
+        weather: [DayWeather], locale: String = "en-GB", send: Send, evidence: EvidenceSink
+    ) async throws -> GuideCopy {
+        let facts = researched.facts
+        let measurements = researched.measurements
+        let verified = researched.verified
+        let assembler = GuideAssembler(walkTimes: walkTimes)
+        let writePrompt = try PromptLibrary.load("write")
         let measured = assembler.assemble(id: id, facts: facts, draft: draft, copy: emptyCopy).guide
         let writeInput = try PipelineInputBuilder.write(guide: measured, draft: draft, measurements: measurements,
                                                          weather: weather, findings: verified.result.findings,
@@ -139,18 +225,7 @@ public struct GuidePipeline: Sendable {
             let issues = CopyChecker().check(copy, expected: targets, input: inputText)
             await evidence(.copy(issues: issues))
             let blocking = issues.filter { if case .ungroundedNumber = $0.kind { false } else { true } }
-            if blocking.isEmpty {
-                let result = assembler.assemble(id: id, facts: facts, draft: draft, copy: copy)
-                guard result.problems.isEmpty else { throw GuidePipelineError.assemblyProblems(result.problems) }
-                try result.guide.validateStructure()
-                let finalIssues = checker.check(result.guide)
-                await evidence(.plan(round: 3, issues: finalIssues))
-                guard !finalIssues.contains(where: { $0.severity == .error }) else {
-                    throw GuidePipelineError.planErrors(finalIssues)
-                }
-                await evidence(.completed)
-                return result.guide
-            }
+            if blocking.isEmpty { return copy }
             guard attempt == 0 else { throw GuidePipelineError.copyErrors(issues) }
             let feedback = blocking.map { "\($0.path): \(String(describing: $0.kind))" }.joined(separator: "\n")
             current = ResponsesRequest(model: model, instructions: writePrompt.body, messages: request.messages + [
@@ -160,17 +235,29 @@ public struct GuidePipeline: Sendable {
         }
         throw GuidePipelineError.invalidPlan("No accepted copy")
     }
+
+    /// Assembles and validates the finished guide; completion is emitted only on success.
+    public func assembleStage(
+        id: String, researched: ResearchedPipeline, draft: PlanDraft, copy: GuideCopy, evidence: EvidenceSink
+    ) async throws -> Guide {
+        let result = GuideAssembler(walkTimes: walkTimes).assemble(id: id, facts: researched.facts,
+                                                                   draft: draft, copy: copy)
+        guard result.problems.isEmpty else { throw GuidePipelineError.assemblyProblems(result.problems) }
+        try result.guide.validateStructure()
+        let finalIssues = PlanChecker(walkTimes: walkTimes).check(result.guide)
+        await evidence(.plan(round: 3, issues: finalIssues))
+        guard !finalIssues.contains(where: { $0.severity == .error }) else {
+            throw GuidePipelineError.planErrors(finalIssues)
+        }
+        await evidence(.completed)
+        return result.guide
+    }
 }
 private extension GuidePipeline {
-    struct ResearchStage {
-        let facts: TripFacts
-        let measurements: PipelineInputMeasurements
-        let verified: VerifiedResearch
-    }
     // swiftlint:disable:next function_parameter_count
     func research(model: String, facts: TripFacts, measurements: PipelineInputMeasurements, stayArea: String,
                   resolveSuggestion: SuggestionResolver?, prepareCandidates: CandidatePreparer?,
-                  send: Send, evidence: EvidenceSink) async throws -> ResearchStage {
+                  send: Send, evidence: EvidenceSink) async throws -> ResearchedPipeline {
         let prompt = try PromptLibrary.load("research")
         let request = try PipelineRequestFactory.initial(
             prompt: prompt, input: PipelineInputBuilder.research(trip: facts.trip, stayArea: stayArea),
@@ -194,7 +281,7 @@ private extension GuidePipeline {
         let verified = VerifiedResearch(result: ResearchResult(findings: resolved.result.findings,
             suggestedPlaces: admitted.map(\.0), searchNotes: notes), places: admitted.map(\.1))
         await evidence(.research(accepted: verified.result, resolvedPlaceIDs: verified.places.map(\.id)))
-        return ResearchStage(facts: researchFacts(prepared, findings: verified.result.findings),
+        return ResearchedPipeline(facts: researchFacts(prepared, findings: verified.result.findings),
                              measurements: measurements, verified: verified)
     }
     func researchFacts(_ facts: TripFacts, findings: [ResearchFinding]) -> TripFacts {

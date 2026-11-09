@@ -1,0 +1,40 @@
+# Local only. These disposable database credentials must never be used for deployment.
+services:
+  postgres:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_USER: taba
+      POSTGRES_PASSWORD: taba-local-only
+      POSTGRES_DB: taba
+    ports:
+      - "127.0.0.1:15432:5432"
+    volumes:
+      - taba-local-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U taba -d taba"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+  server:
+    build: .
+    stop_grace_period: 60s
+    user: "${TABA_UID:-1000}:${TABA_GID:-1000}"
+    environment:
+      HOST: 0.0.0.0
+      DB_HOST: postgres
+      DB_PASSWORD: taba-local-only
+      TABA_APP_TOKEN: "${TABA_APP_TOKEN:-}"
+      FOURSQUARE_API_KEY: "${FOURSQUARE_API_KEY:-}"
+      TABA_MODEL: "${TABA_MODEL:-gpt-6.1-sol}"
+      TABA_CHATGPT_CREDENTIALS: /credentials/chatgpt.json
+    ports:
+      - "127.0.0.1:18090:8090"
+    volumes:
+      - type: bind
+        source: "${HOME}/.config/taba"
+        target: /credentials
+    depends_on:
+      postgres:
+        condition: service_healthy
+volumes:
+  taba-local-postgres:

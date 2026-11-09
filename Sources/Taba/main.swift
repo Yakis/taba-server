@@ -1,4 +1,9 @@
+#if canImport(Darwin)
 import Darwin
+#elseif canImport(Glibc)
+import Glibc
+#endif
+import BuildKit
 import Foundation
 import GuideKit
 import PipelineKit
@@ -17,11 +22,13 @@ struct Taba {
             case CLIError.usage:
                 message = "Usage: taba build --destination NAME --from YYYY-MM-DD --to YYYY-MM-DD "
                     + "[--stay NAME] [--model MODEL] [--out DIRECTORY] [--facts GUIDE.json]"
-            case CLIError.factsMismatch: message = "Facts do not match the requested trip or are missing the stay."
+            case CLIError.factsMismatch, SourcePreparationError.factsMismatch:
+                message = "Facts do not match the requested trip or are missing the stay."
             case CLIError.missingStay: message = "Supply --stay when building without --facts."
             case CLIError.missingKey: message = "FOURSQUARE_API_KEY is not set."
-            case CLIError.geocoding: message = "Could not geocode the destination or stay."
-            case CLIError.noCandidates: message = "No candidate places were found."
+            case CLIError.geocoding, SourcePreparationError.geocoding:
+                message = "Could not geocode the destination or stay."
+            case CLIError.noCandidates, SourcePreparationError.noCandidates: message = "No candidate places were found."
             case CLIError.output:
                 message = "Could not create a new output directory; existing output is never overwritten."
             case CLIError.recording: message = "Could not persist the run record."
@@ -86,8 +93,8 @@ struct Taba {
         switch error {
         case is CancellationError: "cancelled"
         case CLIError.missingKey: "missingFoursquareKey"
-        case CLIError.geocoding: "geocoding"
-        case CLIError.noCandidates: "noCandidates"
+        case CLIError.geocoding, SourcePreparationError.geocoding: "geocoding"
+        case CLIError.noCandidates, SourcePreparationError.noCandidates: "noCandidates"
         case CLIError.recording: "recording"
         case is CredentialSessionError: "credentials"
         default: "pipelineOrSourceFailure"

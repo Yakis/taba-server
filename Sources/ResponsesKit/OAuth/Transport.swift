@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Sends one request and returns the body and response. Tests replace this with a fake.
 public protocol HTTPTransport: Sendable {

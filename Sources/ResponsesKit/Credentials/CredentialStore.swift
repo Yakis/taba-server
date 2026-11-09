@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(Glibc)
+import Glibc
+#endif
 
 public enum CredentialStoreError: Error, Sendable, Equatable {
     case unreadable
@@ -58,6 +61,17 @@ public struct CredentialStore: Sendable {
         }
         guard let data = try? Self.encoder.encode(file) else { throw .writeFailed }
         let temporary = directory.appendingPathComponent(".\(url.lastPathComponent).\(UUID().uuidString).tmp")
+        #if canImport(Glibc)
+        // Create with restrictive permissions from the first instant, then atomically replace.
+        let descriptor = open(temporary.path, O_WRONLY | O_CREAT | O_EXCL, mode_t(0o600))
+        guard descriptor >= 0 else { throw .writeFailed }
+        let written = Self.writeAll(data, to: descriptor)
+        let closed = close(descriptor) == 0
+        guard written, closed, rename(temporary.path, url.path) == 0 else {
+            try? FileManager.default.removeItem(at: temporary)
+            throw .writeFailed
+        }
+        #else
         guard FileManager.default.createFile(
             atPath: temporary.path,
             contents: data,
@@ -75,7 +89,24 @@ public struct CredentialStore: Sendable {
             try? FileManager.default.removeItem(at: temporary)
             throw .writeFailed
         }
+        #endif
     }
+
+    #if canImport(Glibc)
+    private static func writeAll(_ data: Data, to descriptor: Int32) -> Bool {
+        data.withUnsafeBytes { bytes in
+            var offset = 0
+            while offset < bytes.count {
+                guard let base = bytes.baseAddress else { return false }
+                let count = write(descriptor, base.advanced(by: offset), bytes.count - offset)
+                if count < 0 && errno == EINTR { continue }
+                guard count > 0 else { return false }
+                offset += count
+            }
+            return true
+        }
+    }
+    #endif
 
     static var encoder: JSONEncoder {
         let encoder = JSONEncoder()

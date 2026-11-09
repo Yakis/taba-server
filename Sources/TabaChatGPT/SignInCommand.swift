@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 import ResponsesKit
 
 /// `sign-in`: opens the authorize page, waits for the loopback callback, exchanges the code and saves the credentials.

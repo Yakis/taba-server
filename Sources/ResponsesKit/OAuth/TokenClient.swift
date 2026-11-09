@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// The token response from the authorization-code exchange or a refresh.
 public struct TokenResponse: Decodable, Sendable, Equatable, CustomStringConvertible, CustomDebugStringConvertible {

@@ -71,6 +71,84 @@ struct GuidePipelineTests {
     }
     private var research: String { #"{"findings":[],"suggestedPlaces":[],"searchNotes":"none"}"# }
 
+    @Test func stagesResumeFromResearchCheckpoint() async throws {
+        let fixture = try data()
+        let script = try PipelineScript([research, json(fixture.draft), json(fixture.draft),
+                                         json(fixture.draft), json(fixture.copy)])
+        let pipeline = GuidePipeline()
+        let original = fixture.measurements
+        let measurements = PipelineInputMeasurements(
+            areas: original.areas, areaLabels: original.areas.mapValues { _ in "Named area" },
+            walkFromStay: original.walkFromStay, areaWalkMinutes: original.areaWalkMinutes,
+            alwaysOpenPlaceIDs: [fixture.facts.stay.placeId], arrivalWalkMinutes: 2, departureWalkMinutes: 3,
+            arrivalMarginMinutes: 4, departureMarginMinutes: 5)
+        let researched = try await pipeline.researchStage(
+            model: "fake", facts: fixture.facts, measurements: measurements, stayArea: "Centre",
+            send: { try await script.send($0) }, evidence: { await script.record($0) })
+        let factsCheckpoint = try JSONDecoder().decode(
+            FactsCheckpoint.self, from: JSONEncoder().encode(FactsCheckpoint(fixture.facts)))
+        let measurementsCheckpoint = try JSONDecoder().decode(
+            MeasurementsCheckpoint.self, from: JSONEncoder().encode(MeasurementsCheckpoint(measurements)))
+        #expect(factsCheckpoint.value == fixture.facts)
+        #expect(measurementsCheckpoint.value.areaLabels == measurements.areaLabels)
+        #expect(measurementsCheckpoint.value.departureMarginMinutes == 5)
+        let bytes = try JSONEncoder().encode(researched)
+        let restored = try JSONDecoder().decode(ResearchedPipeline.self, from: bytes)
+        #expect(restored.facts == fixture.facts)
+        #expect(restored.measurements.areaLabels == measurements.areaLabels)
+        #expect(restored.measurements.areas == measurements.areas)
+        #expect(restored.measurements.alwaysOpenPlaceIDs == measurements.alwaysOpenPlaceIDs)
+        #expect(restored.measurements.arrivalWalkMinutes == 2)
+        #expect(restored.measurements.departureWalkMinutes == 3)
+        #expect(restored.measurements.arrivalMarginMinutes == 4)
+        #expect(restored.measurements.departureMarginMinutes == 5)
+        let draft = try await pipeline.planStage(id: "test", model: "fake", researched: restored, weather: [],
+            send: { try await script.send($0) }, evidence: { await script.record($0) })
+        let restoredDraft = try JSONDecoder().decode(PlanDraft.self, from: JSONEncoder().encode(draft))
+        let guide = try await pipeline.writeStage(id: "test", model: "fake", researched: restored,
+            draft: restoredDraft, weather: [], send: { try await script.send($0) },
+            evidence: { await script.record($0) })
+        try guide.validateStructure()
+        #expect(await script.requests.count == 5)
+    }
+
+    @Test func resumesPlanAndCopyWithoutRepeatingInitialRequest() async throws {
+        let fixture = try data()
+        let invalid = PlanDraft(days: [], lists: fixture.draft.lists, skippedMeals: [],
+                                openQuestions: [], changes: [])
+        let initial = try json(invalid)
+        let script = try PipelineScript([research, initial, json(fixture.draft), json(fixture.draft),
+                                         json(fixture.copy)])
+        let pipeline = GuidePipeline()
+        let researched = try await pipeline.researchStage(
+            model: "fake", facts: fixture.facts, measurements: fixture.measurements, stayArea: "Centre",
+            send: { try await script.send($0) }, evidence: { await script.record($0) })
+        let planned = try await pipeline.initialPlanStage(
+            id: "test", model: "fake", researched: researched, weather: [],
+            send: { try await script.send($0) }, evidence: { await script.record($0) })
+        #expect(await script.requests.count == 2)
+        #expect(!(await script.events.contains { if case .plan = $0 { true } else { false } }))
+        let restored = try JSONDecoder().decode(PlannedPipeline.self, from: JSONEncoder().encode(planned))
+        let draft = try await pipeline.checkStage(
+            id: "test", model: "fake", researched: researched, planned: restored,
+            send: { try await script.send($0) }, evidence: { await script.record($0) })
+        let requests = await script.requests
+        #expect(requests.map(\.messages.count) == [1, 1, 3, 5])
+        #expect(requests[2].messages[1].content == initial)
+        #expect(requests[2].messages[2].content.contains("Missing day"))
+        #expect(draft.days[0].stops[0].id == "original-stop")
+        let copy = try await pipeline.copyStage(
+            id: "test", model: "fake", researched: researched, draft: draft, weather: [],
+            send: { try await script.send($0) }, evidence: { await script.record($0) })
+        #expect(!(await script.events.contains { if case .completed = $0 { true } else { false } }))
+        let restoredCopy = try JSONDecoder().decode(GuideCopy.self, from: JSONEncoder().encode(copy))
+        let guide = try await pipeline.assembleStage(id: "test", researched: researched, draft: draft,
+                                                     copy: restoredCopy, evidence: { await script.record($0) })
+        try guide.validateStructure()
+        #expect(await script.requests.count == 5)
+        #expect(await script.events.contains { if case .completed = $0 { true } else { false } })
+    }
+
     @Test func completesWithDecodeAndCopyRetries() async throws {
         let fixture = try data()
         let (facts, measurements) = (fixture.facts, fixture.measurements)
