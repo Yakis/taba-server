@@ -125,7 +125,9 @@ continue without asking the owner what happened.
 
 ## Current state
 
-M1 steps 1–5 are done; a live Edinburgh build through the server API passed. GuideKit is now a nested
+M1 steps 1–6 are done: the server runs on the VPS (static Linux image, tailnet-only HTTPS) and built the
+Edinburgh guide live through its API. GuideKit is now a nested
 package in `GuideKit/` (the iOS app's M2 step 1), and the iOS app in `../taba-ios` depends on it by path. GuideKit also has `GuideHTMLRenderer`, which turns a guide into one self-contained HTML page
 (the app exports it; the server can serve the same file later).
-Next: M1 step 6 (deploy, needs the owner's yes). See `docs/SERVER.md` and `private/HANDOFF.md` first.
+Next: the iOS app's M3 (making guides from the phone); server step 7 (model comparison) when the owner
+wants it. Deploying an update: `docs/SERVER.md`, "Deployment", and `private/HANDOFF.md`.

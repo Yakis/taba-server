@@ -173,6 +173,13 @@ Each step is reviewed, then committed on its own.
 
    Done when: `https://travel.nanodev.uk` answers a health check over the tailnet, returns 403 publicly,
    and builds a guide through the API. The owner has to agree to the VPS change first.
+   Done 2026-11-09: health 200 over the tailnet, 403 publicly, a wrong token 401, and a live Edinburgh build
+   (2025 dates, mock facts) through the deployed API in 6 min 49 s (research 2, plan 2, check and write 3.5).
+   The image is a static musl binary on Alpine (about 100 MB), cross-compiled on the Mac and copied over SSH;
+   `Glibc` imports needed `Musl` branches. The server refreshed the ChatGPT sign-in file itself.
+   Learned: CopyChecker flags the ordinal "first" as an ungrounded number (all four flags of the live run:
+   "Market first.", "Breakfast first", "Your first evening's dinner"); words like first/second should not
+   count as numbers.
 7. **Model comparison.** On the Edinburgh trip, measure:
    - plan-check errors on the first answer, and repair rounds;
    - meals, daylight and the train buffer;
