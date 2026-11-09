@@ -1,5 +1,5 @@
 /// The row on the timeline that says how to get from the previous stop to this one: "8 min walk",
-/// "21 min walk · long walk" or "12 min by transit". Same rules as the app's `LegRow`.
+/// "21 min walk · long walk" or "12 min by bus or taxi". Same rules as the app's `LegRow`.
 enum RenderLeg {
     /// The row's text, or nil when no row is worth showing: no leg, under 60 metres, or both stops at the same place.
     /// - Parameters:
@@ -11,7 +11,7 @@ enum RenderLeg {
             return nil
         }
         guard leg.mode == .walk else {
-            return "\(leg.minutes) min by transit"
+            return "\(leg.minutes) min by bus or taxi"
         }
         return leg.minutes > 20 ? "\(leg.minutes) min walk · long walk" : "\(leg.minutes) min walk"
     }

@@ -8,7 +8,7 @@ public enum IssueKind: String, CaseIterable, Hashable, Sendable, Codable {
     case hoursUnknown
     /// A stop starts before the previous one ends.
     case overlap
-    /// The gap between two stops is shorter than the walk between them.
+    /// The gap between two stops is shorter than the walk or bus or taxi ride between them.
     case tightGap
     /// The gap between two stops is short for a walk of that length.
     case shortGap
@@ -38,6 +38,6 @@ public enum IssueKind: String, CaseIterable, Hashable, Sendable, Codable {
     case luggageUnused
     /// The day's walking is more than 1.2 times the pace limit.
     case walkingOverPace
-    /// A transit booking does not name its station, so the walk from or to it is not checked.
+    /// A transit booking does not name its station, so the journey from or to it is not checked.
     case stationUnknown
 }

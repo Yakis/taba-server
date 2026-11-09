@@ -56,14 +56,15 @@ struct CheckContext {
         guide.days.first { $0.date == date }
     }
 
-    /// Walking minutes between two stops' places, or nil when either stop has no place.
-    func stopWalkMinutes(_ first: String?, _ second: String?) -> Int? {
+    /// The leg between two stops' places, or nil when either stop has no place.
+    func stopLeg(_ first: String?, _ second: String?) -> Leg? {
         guard let firstPlace = place(first), let secondPlace = place(second) else { return nil }
-        return walkMinutes(firstPlace, secondPlace)
+        return leg(firstPlace, secondPlace)
     }
 
-    func walkMinutes(_ first: Place, _ second: Place) -> Int {
-        walkTimes.minutes(from: first.location.coordinate, to: second.location.coordinate)
+    /// The walk, or bus or taxi ride, between two places.
+    func leg(_ first: Place, _ second: Place) -> Leg {
+        Travel.leg(from: first.location.coordinate, to: second.location.coordinate, walkTimes: walkTimes)
     }
 
     /// The place's name, or the stop's title when the stop has no place.

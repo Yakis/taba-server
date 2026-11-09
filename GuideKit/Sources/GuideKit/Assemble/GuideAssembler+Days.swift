@@ -47,16 +47,14 @@ extension GuideAssembler {
         }.map(\.element)
     }
 
-    /// The walk from one place to the next, or nil when either stop has no place.
+    /// The walk, or bus or taxi ride past `Travel.longestWalkMinutes`, from one place to the next. Nil when either
+    /// stop has no place.
     private func leg(from previous: Place?, to current: Place?) -> Leg? {
         guard let previous, let current else { return nil }
-        let origin = previous.location.coordinate
-        let destination = current.location.coordinate
-        let metres = StraightLineWalkTimes.haversineMetres(origin, destination)
-        return Leg(
-            mode: .walk,
-            minutes: walkTimes.minutes(from: origin, to: destination),
-            metres: Int(metres.rounded())
+        return Travel.leg(
+            from: previous.location.coordinate,
+            to: current.location.coordinate,
+            walkTimes: walkTimes
         )
     }
 }

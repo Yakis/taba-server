@@ -1,6 +1,6 @@
 extension PlanChecker {
     /// Stops that start before the traveller can arrive at them, and stops too close to the train home.
-    /// A booking without a station id is reported once as info, and its walks count as 0.
+    /// A booking without a station id is reported once as info, and its journeys count as 0.
     func transitFindings(_ context: CheckContext) -> [Finding] {
         var findings: [Finding] = []
         if let arrival = context.arrival, let day = context.day(on: arrival.time.date) {
@@ -21,7 +21,7 @@ extension PlanChecker {
     private func stationUnknown(_ booking: Booking, _ direction: String, _ context: CheckContext) -> Finding {
         let date = direction == "arrival" ? booking.arrives.date : booking.departs.date
         let message = "The \(direction) station for booking \(booking.id) is not set, "
-            + "so the walk from it is not checked."
+            + "so the journey from it is not checked."
         return Finding(.info, .stationUnknown, date: date, message: message)
     }
 
@@ -30,12 +30,12 @@ extension PlanChecker {
         let station = context.place(arrival.stationPlaceId)
         var findings: [Finding] = []
         for stop in day.stops where stop.kind != .travel {
-            let walk = walkBetween(station, and: stop.placeId, context)
+            let journey = journeyMinutes(station, and: stop.placeId, context)
             let start = stop.start.minutesSinceMidnight
-            if start < arrivalMinutes + walk {
+            if start < arrivalMinutes + journey {
                 let message = "\(context.label(stop)) starts at \(Clock.text(start)), "
                     + "but the train arrives at \(Clock.text(arrivalMinutes)) "
-                    + "and the walk from the station takes \(walk) minutes."
+                    + "and the journey from the station takes \(journey) minutes."
                 findings.append(Finding(.error, .beforeArrival, date: day.date, stop: stop, message: message))
             }
         }
@@ -52,12 +52,12 @@ extension PlanChecker {
             return []
         }
         let end = stop.start.minutesSinceMidnight + stop.minutes
-        let walk = walkBetween(station, and: stop.placeId, context)
-        let leaveBy = departMinutes - 30 - walk
+        let journey = journeyMinutes(station, and: stop.placeId, context)
+        let leaveBy = departMinutes - 30 - journey
         if end > leaveBy {
             let message = "\(context.label(stop)) ends at \(Clock.text(end)), "
                 + "but you need to leave by \(Clock.text(leaveBy)) for the \(Clock.text(departMinutes)) train, "
-                + "with a 30-minute margin and a \(walk)-minute walk."
+                + "with a 30-minute margin and a \(journey)-minute journey."
             return [Finding(.error, .missedDeparture, date: day.date, stop: stop, message: message)]
         }
         if leaveBy - end < 15 {
@@ -68,11 +68,11 @@ extension PlanChecker {
         return []
     }
 
-    /// Walking minutes between the station and a stop's place. Zero when either is unknown.
-    private func walkBetween(_ station: Place?, and placeId: String?, _ context: CheckContext) -> Int {
+    /// Minutes between the station and a stop's place, walk or bus or taxi. Zero when either is unknown.
+    private func journeyMinutes(_ station: Place?, and placeId: String?, _ context: CheckContext) -> Int {
         guard let station, let place = context.place(placeId) else {
             return 0
         }
-        return context.walkMinutes(station, place)
+        return context.leg(station, place).minutes
     }
 }
