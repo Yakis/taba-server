@@ -159,4 +159,12 @@ struct TripBuildInputTests {
         #expect(throws: TripBuildInput.ValidationError.preferencesWithFacts) { try make(children: 0) }
         #expect(throws: TripBuildInput.ValidationError.preferencesWithFacts) { try make(mobilityNotes: []) }
     }
+
+    @Test func resolvingTheModelRecordsTheDefaultOnlyWhenTheTripNamesNone() throws {
+        let plain = try TripBuildInput(destination: "Edinburgh", from: start, to: end)
+        #expect(plain.resolvingModel("gpt-6.1-sol").model == "gpt-6.1-sol")
+        let named = try TripBuildInput(destination: "Edinburgh", from: start, to: end, model: "gpt-6.1-terra")
+        #expect(named.resolvingModel("gpt-6.1-sol").model == "gpt-6.1-terra")
+        #expect(plain.resolvingModel("gpt-6-astra").model == nil)
+    }
 }

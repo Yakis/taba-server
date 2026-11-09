@@ -110,7 +110,9 @@ public struct ReplayStageRunner: Sendable {
             let output = try await pipeline.assembleStage(id: id, researched: researched, draft: draft,
                                                            copy: copy, weather: candidate.weather.map(\.value),
                                                            evidence: emit)
-            return StageResult(checkpoint: try JSONEncoder().encode(output), guide: output)
+            // Replay sends nothing; the guide records the model the saved run was made with.
+            let stamped = output.recordingAIModel(model)
+            return StageResult(checkpoint: try JSONEncoder().encode(stamped), guide: stamped)
         }
     }
 

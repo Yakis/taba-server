@@ -9,9 +9,11 @@ private actor FakeHTTPStore: TripHTTPStore {
     let id = UUID()
     var full = false
     var state: TripState = .queued
+    private(set) var createdModels: [String] = []
 
-    func create(_ input: TripBuildInput) async throws -> TripStatus {
+    func create(_ input: TripBuildInput, model: String) async throws -> TripStatus {
         if full { throw AdmissionError.full }
+        createdModels.append(model)
         return statusValue()
     }
 
@@ -26,13 +28,22 @@ private actor FakeHTTPStore: TripHTTPStore {
     private func statusValue() -> TripStatus { .init(id: id, state: state, stage: .basics) }
 }
 
+private struct FakeCatalog: TripModelCatalog {
+    let defaultModel = "gpt-6.1-sol"
+
+    func options() async -> [ModelOption] {
+        [ModelOption(id: "gpt-6.1-sol", name: "Sol"), ModelOption(id: "gpt-6.1-terra", name: "Terra")]
+    }
+}
+
 struct TripHTTPTests {
     private let token = String(repeating: "x", count: 32)
     private let input = #"{"destination":"Edinburgh","from":"2025-11-23","to":"2025-11-25"}"#
 
     @Test func authenticationAndAdmissions() async throws {
         let store = FakeHTTPStore()
-        let app = Application(responder: try TripHTTP.router(store: store, token: token).buildResponder())
+        let app = Application(responder: try TripHTTP.router(store: store, token: token,
+                                                            models: FakeCatalog()).buildResponder())
         try await app.test(.router) { client in
             try await client.execute(uri: "/health", method: .get) { #expect($0.status == .ok) }
             try await client.execute(uri: "/trips", method: .post) { #expect($0.status == .unauthorized) }
@@ -49,7 +60,8 @@ struct TripHTTPTests {
 
     @Test func acceptsPreferencesAndRejectsTooManyInterests() async throws {
         let store = FakeHTTPStore()
-        let app = Application(responder: try TripHTTP.router(store: store, token: token).buildResponder())
+        let app = Application(responder: try TripHTTP.router(store: store, token: token,
+                                                            models: FakeCatalog()).buildResponder())
         let preferred = #"{"destination":"Edinburgh","from":"2025-11-23","to":"2025-11-25","pace":"relaxed","#
             + #""interests":["Food","Museums"],"dailySpend":"low","adults":2,"children":1,"#
             + #""mobilityNotes":["Step-free access"]}"#
@@ -65,11 +77,38 @@ struct TripHTTPTests {
         }
     }
 
+    @Test func modelsRouteOffersChoicesAndOnlyOfferedModelsAreAccepted() async throws {
+        let store = FakeHTTPStore()
+        let app = Application(responder: try TripHTTP.router(store: store, token: token,
+                                                            models: FakeCatalog()).buildResponder())
+        let terraBody = ByteBuffer(string: String(input.dropLast()) + #","model":"gpt-6.1-terra"}"#)
+        let lunaBody = ByteBuffer(string: String(input.dropLast()) + #","model":"gpt-6.1-luna"}"#)
+        try await app.test(.router) { client in
+            let headers: HTTPFields = [.authorization: "Bearer \(token)"]
+            try await client.execute(uri: "/models", method: .get) { #expect($0.status == .unauthorized) }
+            try await client.execute(uri: "/models", method: .get, headers: headers) { response in
+                #expect(response.status == .ok)
+                let list = try JSONDecoder().decode(ModelListResponse.self, from: Data(buffer: response.body))
+                #expect(list.defaultModel == "gpt-6.1-sol")
+                #expect(list.models.map(\.name) == ["Sol", "Terra"])
+                #expect(list.models.map(\.id) == ["gpt-6.1-sol", "gpt-6.1-terra"])
+            }
+            try await client.execute(uri: "/trips", method: .post, headers: headers,
+                                     body: terraBody) { #expect($0.status == .accepted) }
+            try await client.execute(uri: "/trips", method: .post, headers: headers,
+                                     body: lunaBody) { #expect($0.status == .badRequest) }
+            try await client.execute(uri: "/trips", method: .post, headers: headers,
+                                     body: ByteBuffer(string: input)) { #expect($0.status == .accepted) }
+        }
+        #expect(await store.createdModels == ["gpt-6.1-terra", "gpt-6.1-sol"])
+    }
+
     @Test func terminalStreamResumesAfterCursor() async throws {
         let store = FakeHTTPStore()
         await store.complete()
         let id = store.id
-        let app = Application(responder: try TripHTTP.router(store: store, token: token).buildResponder())
+        let app = Application(responder: try TripHTTP.router(store: store, token: token,
+                                                            models: FakeCatalog()).buildResponder())
         try await app.test(.router) { client in
             let headers: HTTPFields = [.authorization: "Bearer \(token)"]
             try await client.execute(uri: "/trips/\(id)/events", method: .get, headers: headers) { response in

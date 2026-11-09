@@ -22,7 +22,7 @@ public struct PostgresTripStore: TripHTTPStore, Sendable {
         self.logger = logger
     }
 
-    public func create(_ input: TripBuildInput) async throws -> TripStatus {
+    public func create(_ input: TripBuildInput, model: String) async throws -> TripStatus {
         let id = UUID()
         let payload = try JSONEncoder().encode(input)
         let admitted: TripStatus? = try await client.withTransaction(logger: logger) { connection in
@@ -32,9 +32,10 @@ public struct PostgresTripStore: TripHTTPStore, Sendable {
                 """, logger: logger)
             for try await count in rows.decode(Int64.self) where count >= 4 { return nil }
             try await connection.query("""
-                INSERT INTO taba_trips (id, input, state, stage) VALUES (\(id), \(payload), 'queued', 'basics')
+                INSERT INTO taba_trips (id, input, state, stage, model)
+                VALUES (\(id), \(payload), 'queued', 'basics', \(model))
                 """, logger: logger)
-            let status = TripStatus(id: id, state: .queued, stage: .basics)
+            let status = TripStatus(id: id, state: .queued, stage: .basics, model: model)
             try await progress(status, connection: connection)
             return status
         }
@@ -44,9 +45,9 @@ public struct PostgresTripStore: TripHTTPStore, Sendable {
 
     public func status(_ id: UUID) async throws -> TripStatus? {
         let rows = try await client.query(
-            "SELECT state, stage, review FROM taba_trips WHERE id = \(id)", logger: logger)
-        for try await (state, stage, review) in rows.decode((String, String, Bool).self) {
-            return try Self.status(id, state: state, stage: stage, review: review)
+            "SELECT state, stage, review, model FROM taba_trips WHERE id = \(id)", logger: logger)
+        for try await (state, stage, review, model) in rows.decode((String, String, Bool, String?).self) {
+            return try Self.status(id, state: state, stage: stage, review: review, model: model)
         }
         return nil
     }
@@ -72,13 +73,15 @@ public struct PostgresTripStore: TripHTTPStore, Sendable {
 
     public func events(_ id: UUID, after: Int64) async throws -> [ProgressEvent] {
         let rows = try await client.query("""
-            SELECT id, state, stage, review FROM taba_progress
-            WHERE trip_id = \(id) AND id > \(after) ORDER BY id LIMIT 100
+            SELECT p.id, p.state, p.stage, p.review, t.model FROM taba_progress p
+            JOIN taba_trips t ON t.id = p.trip_id
+            WHERE p.trip_id = \(id) AND p.id > \(after) ORDER BY p.id LIMIT 100
             """, logger: logger)
         var result: [ProgressEvent] = []
-        for try await (eventID, state, stage, review) in rows.decode((Int64, String, String, Bool).self) {
+        let decoded = rows.decode((Int64, String, String, Bool, String?).self)
+        for try await (eventID, state, stage, review, model) in decoded {
             result.append(ProgressEvent(id: eventID,
-                status: try Self.status(id, state: state, stage: stage, review: review)))
+                status: try Self.status(id, state: state, stage: stage, review: review, model: model)))
         }
         return result
     }
@@ -280,11 +283,12 @@ public struct PostgresTripStore: TripHTTPStore, Sendable {
             """, logger: logger)
     }
 
-    private static func status(_ id: UUID, state: String, stage: String, review: Bool) throws -> TripStatus {
+    private static func status(_ id: UUID, state: String, stage: String, review: Bool,
+                               model: String?) throws -> TripStatus {
         guard let state = TripState(rawValue: state), let stage = BuildStage(rawValue: stage) else {
             throw BuildStoreError.corruptCheckpoint
         }
-        return TripStatus(id: id, state: state, stage: stage, copyReviewRequired: review)
+        return TripStatus(id: id, state: state, stage: stage, copyReviewRequired: review, model: model)
     }
 }
 

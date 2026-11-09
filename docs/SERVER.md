@@ -63,8 +63,9 @@ check. JSON responses and progress streams use `Cache-Control: no-store`; do not
 | Method | Path | Result |
 |---|---|---|
 | GET | `/health` | `200`, `ok` |
+| GET | `/models` | The AI models a trip may name, and the default (below) |
 | POST | `/trips` | `202`, status containing the new UUID; `503` when four builds are active |
-| GET | `/trips/:id` | State, current stage, `copyReviewRequired` |
+| GET | `/trips/:id` | State, current stage, `copyReviewRequired`, `model` |
 | GET | `/trips/:id/guide` | The Guide after completion; `409` while unavailable |
 | GET | `/trips/:id/review` | Preserved copy-review flags, including affected text and paths |
 | GET | `/trips/:id/events` | SSE progress, resumable using `Last-Event-ID` |
@@ -89,14 +90,23 @@ Optional preferences, each falling back to the old default when absent:
 | `dailySpend` | `low`, `moderate`, `high` | `moderate` |
 | `adults`, `children` | 1–10, 0–10 | 1, 0 |
 | `mobilityNotes` | at most 5 strings, each 1–120 bytes | none |
+| `model` | a slug from `/models`, shaped `gpt-<version>-sol`, `-terra` or `-luna` | the server default (`TABA_MODEL`) |
 
 They fill the trip scaffold the pipeline plans and writes from (`Trip.pace`, `interests`, `budget.dailySpend`,
 `party`). They are not accepted together with `facts`.
 
 Optional `facts` is an inline Guide scaffold instead of `stay`. Only facts, not its existing plan or copy,
 are used. The dates/destination must match. Unknown top-level fields, server file paths and caller-selected
-provider configuration are not accepted. Request bodies are limited to 1 MiB. An Edinburgh benchmark request
+provider configuration are not accepted, apart from picking one of the offered `model`s. Request bodies are limited to 1 MiB. An Edinburgh benchmark request
 can embed `GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json` as `facts`.
+
+Models: `GET /models` answers
+`{"default":"gpt-6.1-sol","models":[{"id":"gpt-6.1-sol","name":"Sol"},{"id":"gpt-6.1-terra","name":"Terra"},{"id":"gpt-6-luna","name":"Luna"}]}`.
+The list is the newest Sol, Terra and Luna on the ChatGPT plan (from `GET https://api.openai.com/v1/models`), kept
+for an hour; if the plan cannot be asked, the last good list, or only the default. The default is always first.
+Offline replay offers only the default. A `model` the server does not currently offer gets `400`. The trip stores
+the model it will use (the default is filled in at admission), `GET /trips/:id` and the progress events report it,
+and the finished guide records it as `aiModel`. Trips from before this change have no model.
 
 SSE sends durable increasing event IDs and safe status only—not the destination, bookings, provider output
 or raw errors. It emits heartbeats, disables proxy buffering, observes disconnect/cancellation, and closes

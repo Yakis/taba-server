@@ -1,7 +1,8 @@
 import Foundation
 import GuideKit
 
-/// The only caller-controlled inputs to a build. Provider configuration belongs to the server.
+/// The only caller-controlled inputs to a build. Provider configuration belongs to the server: the server owns
+/// the connection and the list of models, and the traveller only picks one of the models it offers.
 public struct TripBuildInput: Codable, Sendable {
     public let destination: String
     public let from: LocalDate
@@ -17,17 +18,20 @@ public struct TripBuildInput: Codable, Sendable {
     public let adults: Int?
     public let children: Int?
     public let mobilityNotes: [String]?
+    /// The AI model slug to build with, such as gpt-6.1-terra. Nil means the server default.
+    public let model: String?
 
     public enum ValidationError: Error, Equatable, Sendable {
         case invalidDestination, invalidStay, invalidDates, factsMismatch, tooManyFacts, unknownField
-        case invalidInterests, invalidParty, invalidMobility, preferencesWithFacts
+        case invalidInterests, invalidParty, invalidMobility, preferencesWithFacts, invalidModel
     }
 
     public init(destination: String, from: LocalDate, to: LocalDate, stay: String? = nil,
                 facts: Guide? = nil, pace: Pace? = nil, interests: [String]? = nil,
                 dailySpend: DailySpend? = nil, adults: Int? = nil, children: Int? = nil,
-                mobilityNotes: [String]? = nil) throws {
+                mobilityNotes: [String]? = nil, model: String? = nil) throws {
         guard Self.validName(destination) else { throw ValidationError.invalidDestination }
+        guard model.map({ ModelChoice.isWellFormed($0) }) ?? true else { throw ValidationError.invalidModel }
         guard stay.map({ Self.validName($0) }) ?? true else { throw ValidationError.invalidStay }
         // Inclusive maximum of 14 calendar days, even around DST and month/year boundaries.
         guard from <= to, let limit = from.adding(days: 13), to <= limit else {
@@ -60,6 +64,16 @@ public struct TripBuildInput: Codable, Sendable {
         self.adults = adults
         self.children = children
         self.mobilityNotes = mobilityNotes
+        self.model = model
+    }
+
+    /// The same input with the model resolved, so the stored trip records the model its build will use even if the
+    /// server's default changes while it waits. Returns `self` when the model is not one a trip may name.
+    public func resolvingModel(_ resolved: String) -> TripBuildInput {
+        guard model == nil else { return self }
+        return (try? TripBuildInput(destination: destination, from: from, to: to, stay: stay, facts: facts,
+                                    pace: pace, interests: interests, dailySpend: dailySpend, adults: adults,
+                                    children: children, mobilityNotes: mobilityNotes, model: resolved)) ?? self
     }
 
     private static func validatePreferences(interests: [String]?, adults: Int?, children: Int?,
@@ -90,7 +104,7 @@ public struct TripBuildInput: Codable, Sendable {
 
     private enum Keys: String, CodingKey, CaseIterable {
         case destination, from, to, stay, facts
-        case pace, interests, dailySpend, adults, children, mobilityNotes
+        case pace, interests, dailySpend, adults, children, mobilityNotes, model
     }
     private struct AnyKey: CodingKey {
         let stringValue: String
@@ -114,6 +128,7 @@ public struct TripBuildInput: Codable, Sendable {
                       dailySpend: values.decodeIfPresent(DailySpend.self, forKey: .dailySpend),
                       adults: values.decodeIfPresent(Int.self, forKey: .adults),
                       children: values.decodeIfPresent(Int.self, forKey: .children),
-                      mobilityNotes: values.decodeIfPresent([String].self, forKey: .mobilityNotes))
+                      mobilityNotes: values.decodeIfPresent([String].self, forKey: .mobilityNotes),
+                      model: values.decodeIfPresent(String.self, forKey: .model))
     }
 }

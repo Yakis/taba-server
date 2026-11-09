@@ -67,6 +67,7 @@ struct PostgresTripStoreTests {
         let migrations = DatabaseMigrations()
         await migrations.add(BuildMigration())
         await migrations.add(BuildAttemptMigration())
+        await migrations.add(BuildModelMigration())
         let queue = await JobQueue(.postgres(client: postgres, migrations: migrations,
             configuration: .init(queueName: "taba"), logger: logger), logger: logger)
         try await migrations.apply(client: postgres, logger: logger, dryRun: false)
@@ -74,9 +75,14 @@ struct PostgresTripStoreTests {
         let input = try TripBuildInput(destination: "Edinburgh", from: #require(LocalDate("2025-11-23")),
                                        to: #require(LocalDate("2025-11-25")))
         var trips: [TripStatus] = []
-        for _ in 0..<4 { trips.append(try await store.create(input)) }
+        for _ in 0..<4 { trips.append(try await store.create(input, model: "gpt-6.1-sol")) }
         #expect(trips.allSatisfy { $0.state == .queued && $0.stage == .basics })
-        await #expect(throws: AdmissionError.self) { try await store.create(input) }
+        #expect(trips.allSatisfy { $0.model == "gpt-6.1-sol" })
+        let recorded = try await store.status(trips[0].id)
+        let early = try await store.events(trips[0].id, after: 0)
+        #expect(recorded?.model == "gpt-6.1-sol")
+        #expect(!early.isEmpty && early.allSatisfy { $0.status.model == "gpt-6.1-sol" })
+        await #expect(throws: AdmissionError.self) { try await store.create(input, model: "gpt-6.1-sol") }
 
         let failure: StageRunner = { _, _ in throw FakeFailure.privateProviderDetail }
         for trip in trips.dropFirst() {
@@ -146,7 +152,7 @@ struct PostgresTripStoreTests {
         queue.registerJob(JobDefinition(parameters: StageJob.self, retryStrategy: .dontRetry) { job, _ in
             try await store.process(job, runner: runner)
         })
-        let queued = try await store.create(input) // terminal builds release admission capacity
+        let queued = try await store.create(input, model: "gpt-6.1-sol") // terminal builds release admission capacity
         try await withThrowingTaskGroup(of: Void.self) { services in
             services.addTask { try await queue.processor(options: .init(numWorkers: 1)).run() }
             services.addTask { try await BuildDispatcher(store: store, queue: queue, migrations: migrations).run() }
@@ -164,7 +170,7 @@ struct PostgresTripStoreTests {
     // swiftlint:disable:next function_body_length cyclomatic_complexity
     private func connectionLoss(_ postgres: PostgresClient, store: PostgresTripStore,
                                 input: TripBuildInput) async throws {
-        let trip = try await store.create(input)
+        let trip = try await store.create(input, model: "gpt-6.1-sol")
         let job = StageJob(tripID: trip.id, stage: .basics)
         let signal = InterruptedStage()
         let blocked: StageRunner = { _, _ in

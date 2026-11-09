@@ -16,12 +16,32 @@ public struct TripStatus: Codable, Sendable {
     public let state: TripState
     public let stage: BuildStage
     public let copyReviewRequired: Bool
+    /// The AI model the trip is built with. Nil for trips admitted before models were recorded.
+    public let model: String?
 
-    public init(id: UUID, state: TripState, stage: BuildStage, copyReviewRequired: Bool = false) {
+    public init(id: UUID, state: TripState, stage: BuildStage, copyReviewRequired: Bool = false,
+                model: String? = nil) {
         self.id = id
         self.state = state
         self.stage = stage
         self.copyReviewRequired = copyReviewRequired
+        self.model = model
+    }
+}
+
+/// `GET /models`: the models the app may pick, and the one used when a trip names none.
+public struct ModelListResponse: Codable, Sendable {
+    public let defaultModel: String
+    public let models: [ModelOption]
+
+    public init(defaultModel: String, models: [ModelOption]) {
+        self.defaultModel = defaultModel
+        self.models = models
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case defaultModel = "default"
+        case models
     }
 }
 
@@ -39,7 +59,8 @@ public enum AdmissionError: Error { case full }
 
 /// The implementation must provide durable, monotonically ordered events per trip.
 public protocol TripHTTPStore: Sendable {
-    func create(_ input: TripBuildInput) async throws -> TripStatus
+    /// `model` is the resolved model: the input's model, or the server default when the input names none.
+    func create(_ input: TripBuildInput, model: String) async throws -> TripStatus
     func status(_ id: UUID) async throws -> TripStatus?
     func guide(_ id: UUID) async throws -> Guide?
     func events(_ id: UUID, after: Int64) async throws -> [ProgressEvent]
@@ -55,11 +76,17 @@ public enum TripHTTP {
     public enum ConfigurationError: Error { case invalidToken }
 
     // swiftlint:disable:next cyclomatic_complexity function_body_length
-    public static func router(store: any TripHTTPStore, token: String) throws -> Router<BasicRequestContext> {
+    public static func router(store: any TripHTTPStore, token: String,
+                              models: any TripModelCatalog) throws -> Router<BasicRequestContext> {
         guard token.utf8.count >= 32 else { throw ConfigurationError.invalidToken }
         let digest = SHA256.hash(data: Data(token.utf8))
         let router = Router()
         router.get("/health") { _, _ in "ok" }
+        router.get("/models") { request, _ -> Response in
+            try authorize(request, digest: digest)
+            let response = ModelListResponse(defaultModel: models.defaultModel, models: await models.options())
+            return try json(response)
+        }
         router.post("/trips") { request, _ -> Response in
             try authorize(request, digest: digest)
             let input: TripBuildInput
@@ -67,7 +94,15 @@ public enum TripHTTP {
                 let bytes = try await request.body.collect(upTo: 1_048_576)
                 input = try JSONDecoder().decode(TripBuildInput.self, from: Data(buffer: bytes))
             } catch { throw HTTPError(.badRequest) }
-            do { return try json(await store.create(input), status: .accepted) } catch AdmissionError.full {
+            if let requested = input.model {
+                // Only a model the account currently offers may be used.
+                let offered = await models.options()
+                guard offered.contains(where: { $0.id == requested }) else { throw HTTPError(.badRequest) }
+            }
+            let model = input.model ?? models.defaultModel
+            do {
+                return try json(await store.create(input.resolvingModel(model), model: model), status: .accepted)
+            } catch AdmissionError.full {
                 throw HTTPError(.serviceUnavailable)
             } catch { throw HTTPError(.internalServerError) }
         }

@@ -55,6 +55,7 @@ struct TabaServer {
         let migrations = DatabaseMigrations()
         await migrations.add(BuildMigration())
         await migrations.add(BuildAttemptMigration())
+        await migrations.add(BuildModelMigration())
         let queue = await JobQueue(.postgres(client: postgres, migrations: migrations,
             configuration: .init(queueName: "taba"), logger: privateLogger), logger: privateLogger)
         let store = PostgresTripStore(client: postgres, logger: privateLogger)
@@ -63,11 +64,15 @@ struct TabaServer {
         let client = HTTPClient(configuration: .init(redirectConfiguration: .disallow,
             timeout: .init(connect: .seconds(15), read: .minutes(10))))
         do {
+            // The default model is used by trips that name none. It is also the only model offered offline.
+            let defaultModel = environment["TABA_MODEL"] ?? "gpt-6.1-sol"
             let runner: StageRunner
+            let models: any TripModelCatalog
             switch try ServerMode.parse(environment) {
             case .replay(let directory):
                 let replay = try ReplayStageRunner(directory: directory)
                 runner = { try await replay.run($0, evidence: $1) }
+                models = FixedModelCatalog(defaultModel: defaultModel)
                 logger.notice("Offline replay mode; no provider requests will be sent")
             case .live:
                 guard let key = environment["FOURSQUARE_API_KEY"], !key.isEmpty else {
@@ -75,14 +80,15 @@ struct TabaServer {
                 }
                 let session = CredentialSession(store: .defaultStore,
                     tokenClient: TokenClient(transport: AHCOAuthTransport(client: client)))
-                let live = LiveStageRunner(client: client, key: key,
-                    model: environment["TABA_MODEL"] ?? "gpt-6.1-sol", session: session)
+                let live = LiveStageRunner(client: client, key: key, model: defaultModel, session: session)
                 runner = { try await live.run($0, evidence: $1) }
+                models = ModelCatalog.live(defaultModel: defaultModel, session: session,
+                    client: ModelsClient(transport: AHCOAuthTransport(client: client)))
             }
             queue.registerJob(JobDefinition(parameters: StageJob.self, retryStrategy: .dontRetry) { job, _ in
                 try await store.process(job, runner: runner)
             })
-            let router = try TripHTTP.router(store: store, token: token)
+            let router = try TripHTTP.router(store: store, token: token, models: models)
             var application = Application(router: router,
                 configuration: .init(address: .hostname(environment["HOST"] ?? "127.0.0.1", port: port)),
                 services: [postgres, queue.processor(options: .init(numWorkers: 1)),

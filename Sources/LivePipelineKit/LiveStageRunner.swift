@@ -59,6 +59,8 @@ public struct LiveStageRunner: Sendable {
         let emit: GuidePipeline.EvidenceSink = { await evidence(.pipeline($0)) }
         let send: GuidePipeline.Send = { try await sendResponse($0) }
         let id = work.tripID.uuidString
+        // A trip may name its model; otherwise the server default is used for every AI request of the trip.
+        let aiModel = work.input.model ?? model
         switch work.stage {
         case .basics:
             let fetcher = sourceFetcher(limit: 5)
@@ -78,7 +80,7 @@ public struct LiveStageRunner: Sendable {
             let fetcher = sourceFetcher(limit: 45)
             let suggestions = SuggestionPreparation(fetcher: fetcher, key: key, facts: candidates.facts.value,
                 record: record, geocoder: NominatimGeocoder(fetcher: fetcher))
-            let result = try await pipeline.researchStage(model: model, facts: candidates.facts.value,
+            let result = try await pipeline.researchStage(model: aiModel, facts: candidates.facts.value,
                 measurements: candidates.measurements.value, stayArea: candidates.stayArea,
                 resolveSuggestion: { try await suggestions.resolve($0) },
                 prepareCandidates: { try await suggestions.prepare($0, facts: $1, measurements: $2) },
@@ -91,19 +93,19 @@ public struct LiveStageRunner: Sendable {
                 ? "Choose accommodation; the base is unbooked and approximate."
                 : "Confirm check-in and check-out times; supplied defaults may be assumptions."
             let request: JSONValue = .object(["accommodationQuestion": .string(question)])
-            let result = try await pipeline.initialPlanStage(id: id, model: model, researched: researched,
+            let result = try await pipeline.initialPlanStage(id: id, model: aiModel, researched: researched,
                 weather: candidates.weather.map(\.value), requests: request, send: send, evidence: emit)
             return try checkpoint(result)
         case .check:
             let researched: ResearchedPipeline = try load(.research, from: work)
             let planned: PlannedPipeline = try load(.plan, from: work)
-            return try await checkpoint(pipeline.checkStage(id: id, model: model, researched: researched,
+            return try await checkpoint(pipeline.checkStage(id: id, model: aiModel, researched: researched,
                                                              planned: planned, send: send, evidence: emit))
         case .write:
             let candidates: CandidatesCheckpoint = try load(.candidates, from: work)
             let researched: ResearchedPipeline = try load(.research, from: work)
             let draft: PlanDraft = try load(.check, from: work)
-            return try await checkpoint(pipeline.copyStage(id: id, model: model, researched: researched, draft: draft,
+            return try await checkpoint(pipeline.copyStage(id: id, model: aiModel, researched: researched, draft: draft,
                 weather: candidates.weather.map(\.value), send: send, evidence: emit))
         case .assemble:
             let candidates: CandidatesCheckpoint = try load(.candidates, from: work)
@@ -113,7 +115,7 @@ public struct LiveStageRunner: Sendable {
             let guide = try await pipeline.assembleStage(id: id, researched: researched, draft: draft,
                                                           copy: copy, weather: candidates.weather.map(\.value),
                                                           evidence: emit)
-            let final = assumptions(guide, input: work.input)
+            let final = assumptions(guide, input: work.input, model: aiModel)
             return StageResult(checkpoint: try JSONEncoder().encode(final), guide: final)
         }
     }
@@ -155,8 +157,9 @@ private func checkpoint<T: Encodable>(_ value: T) throws -> StageResult {
     StageResult(checkpoint: try JSONEncoder().encode(value))
 }
 
-private func assumptions(_ guide: Guide, input: TripBuildInput) -> Guide {
-    guard input.facts == nil else { return guide }
+/// Adds the open questions for a trip that has no supplied facts, and records the model that wrote the guide.
+private func assumptions(_ guide: Guide, input: TripBuildInput, model: String) -> Guide {
+    guard input.facts == nil else { return guide.recordingAIModel(model) }
     var questions = guide.openQuestions ?? []
     if input.stay == nil { questions.append("Choose accommodation; the base is an approximate placeholder.") }
     questions.append("Confirm check-in and check-out; 15:00 and 11:00 are assumptions, not confirmed.")
@@ -164,5 +167,5 @@ private func assumptions(_ guide: Guide, input: TripBuildInput) -> Guide {
     return Guide(id: guide.id, version: guide.version, status: guide.status, trip: guide.trip,
                  bookings: guide.bookings, stay: guide.stay, places: guide.places, days: guide.days,
                  lists: guide.lists, tasting: guide.tasting, practical: guide.practical, sources: guide.sources,
-                 hero: guide.hero, notes: guide.notes, openQuestions: questions)
+                 hero: guide.hero, notes: guide.notes, openQuestions: questions, aiModel: model)
 }
