@@ -192,9 +192,11 @@ public enum SourcePreparation {
         let trip = Trip(destination: Destination(name: options.destination, countryCode: country,
                                                  timeZoneId: timeZone, centre: centre),
                         dates: TripDates(start: options.from, end: options.to),
-                        party: Party(adults: 1, children: 0, mobilityNotes: []),
-                        budget: Budget(currencyCode: currency(for: country), stayMaxPerNight: 0, dailySpend: .moderate),
-                        interests: [], pace: .unhurried, voice: "Warm, practical and concise")
+                        party: options.preferences.party,
+                        budget: Budget(currencyCode: currency(for: country), stayMaxPerNight: 0,
+                                       dailySpend: options.preferences.dailySpend),
+                        interests: options.preferences.interests, pace: options.preferences.pace,
+                        voice: "Warm, practical and concise")
         return TripFacts(trip: trip, bookings: [], stay: stay, places: [place.id: place], practical: [], sources: [])
     }
 

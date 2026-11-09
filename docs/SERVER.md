@@ -80,6 +80,19 @@ Create body (14 calendar days maximum; names at most 120 UTF-8 bytes):
 }
 ```
 
+Optional preferences, each falling back to the old default when absent:
+
+| Key | Values | Default |
+|---|---|---|
+| `pace` | `relaxed`, `unhurried`, `packed` | `unhurried` |
+| `interests` | ranked strings, at most 10, each 1–60 UTF-8 bytes, no duplicates ignoring case | none |
+| `dailySpend` | `low`, `moderate`, `high` | `moderate` |
+| `adults`, `children` | 1–10, 0–10 | 1, 0 |
+| `mobilityNotes` | at most 5 strings, each 1–120 bytes | none |
+
+They fill the trip scaffold the pipeline plans and writes from (`Trip.pace`, `interests`, `budget.dailySpend`,
+`party`). They are not accepted together with `facts`.
+
 Optional `facts` is an inline Guide scaffold instead of `stay`. Only facts, not its existing plan or copy,
 are used. The dates/destination must match. Unknown top-level fields, server file paths and caller-selected
 provider configuration are not accepted. Request bodies are limited to 1 MiB. An Edinburgh benchmark request

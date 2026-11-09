@@ -45,8 +45,15 @@ public struct LiveStageRunner: Sendable {
 
     // swiftlint:disable:next function_body_length
     public func run(_ work: BuildWork, evidence: @escaping BuildEvidenceSink) async throws -> StageResult {
+        let standard = TripPreferences.standard
+        let preferences = TripPreferences(pace: work.input.pace ?? standard.pace,
+                                          interests: work.input.interests ?? standard.interests,
+                                          dailySpend: work.input.dailySpend ?? standard.dailySpend,
+                                          adults: work.input.adults ?? standard.adults,
+                                          children: work.input.children ?? standard.children,
+                                          mobilityNotes: work.input.mobilityNotes ?? standard.mobilityNotes)
         let input = SourceInput(destination: work.input.destination, from: work.input.from, to: work.input.to,
-                                stay: work.input.stay, facts: work.input.facts)
+                                stay: work.input.stay, facts: work.input.facts, preferences: preferences)
         let record = SourceRecord { await evidence(.source($0)) }
         let pipeline = GuidePipeline()
         let emit: GuidePipeline.EvidenceSink = { await evidence(.pipeline($0)) }

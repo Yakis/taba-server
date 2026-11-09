@@ -9,13 +9,16 @@ public struct SourceInput: Sendable {
     public let to: LocalDate
     public let stay: String?
     public let facts: Guide?
+    public let preferences: TripPreferences
 
-    public init(destination: String, from: LocalDate, to: LocalDate, stay: String? = nil, facts: Guide? = nil) {
+    public init(destination: String, from: LocalDate, to: LocalDate, stay: String? = nil, facts: Guide? = nil,
+                preferences: TripPreferences = .standard) {
         self.destination = destination
         self.from = from
         self.to = to
         self.stay = stay
         self.facts = facts
+        self.preferences = preferences
     }
 }
 

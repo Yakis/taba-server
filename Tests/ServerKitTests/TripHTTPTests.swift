@@ -47,6 +47,24 @@ struct TripHTTPTests {
         }
     }
 
+    @Test func acceptsPreferencesAndRejectsTooManyInterests() async throws {
+        let store = FakeHTTPStore()
+        let app = Application(responder: try TripHTTP.router(store: store, token: token).buildResponder())
+        let preferred = #"{"destination":"Edinburgh","from":"2025-11-23","to":"2025-11-25","pace":"relaxed","#
+            + #""interests":["Food","Museums"],"dailySpend":"low","adults":2,"children":1,"#
+            + #""mobilityNotes":["Step-free access"]}"#
+        let interests = (1...11).map { "\"Interest \($0)\"" }.joined(separator: ",")
+        let tooMany = #"{"destination":"Edinburgh","from":"2025-11-23","to":"2025-11-25","interests":["#
+            + interests + "]}"
+        try await app.test(.router) { client in
+            let headers: HTTPFields = [.authorization: "Bearer \(token)"]
+            try await client.execute(uri: "/trips", method: .post, headers: headers,
+                                     body: ByteBuffer(string: preferred)) { #expect($0.status == .accepted) }
+            try await client.execute(uri: "/trips", method: .post, headers: headers,
+                                     body: ByteBuffer(string: tooMany)) { #expect($0.status == .badRequest) }
+        }
+    }
+
     @Test func terminalStreamResumesAfterCursor() async throws {
         let store = FakeHTTPStore()
         await store.complete()
