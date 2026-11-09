@@ -258,8 +258,21 @@ public enum PipelineInputBuilder {
         }
         return .object(["start": try value(first), "end": try value(last)])
     }
+    /// A walk or bus or taxi ride, as `{"mode": ..., "minutes": ...}`.
+    private static func travelValue(mode: LegMode, minutes: Int) -> JSONValue {
+        .object(["mode": .string(mode.rawValue), "minutes": .integer(minutes)])
+    }
+    /// The walk, or bus or taxi ride, from the stay to a candidate. Without the stay's place it falls back to the walk.
+    private static func fromStay(walk: Int, to place: Place, stay: Place?) -> JSONValue {
+        guard let stay else {
+            return travelValue(mode: .walk, minutes: walk)
+        }
+        let leg = Travel.leg(walkMinutes: walk, metres: Travel.metres(from: stay.location.coordinate,
+                                                                    to: place.location.coordinate))
+        return travelValue(mode: leg.mode, minutes: leg.minutes)
+    }
     private static func place(_ place: Place, dates: [LocalDate], measurements: PipelineInputMeasurements,
-                              writing: Bool) throws -> JSONValue {
+                              writing: Bool, stay: Place?) throws -> JSONValue {
         guard let area = measurements.areas[place.id] else { throw PipelineInputError.missingArea(place.id) }
         guard let walk = measurements.walkFromStay[place.id], walk >= 0 else {
             throw PipelineInputError.missingWalk(place.id)
@@ -270,7 +283,7 @@ public enum PipelineInputBuilder {
         var result: [String: JSONValue] = [
             "id": .string(place.id), "name": .string(place.name), "kind": try value(place.kind),
             "area": .string(area), "areaName": .string(measurements.areaLabels[place.id] ?? area),
-            "walkFromStay": .integer(walk), "hours": .object(hoursByDate),
+            "fromStay": fromStay(walk: walk, to: place, stay: stay), "hours": .object(hoursByDate),
             "priceLevel": try optional(place.priceLevel), "bookingNeeded": .bool(place.booking.needed),
             "indoor": .bool(place.indoor)
         ]
@@ -289,11 +302,12 @@ public enum PipelineInputBuilder {
             result["window"] = try window(date, guide: guide, measurements: measurements)
             return .object(result)
         }
+        let stay = guide.places[guide.stay.placeId]
         let places = try guide.places.values.sorted { $0.id < $1.id }.map {
-            try place($0, dates: dates, measurements: measurements, writing: false)
+            try place($0, dates: dates, measurements: measurements, writing: false, stay: stay)
         }
         return .object(["trip": try trip(guide.trip, writing: false, locale: ""), "anchors": try anchors(guide),
-                        "days": .array(days), "areaWalkMinutes": measurements.areaWalkMinutes,
+                        "days": .array(days), "areaTravelMinutes": measurements.areaWalkMinutes,
                         "candidates": .array(places), "findings": try findings(research), "requests": requests])
     }
     // Locale and research are independent of the checked plan and its measurements.
@@ -319,16 +333,18 @@ public enum PipelineInputBuilder {
                 fields["placeId"] = try optional(stop.placeId)
                 fields["mealSlot"] = try optional(stop.mealSlot)
                 fields["alternative"] = try optional(stop.alternative)
-                fields["walkFromPrevious"] = assembled.legFromPrevious.map { .integer($0.minutes) } ?? .null
+                fields["fromPrevious"] = assembled.legFromPrevious
+                    .map { travelValue(mode: $0.mode, minutes: $0.minutes) } ?? .null
                 return .object(fields)
             }
             return .object(["date": try value(day.date), "theme": .string(day.theme), "stops": .array(stops)])
         }
         let ids = Set(draft.days.flatMap(\.stops).flatMap { [$0.placeId, $0.alternative?.placeId].compactMap { $0 } }
                       + draft.lists.flatMap(\.placeIds))
+        let stay = guide.places[guide.stay.placeId]
         let places = try ids.sorted().map { id in
             guard let item = guide.places[id] else { throw PipelineInputError.missingPlace(id) }
-            return try place(item, dates: dates, measurements: measurements, writing: true)
+            return try place(item, dates: dates, measurements: measurements, writing: true, stay: stay)
         }
         return .object(["trip": try trip(guide.trip, writing: true, locale: locale), "days": .array(days),
                         "light": .array(try dates.map {

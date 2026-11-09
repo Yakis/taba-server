@@ -4,8 +4,8 @@ priority order still apply.
 
 - Each issue has `severity` (`error`, `warning` or `info`), `kind`, `date`, `stopId` (or `null`) and `message`.
   Times and distances in messages were measured by code. Trust them over your own estimates.
-- `legs` gives the measured walk minutes between consecutive stops in your plan. Use them instead of
-  `areaWalkMinutes` for stops that stay where they are.
+- `legs` gives the measured minutes and the mode (`walk`, or `transit` for a bus or taxi ride) between consecutive
+  stops in your plan. Use them instead of `areaTravelMinutes` for stops that stay where they are.
 
 What to do:
 
@@ -22,4 +22,4 @@ Return the full plan, with every day, as the same JSON schema. In `changes`, des
 sentence, for example: "Moved d2-s4 from 15:10 to 14:40 so it ends before sunset."
 
 
-{"issues":[{"date":"2025-11-23","kind":"tightGap","message":"The walk takes 21 minutes.","severity":"error","stopId":"d1-market"}],"legs":[{"fromStopId":"d1-arrive","minutes":21,"toStopId":"d1-market"},{"fromStopId":"d1-market","minutes":11,"toStopId":"d1-bags"},{"fromStopId":"d1-bags","minutes":8,"toStopId":"d1-christmas"},{"fromStopId":"d1-christmas","minutes":4,"toStopId":"d1-pint"},{"fromStopId":"d2-castle","minutes":2,"toStopId":"d2-oink"},{"fromStopId":"d2-oink","minutes":3,"toStopId":"d2-grassmarket"},{"fromStopId":"d2-grassmarket","minutes":21,"toStopId":"d2-calton"},{"fromStopId":"d2-calton","minutes":4,"toStopId":"d2-street-food"},{"fromStopId":"d2-street-food","minutes":6,"toStopId":"d2-guildford"},{"fromStopId":"d3-breakfast","minutes":6,"toStopId":"d3-checkout"},{"fromStopId":"d3-checkout","minutes":17,"toStopId":"d3-dean"},{"fromStopId":"d3-dean","minutes":null,"toStopId":"d3-quick-bite"},{"fromStopId":"d3-quick-bite","minutes":null,"toStopId":"d3-collect"},{"fromStopId":"d3-collect","minutes":1,"toStopId":"d3-train"}]}
+{"issues":[{"date":"2025-11-23","kind":"tightGap","message":"The walk takes 21 minutes.","severity":"error","stopId":"d1-market"}],"legs":[{"fromStopId":"d1-arrive","minutes":21,"mode":"walk","toStopId":"d1-market"},{"fromStopId":"d1-market","minutes":11,"mode":"walk","toStopId":"d1-bags"},{"fromStopId":"d1-bags","minutes":8,"mode":"walk","toStopId":"d1-christmas"},{"fromStopId":"d1-christmas","minutes":4,"mode":"walk","toStopId":"d1-pint"},{"fromStopId":"d2-castle","minutes":2,"mode":"walk","toStopId":"d2-oink"},{"fromStopId":"d2-oink","minutes":3,"mode":"walk","toStopId":"d2-grassmarket"},{"fromStopId":"d2-grassmarket","minutes":21,"mode":"walk","toStopId":"d2-calton"},{"fromStopId":"d2-calton","minutes":4,"mode":"walk","toStopId":"d2-street-food"},{"fromStopId":"d2-street-food","minutes":6,"mode":"walk","toStopId":"d2-guildford"},{"fromStopId":"d3-breakfast","minutes":6,"mode":"walk","toStopId":"d3-checkout"},{"fromStopId":"d3-checkout","minutes":17,"mode":"walk","toStopId":"d3-dean"},{"fromStopId":"d3-dean","minutes":null,"mode":null,"toStopId":"d3-quick-bite"},{"fromStopId":"d3-quick-bite","minutes":null,"mode":null,"toStopId":"d3-collect"},{"fromStopId":"d3-collect","minutes":1,"mode":"walk","toStopId":"d3-train"}]}

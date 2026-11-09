@@ -47,14 +47,14 @@
 
           ],
           "flexible" : false,
+          "fromPrevious" : null,
           "id" : "d1-arrive",
           "kind" : "travel",
           "mealSlot" : null,
           "minutes" : 20,
           "placeId" : "osm:node/7149998196",
           "reason" : "fixture",
-          "start" : "12:29",
-          "walkFromPrevious" : null
+          "start" : "12:29"
         },
         {
           "alternative" : null,
@@ -62,14 +62,17 @@
 
           ],
           "flexible" : true,
+          "fromPrevious" : {
+            "minutes" : 21,
+            "mode" : "walk"
+          },
           "id" : "d1-market",
           "kind" : "meal",
           "mealSlot" : "lunch",
           "minutes" : 90,
           "placeId" : "osm:node/2338447599",
           "reason" : "fixture",
-          "start" : "13:15",
-          "walkFromPrevious" : 21
+          "start" : "13:15"
         },
         {
           "alternative" : null,
@@ -77,14 +80,17 @@
 
           ],
           "flexible" : false,
+          "fromPrevious" : {
+            "minutes" : 11,
+            "mode" : "walk"
+          },
           "id" : "d1-bags",
           "kind" : "logistics",
           "mealSlot" : null,
           "minutes" : 60,
           "placeId" : "manual:stay-new-town",
           "reason" : "fixture",
-          "start" : "15:00",
-          "walkFromPrevious" : 11
+          "start" : "15:00"
         },
         {
           "alternative" : null,
@@ -92,14 +98,17 @@
 
           ],
           "flexible" : true,
+          "fromPrevious" : {
+            "minutes" : 8,
+            "mode" : "walk"
+          },
           "id" : "d1-christmas",
           "kind" : "sight",
           "mealSlot" : null,
           "minutes" : 90,
           "placeId" : "osm:way/5585005",
           "reason" : "fixture",
-          "start" : "16:30",
-          "walkFromPrevious" : 8
+          "start" : "16:30"
         },
         {
           "alternative" : null,
@@ -107,14 +116,17 @@
 
           ],
           "flexible" : true,
+          "fromPrevious" : {
+            "minutes" : 4,
+            "mode" : "walk"
+          },
           "id" : "d1-pint",
           "kind" : "drink",
           "mealSlot" : null,
           "minutes" : 60,
           "placeId" : "osm:node/1367337816",
           "reason" : "fixture",
-          "start" : "19:00",
-          "walkFromPrevious" : 4
+          "start" : "19:00"
         }
       ],
       "theme" : "Market first. Magic later."
@@ -128,14 +140,14 @@
 
           ],
           "flexible" : true,
+          "fromPrevious" : null,
           "id" : "d2-castle",
           "kind" : "sight",
           "mealSlot" : null,
           "minutes" : 90,
           "placeId" : "manual:royal-mile",
           "reason" : "fixture",
-          "start" : "09:30",
-          "walkFromPrevious" : null
+          "start" : "09:30"
         },
         {
           "alternative" : null,
@@ -143,14 +155,17 @@
 
           ],
           "flexible" : true,
+          "fromPrevious" : {
+            "minutes" : 2,
+            "mode" : "walk"
+          },
           "id" : "d2-oink",
           "kind" : "meal",
           "mealSlot" : "lunch",
           "minutes" : 60,
           "placeId" : "osm:node/2339288064",
           "reason" : "fixture",
-          "start" : "11:30",
-          "walkFromPrevious" : 2
+          "start" : "11:30"
         },
         {
           "alternative" : null,
@@ -158,14 +173,17 @@
 
           ],
           "flexible" : true,
+          "fromPrevious" : {
+            "minutes" : 3,
+            "mode" : "walk"
+          },
           "id" : "d2-grassmarket",
           "kind" : "sight",
           "mealSlot" : null,
           "minutes" : 60,
           "placeId" : "osm:way/192212388",
           "reason" : "fixture",
-          "start" : "13:00",
-          "walkFromPrevious" : 3
+          "start" : "13:00"
         },
         {
           "alternative" : {
@@ -176,14 +194,17 @@
 
           ],
           "flexible" : true,
+          "fromPrevious" : {
+            "minutes" : 21,
+            "mode" : "walk"
+          },
           "id" : "d2-calton",
           "kind" : "sight",
           "mealSlot" : null,
           "minutes" : 75,
           "placeId" : "osm:node/1149620440",
           "reason" : "fixture",
-          "start" : "15:10",
-          "walkFromPrevious" : 21
+          "start" : "15:10"
         },
         {
           "alternative" : null,
@@ -191,14 +212,17 @@
 
           ],
           "flexible" : true,
+          "fromPrevious" : {
+            "minutes" : 4,
+            "mode" : "walk"
+          },
           "id" : "d2-street-food",
           "kind" : "meal",
           "mealSlot" : "dinner",
           "minutes" : 75,
           "placeId" : "osm:node/10785545157",
           "reason" : "fixture",
-          "start" : "16:45",
-          "walkFromPrevious" : 4
+          "start" : "16:45"
         },
         {
           "alternative" : null,
@@ -206,14 +230,17 @@
 
           ],
           "flexible" : true,
+          "fromPrevious" : {
+            "minutes" : 6,
+            "mode" : "walk"
+          },
           "id" : "d2-guildford",
           "kind" : "drink",
           "mealSlot" : null,
           "minutes" : 60,
           "placeId" : "osm:node/33185107",
           "reason" : "fixture",
-          "start" : "19:00",
-          "walkFromPrevious" : 6
+          "start" : "19:00"
         }
       ],
       "theme" : "Old stones. Hot food. Cold beer."
@@ -227,14 +254,14 @@
 
           ],
           "flexible" : true,
+          "fromPrevious" : null,
           "id" : "d3-breakfast",
           "kind" : "meal",
           "mealSlot" : "breakfast",
           "minutes" : 60,
           "placeId" : "manual:stay-new-town",
           "reason" : "fixture",
-          "start" : "08:45",
-          "walkFromPrevious" : null
+          "start" : "08:45"
         },
         {
           "alternative" : null,
@@ -242,14 +269,17 @@
 
           ],
           "flexible" : false,
+          "fromPrevious" : {
+            "minutes" : 6,
+            "mode" : "walk"
+          },
           "id" : "d3-checkout",
           "kind" : "logistics",
           "mealSlot" : null,
           "minutes" : 25,
           "placeId" : "manual:luggage-rose",
           "reason" : "fixture",
-          "start" : "10:00",
-          "walkFromPrevious" : 6
+          "start" : "10:00"
         },
         {
           "alternative" : null,
@@ -257,14 +287,17 @@
 
           ],
           "flexible" : true,
+          "fromPrevious" : {
+            "minutes" : 17,
+            "mode" : "walk"
+          },
           "id" : "d3-dean",
           "kind" : "sight",
           "mealSlot" : null,
           "minutes" : 75,
           "placeId" : "osm:relation/18573379",
           "reason" : "fixture",
-          "start" : "10:30",
-          "walkFromPrevious" : 17
+          "start" : "10:30"
         },
         {
           "alternative" : null,
@@ -272,14 +305,14 @@
 
           ],
           "flexible" : true,
+          "fromPrevious" : null,
           "id" : "d3-quick-bite",
           "kind" : "meal",
           "mealSlot" : "lunch",
           "minutes" : 45,
           "placeId" : null,
           "reason" : "fixture",
-          "start" : "12:20",
-          "walkFromPrevious" : null
+          "start" : "12:20"
         },
         {
           "alternative" : null,
@@ -287,14 +320,14 @@
 
           ],
           "flexible" : false,
+          "fromPrevious" : null,
           "id" : "d3-collect",
           "kind" : "travel",
           "mealSlot" : null,
           "minutes" : 35,
           "placeId" : "osm:node/7149998196",
           "reason" : "fixture",
-          "start" : "13:10",
-          "walkFromPrevious" : null
+          "start" : "13:10"
         },
         {
           "alternative" : null,
@@ -302,14 +335,17 @@
 
           ],
           "flexible" : false,
+          "fromPrevious" : {
+            "minutes" : 1,
+            "mode" : "walk"
+          },
           "id" : "d3-train",
           "kind" : "travel",
           "mealSlot" : null,
           "minutes" : 262,
           "placeId" : "osm:node/7149998196",
           "reason" : "fixture",
-          "start" : "14:30",
-          "walkFromPrevious" : 1
+          "start" : "14:30"
         }
       ],
       "theme" : "One last wander. Then home."
@@ -521,6 +557,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 11,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -530,8 +570,7 @@
       "indoor" : false,
       "kind" : "viewpoint",
       "name" : "Castle Esplanade",
-      "priceLevel" : null,
-      "walkFromStay" : 11
+      "priceLevel" : null
     },
     {
       "address" : "Rose Street, Edinburgh EH2",
@@ -542,6 +581,10 @@
         "facts" : [
 
         ]
+      },
+      "fromStay" : {
+        "minutes" : 6,
+        "mode" : "walk"
       },
       "hours" : {
         "2025-11-23" : [
@@ -558,8 +601,7 @@
       "indoor" : true,
       "kind" : "luggage",
       "name" : "Test Luggage Store",
-      "priceLevel" : null,
-      "walkFromStay" : 6
+      "priceLevel" : null
     },
     {
       "address" : "Royal Mile, Edinburgh",
@@ -571,6 +613,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 12,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -580,8 +626,7 @@
       "indoor" : false,
       "kind" : "street",
       "name" : "Royal Mile",
-      "priceLevel" : null,
-      "walkFromStay" : 12
+      "priceLevel" : null
     },
     {
       "address" : "Queen Street, Edinburgh EH2",
@@ -593,6 +638,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 1,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -602,8 +651,7 @@
       "indoor" : true,
       "kind" : "lodging",
       "name" : "New Town Test Apartment",
-      "priceLevel" : null,
-      "walkFromStay" : 1
+      "priceLevel" : null
     },
     {
       "address" : "The Vennel, Edinburgh EH1 2HU",
@@ -615,6 +663,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 14,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -624,8 +676,7 @@
       "indoor" : false,
       "kind" : "street",
       "name" : "The Vennel",
-      "priceLevel" : null,
-      "walkFromStay" : 14
+      "priceLevel" : null
     },
     {
       "address" : "Leith Street, Edinburgh EH1 3AU",
@@ -641,6 +692,10 @@
           }
         ]
       },
+      "fromStay" : {
+        "minutes" : 14,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -650,8 +705,7 @@
       "indoor" : true,
       "kind" : "foodHall",
       "name" : "Edinburgh Street Food",
-      "priceLevel" : null,
-      "walkFromStay" : 14
+      "priceLevel" : null
     },
     {
       "address" : "Calton Hill, Edinburgh EH7 5AA",
@@ -663,6 +717,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 18,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -672,8 +730,7 @@
       "indoor" : false,
       "kind" : "viewpoint",
       "name" : "Calton Hill",
-      "priceLevel" : null,
-      "walkFromStay" : 18
+      "priceLevel" : null
     },
     {
       "address" : "80 West Bow, Edinburgh EH1 2HH",
@@ -689,6 +746,10 @@
           }
         ]
       },
+      "fromStay" : {
+        "minutes" : 13,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -698,8 +759,7 @@
       "indoor" : true,
       "kind" : "pub",
       "name" : "The Bow Bar",
-      "priceLevel" : null,
-      "walkFromStay" : 13
+      "priceLevel" : null
     },
     {
       "address" : "3-5 Rose Street, Edinburgh EH2 2PR",
@@ -711,6 +771,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 6,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -720,8 +784,7 @@
       "indoor" : true,
       "kind" : "pub",
       "name" : "The Abbotsford",
-      "priceLevel" : null,
-      "walkFromStay" : 6
+      "priceLevel" : null
     },
     {
       "address" : "Saunders Street, Edinburgh EH3 6TQ",
@@ -737,6 +800,10 @@
           }
         ]
       },
+      "fromStay" : {
+        "minutes" : 11,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : [
           "10:00-16:00"
@@ -748,8 +815,7 @@
       "indoor" : false,
       "kind" : "market",
       "name" : "Stockbridge Market",
-      "priceLevel" : null,
-      "walkFromStay" : 11
+      "priceLevel" : null
     },
     {
       "address" : "34 Victoria Street, Edinburgh EH1 2JW",
@@ -761,6 +827,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 13,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -770,8 +840,7 @@
       "indoor" : true,
       "kind" : "restaurant",
       "name" : "Oink Victoria Street",
-      "priceLevel" : null,
-      "walkFromStay" : 13
+      "priceLevel" : null
     },
     {
       "address" : "38 Hanover Street, Edinburgh EH2 2DR",
@@ -786,6 +855,10 @@
             "text" : "Open 11:00-17:00 daily, or until sold out."
           }
         ]
+      },
+      "fromStay" : {
+        "minutes" : 4,
+        "mode" : "walk"
       },
       "hours" : {
         "2025-11-23" : [
@@ -802,8 +875,7 @@
       "indoor" : true,
       "kind" : "restaurant",
       "name" : "Oink Hanover Street",
-      "priceLevel" : null,
-      "walkFromStay" : 4
+      "priceLevel" : null
     },
     {
       "address" : "1 West Register Street, Edinburgh EH2 2AA",
@@ -819,6 +891,10 @@
           }
         ]
       },
+      "fromStay" : {
+        "minutes" : 10,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -828,8 +904,7 @@
       "indoor" : true,
       "kind" : "pub",
       "name" : "The Guildford Arms",
-      "priceLevel" : null,
-      "walkFromStay" : 10
+      "priceLevel" : null
     },
     {
       "address" : "36-38 Raeburn Place, Edinburgh EH4 1HN",
@@ -841,6 +916,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 15,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -850,8 +929,7 @@
       "indoor" : true,
       "kind" : "grocery",
       "name" : "M&S Food Stockbridge",
-      "priceLevel" : null,
-      "walkFromStay" : 15
+      "priceLevel" : null
     },
     {
       "address" : "1-3 Cumberland Street, Edinburgh EH3 6RT",
@@ -863,6 +941,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 8,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -872,8 +954,7 @@
       "indoor" : true,
       "kind" : "pub",
       "name" : "The Cumberland Bar",
-      "priceLevel" : null,
-      "walkFromStay" : 8
+      "priceLevel" : null
     },
     {
       "address" : "9-12 Bank Street, Edinburgh EH1 2LN",
@@ -885,6 +966,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 11,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -894,8 +979,7 @@
       "indoor" : true,
       "kind" : "restaurant",
       "name" : "Makars Mash Bar",
-      "priceLevel" : null,
-      "walkFromStay" : 11
+      "priceLevel" : null
     },
     {
       "address" : "Edinburgh Waverley Station, Edinburgh",
@@ -907,6 +991,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 11,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -916,8 +1004,7 @@
       "indoor" : true,
       "kind" : "station",
       "name" : "Waverley Station",
-      "priceLevel" : null,
-      "walkFromStay" : 11
+      "priceLevel" : null
     },
     {
       "address" : "Dean Village, Edinburgh EH4 3AY",
@@ -929,6 +1016,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 20,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -938,8 +1029,7 @@
       "indoor" : false,
       "kind" : "neighbourhood",
       "name" : "Dean Village",
-      "priceLevel" : null,
-      "walkFromStay" : 20
+      "priceLevel" : null
     },
     {
       "address" : "Grassmarket, Edinburgh",
@@ -951,6 +1041,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 14,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -960,8 +1054,7 @@
       "indoor" : false,
       "kind" : "street",
       "name" : "Grassmarket",
-      "priceLevel" : null,
-      "walkFromStay" : 14
+      "priceLevel" : null
     },
     {
       "address" : "Victoria Street, Edinburgh EH1 2EX",
@@ -973,6 +1066,10 @@
 
         ]
       },
+      "fromStay" : {
+        "minutes" : 13,
+        "mode" : "walk"
+      },
       "hours" : {
         "2025-11-23" : "unknown",
         "2025-11-24" : "unknown",
@@ -982,8 +1079,7 @@
       "indoor" : false,
       "kind" : "street",
       "name" : "Victoria Street",
-      "priceLevel" : null,
-      "walkFromStay" : 13
+      "priceLevel" : null
     },
     {
       "address" : "East Princes Street Gardens, Edinburgh",
@@ -998,6 +1094,10 @@
             "text" : "Free entry. Purchases extra."
           }
         ]
+      },
+      "fromStay" : {
+        "minutes" : 8,
+        "mode" : "walk"
       },
       "hours" : {
         "2025-11-23" : [
@@ -1014,8 +1114,7 @@
       "indoor" : false,
       "kind" : "market",
       "name" : "Edinburgh's Christmas",
-      "priceLevel" : null,
-      "walkFromStay" : 8
+      "priceLevel" : null
     }
   ],
   "stay" : {

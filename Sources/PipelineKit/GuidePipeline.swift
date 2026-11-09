@@ -357,11 +357,19 @@ private extension GuidePipeline {
             return zip(stops, stops.dropFirst()).map { from, to in
                 let origin = from.placeId.flatMap { facts.places[$0] }
                 let destination = to.placeId.flatMap { facts.places[$0] }
-                let minutes: JSONValue = if let origin, let destination {
-                    .integer(walkTimes.minutes(from: origin.location.coordinate, to: destination.location.coordinate))
-                } else { .null }
+                let mode: JSONValue
+                let minutes: JSONValue
+                if let origin, let destination {
+                    let leg = Travel.leg(from: origin.location.coordinate, to: destination.location.coordinate,
+                                         walkTimes: walkTimes)
+                    mode = .string(leg.mode.rawValue)
+                    minutes = .integer(leg.minutes)
+                } else {
+                    mode = .null
+                    minutes = .null
+                }
                 return JSONValue.object(["fromStopId": .string(from.id), "toStopId": .string(to.id),
-                                         "minutes": minutes])
+                                         "mode": mode, "minutes": minutes])
             }
         })
     }

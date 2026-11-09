@@ -61,10 +61,21 @@ struct PipelineInputTests {
         return GuideAssembler(walkTimes: StraightLineWalkTimes()).assemble(id: guide.id, facts: facts,
                                                                            draft: draft, copy: copy)
     }
+    /// Set TABA_WRITE_FIXTURES=1 to rewrite the pipeline goldens, then review the diff and run again without it.
+    private var writesFixtures: Bool {
+        ProcessInfo.processInfo.environment["TABA_WRITE_FIXTURES"] == "1"
+    }
     private func checkGolden(_ name: String, _ actual: String) throws {
         let url = directory.appendingPathComponent("Fixtures/\(name).json")
-        let expected = try JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: url))
         let actualValue = try JSONDecoder().decode(JSONValue.self, from: Data(actual.utf8))
+        if writesFixtures {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
+            try (encoder.encode(actualValue) + Data("\n".utf8)).write(to: url)
+            Issue.record("Rewrote \(name).json; run the tests again without TABA_WRITE_FIXTURES")
+            return
+        }
+        let expected = try JSONDecoder().decode(JSONValue.self, from: Data(contentsOf: url))
         #expect(actualValue == expected)
         #expect(actual == (try PipelineInputBuilder.json(actualValue)))
     }
@@ -72,15 +83,17 @@ struct PipelineInputTests {
         let walkTimes = StraightLineWalkTimes()
         return .array(draft.days.flatMap { day in
             zip(day.stops, day.stops.dropFirst()).map { from, to in
-                let minutes: JSONValue
+                var mode: JSONValue = .null
+                var minutes: JSONValue = .null
                 if let fromID = from.placeId, let toID = to.placeId,
                    let origin = guide.places[fromID], let destination = guide.places[toID] {
-                    minutes = .integer(walkTimes.minutes(from: origin.location.coordinate,
-                                                        to: destination.location.coordinate))
-                } else {
-                    minutes = .null
+                    let leg = Travel.leg(from: origin.location.coordinate, to: destination.location.coordinate,
+                                         walkTimes: walkTimes)
+                    mode = .string(leg.mode.rawValue)
+                    minutes = .integer(leg.minutes)
                 }
-                return .object(["fromStopId": .string(from.id), "toStopId": .string(to.id), "minutes": minutes])
+                return .object(["fromStopId": .string(from.id), "toStopId": .string(to.id),
+                                "mode": mode, "minutes": minutes])
             }
         })
     }
@@ -126,7 +139,12 @@ extension PipelineInputTests {
             .appendingRepair(previousAssistant: "plan", repairText: try PromptLibrary.load("repair").body,
                              payload: repair).messages.last!.content
         let messageURL = directory.appendingPathComponent("Fixtures/repair-message.txt")
-        #expect(message + "\n" == (try String(contentsOf: messageURL, encoding: .utf8)))
+        if writesFixtures {
+            try (message + "\n").write(to: messageURL, atomically: true, encoding: .utf8)
+            Issue.record("Rewrote repair-message.txt; run the tests again without TABA_WRITE_FIXTURES")
+        } else {
+            #expect(message + "\n" == (try String(contentsOf: messageURL, encoding: .utf8)))
+        }
         let research = try PipelineInputBuilder.research(trip: guide.trip, stayArea: "Old Town")
         try checkGolden("research-input", PipelineInputBuilder.json(research))
     }
@@ -302,5 +320,77 @@ extension PipelineInputTests {
         let days = try #require(json.objectValue?["days"]?.arrayValue)
         #expect(days.first?.objectValue?["window"] == .object(["start": .string("12:39"), "end": .string("23:59")]))
         #expect(days.last?.objectValue?["window"] == .object(["start": .string("00:00"), "end": .string("13:48")]))
+    }
+
+    @Test func planCandidatesCarryWalkOrRideFromTheStay() throws {
+        let guide = try guide()
+        let base = try measurements(guide)
+        let stay = try #require(guide.places[guide.stay.placeId])
+        let far = try #require(guide.places["osm:node/2338447599"])
+        var walks = base.walkFromStay
+        walks[far.id] = 200
+        let stayWalk = try #require(walks[stay.id])
+        let measurements = PipelineInputMeasurements(
+            areas: base.areas, areaLabels: base.areaLabels, walkFromStay: walks, areaWalkMinutes: base.areaWalkMinutes,
+            alwaysOpenPlaceIDs: [], arrivalWalkMinutes: 10, departureWalkMinutes: 12,
+            arrivalMarginMinutes: 0, departureMarginMinutes: 30
+        )
+        let input = try PipelineInputBuilder.plan(guide: guide, measurements: measurements, weather: [],
+                                                  findings: [], requests: .null)
+        let root = try #require(input.objectValue)
+        #expect(root["areaTravelMinutes"] != nil)
+        #expect(root["areaWalkMinutes"] == nil)
+        let candidates = try #require(root["candidates"]?.arrayValue).compactMap(\.objectValue)
+        let farEntry = try #require(candidates.first { $0["id"] == .string(far.id) })
+        let metres = Travel.metres(from: stay.location.coordinate, to: far.location.coordinate)
+        #expect(farEntry["walkFromStay"] == nil)
+        #expect(farEntry["fromStay"] == .object([
+            "mode": .string("transit"), "minutes": .integer(Travel.rideMinutes(metres: metres))
+        ]))
+        let stayEntry = try #require(candidates.first { $0["id"] == .string(stay.id) })
+        #expect(stayEntry["fromStay"] == .object(["mode": .string("walk"), "minutes": .integer(stayWalk)]))
+    }
+
+    @Test func writePayloadCarriesWalkAndRideLegsAndStayTravel() throws {
+        let guide = try guide()
+        let draft = draft(guide)
+        let facts = TripFacts(trip: guide.trip, bookings: guide.bookings, stay: guide.stay,
+                              places: guide.places, practical: guide.practical, sources: guide.sources)
+        let copy = GuideCopy(hero: GuideHero(title: "", subtitle: "", tagline: ""), days: [], stops: [], places: [],
+                             lists: [], tasting: [],
+                             notes: GuideNotes(weather: "", light: "", backupPlan: "", rules: ""))
+        let measured = try measurements(guide)
+        let walks = GuideAssembler(walkTimes: StraightLineWalkTimes()).assemble(
+            id: guide.id, facts: facts, draft: draft, copy: copy).guide
+        let rides = GuideAssembler(walkTimes: FixedWalkTimes(fixed: 200)).assemble(
+            id: guide.id, facts: facts, draft: draft, copy: copy).guide
+
+        for (assembled, expectedMode) in [(walks, "walk"), (rides, "transit")] {
+            let input = try PipelineInputBuilder.write(guide: assembled, draft: draft, measurements: measured,
+                                                       weather: [], findings: [], locale: "en-GB")
+            let root = try #require(input.objectValue)
+            let stops = try #require(root["days"]?.arrayValue).flatMap { $0.objectValue?["stops"]?.arrayValue ?? [] }
+                .compactMap(\.objectValue)
+            #expect(stops.allSatisfy { $0["walkFromPrevious"] == nil })
+            let legs = stops.compactMap { $0["fromPrevious"]?.objectValue }
+            #expect(!legs.isEmpty)
+            #expect(legs.allSatisfy { $0["mode"] == .string(expectedMode) })
+            #expect(legs.allSatisfy { leg in
+                if case .integer(let minutes)? = leg["minutes"] { return minutes > 0 }
+                return false
+            })
+            let places = try #require(root["places"]?.arrayValue).compactMap(\.objectValue)
+            #expect(!places.isEmpty)
+            #expect(places.allSatisfy { $0["walkFromStay"] == nil && $0["fromStay"]?.objectValue?["mode"] != nil })
+        }
+    }
+}
+
+/// Every walk is the same length, so a long one makes each leg a bus or taxi ride.
+private struct FixedWalkTimes: WalkTimes {
+    let fixed: Int
+
+    func minutes(from origin: Coordinate, to destination: Coordinate) -> Int {
+        fixed
     }
 }

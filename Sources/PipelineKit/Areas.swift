@@ -25,7 +25,8 @@ public struct AreaCluster: Sendable, Equatable {
     public let centre: Coordinate
 }
 
-/// A directed measurement: a future walking provider may not be symmetric.
+/// A directed measurement of the travel minutes between two area centres: a walk up to 30 minutes, otherwise a bus or
+/// taxi ride, as `Travel` decides. A future walking provider may not be symmetric.
 public struct AreaWalk: Sendable, Equatable {
     public let fromAreaID: String
     public let toAreaID: String
@@ -76,7 +77,7 @@ public struct AreaClusterer: Sendable {
             clusters.filter { $0.id != from.id }.map { to in
                 AreaWalk(
                     fromAreaID: from.id, toAreaID: to.id,
-                    minutes: walkTimes.minutes(from: from.centre, to: to.centre)
+                    minutes: Travel.leg(from: from.centre, to: to.centre, walkTimes: walkTimes).minutes
                 )
             }
         }

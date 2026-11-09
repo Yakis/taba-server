@@ -12,71 +12,85 @@
     {
       "fromStopId" : "d1-arrive",
       "minutes" : 21,
+      "mode" : "walk",
       "toStopId" : "d1-market"
     },
     {
       "fromStopId" : "d1-market",
       "minutes" : 11,
+      "mode" : "walk",
       "toStopId" : "d1-bags"
     },
     {
       "fromStopId" : "d1-bags",
       "minutes" : 8,
+      "mode" : "walk",
       "toStopId" : "d1-christmas"
     },
     {
       "fromStopId" : "d1-christmas",
       "minutes" : 4,
+      "mode" : "walk",
       "toStopId" : "d1-pint"
     },
     {
       "fromStopId" : "d2-castle",
       "minutes" : 2,
+      "mode" : "walk",
       "toStopId" : "d2-oink"
     },
     {
       "fromStopId" : "d2-oink",
       "minutes" : 3,
+      "mode" : "walk",
       "toStopId" : "d2-grassmarket"
     },
     {
       "fromStopId" : "d2-grassmarket",
       "minutes" : 21,
+      "mode" : "walk",
       "toStopId" : "d2-calton"
     },
     {
       "fromStopId" : "d2-calton",
       "minutes" : 4,
+      "mode" : "walk",
       "toStopId" : "d2-street-food"
     },
     {
       "fromStopId" : "d2-street-food",
       "minutes" : 6,
+      "mode" : "walk",
       "toStopId" : "d2-guildford"
     },
     {
       "fromStopId" : "d3-breakfast",
       "minutes" : 6,
+      "mode" : "walk",
       "toStopId" : "d3-checkout"
     },
     {
       "fromStopId" : "d3-checkout",
       "minutes" : 17,
+      "mode" : "walk",
       "toStopId" : "d3-dean"
     },
     {
       "fromStopId" : "d3-dean",
       "minutes" : null,
+      "mode" : null,
       "toStopId" : "d3-quick-bite"
     },
     {
       "fromStopId" : "d3-quick-bite",
       "minutes" : null,
+      "mode" : null,
       "toStopId" : "d3-collect"
     },
     {
       "fromStopId" : "d3-collect",
       "minutes" : 1,
+      "mode" : "walk",
       "toStopId" : "d3-train"
     }
   ]

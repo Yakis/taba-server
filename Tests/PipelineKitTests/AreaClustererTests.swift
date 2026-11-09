@@ -67,7 +67,10 @@ struct AreaClustererTests {
         #expect(result.walks.map(\.minutes) == [7, 11])
         let real = try AreaClusterer().cluster([candidate("a", 0), candidate("b", 0.01)])
         #expect(real.walks.map(\.minutes) == [19, 19])
-        let expected = StraightLineWalkTimes().minutes(from: result.clusters[0].centre, to: result.clusters[1].centre)
+        // Area minutes are travel minutes: a walk up to 30 minutes, otherwise a bus or taxi ride.
+        let expected = Travel.leg(
+            from: result.clusters[0].centre, to: result.clusters[1].centre, walkTimes: StraightLineWalkTimes()
+        ).minutes
         let measured = try AreaClusterer().cluster([
             candidate("a", 0), candidate("b", 0.002), candidate("c", 0.02)
         ])

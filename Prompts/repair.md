@@ -1,6 +1,6 @@
 ---
 id: repair
-version: 1
+version: 2
 role: message
 output: PlanDraft
 effort: high
@@ -12,8 +12,8 @@ priority order still apply.
 
 - Each issue has `severity` (`error`, `warning` or `info`), `kind`, `date`, `stopId` (or `null`) and `message`.
   Times and distances in messages were measured by code. Trust them over your own estimates.
-- `legs` gives the measured walk minutes between consecutive stops in your plan. Use them instead of
-  `areaWalkMinutes` for stops that stay where they are.
+- `legs` gives the measured minutes and the mode (`walk`, or `transit` for a bus or taxi ride) between consecutive
+  stops in your plan. Use them instead of `areaTravelMinutes` for stops that stay where they are.
 
 What to do:
 

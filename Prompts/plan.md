@@ -1,6 +1,6 @@
 ---
 id: plan
-version: 2
+version: 3
 role: instructions
 output: PlanDraft
 effort: high
@@ -20,11 +20,12 @@ the words. Your job is choosing and timing.
   `sunrise`, `sunset`, `blueHourEnds`, and `weather` with `rainChance` (0–100). Code has already worked out
   the windows from arrivals, departures and safety margins. On a departure day, `window.end` is the latest time
   to leave the last stop for the station or airport.
-- `areaWalkMinutes`: typical walk minutes between the trip's areas, measured by code, keyed by stable area
-  cluster ids.
+- `areaTravelMinutes`: typical minutes between the trip's areas: a walk up to 30 minutes, otherwise a bus or taxi
+  ride, as code decides. Measured by code, keyed by stable area cluster ids.
 - `candidates`: the only places you may use, including the stay and the luggage store. Each has `id`, `name`,
-  `kind`, `area` (the stable cluster id used in `areaWalkMinutes`), `areaName` (the human-readable majority
-  label for the cluster; different clusters can share a name), `walkFromStay` minutes, `indoor`,
+  `kind`, `area` (the stable cluster id used in `areaTravelMinutes`), `areaName` (the human-readable majority
+  label for the cluster; different clusters can share a name), `fromStay` (`mode`, `walk` or `transit` for a
+  bus or taxi ride, and `minutes`, as code decides), `indoor`,
   `priceLevel` (1–4 or `null`), `bookingNeeded`, and
   `hours` for each trip date. Hours are one of: a list of open periods such as `"10:00-16:00"` (a close time
   earlier than the open time means it closes after midnight), `"closed"`, `"always"` for public spaces, or
@@ -47,7 +48,7 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
    only when it is a meal "somewhere near" an area that has no suitable candidate.
 2. Every stop starts and ends inside its day's `window`.
 3. Stops on a day are in time order and never overlap. Between stops in the same area, leave at least 5
-   minutes. Between areas, leave at least the `areaWalkMinutes` value, and never less than 10.
+   minutes. Between areas, leave at least the `areaTravelMinutes` value, and never less than 10.
 4. A stop at a place with listed open periods fits entirely inside one open period on that date. Never use a
    place marked `"closed"` that day.
 5. A place with `"unknown"` hours may be used only if it is an outdoor public space, or as a `flexible: true`
@@ -78,6 +79,8 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
     | `unhurried` | 4–5 | 09:00 | about 130 minutes |
     | `packed` | 6 or more | no limit | about 180 minutes |
 
+    Walking counts only walks, not bus or taxi rides.
+
     Relaxed and unhurried days include a rest stop of at least 45 minutes in the afternoon. It can be at the
     stay.
 11. Geography: plan each day around one or two neighbouring areas, in an order that doesn't double back. Keep
@@ -87,23 +90,26 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
     that is open then. Use `null` only when no candidate fits.
 13. Time-bound first: findings that happen only on these dates, such as a weekly market or a seasonal event,
     come before places that are there any day. Build the affected day around them.
+14. Ride from the stay: when the stay is a ride away (`fromStay.mode` is `transit` for most candidates), the day
+    starts and ends with a bus or taxi ride: plan the first stop after the ride from the stay and the return after
+    the last stop, and don't go back to the stay in the middle of the day unless check-in or bags need it.
 
 ## C. Taste.
 
-14. Give each day one clear highlight and a theme you can say in a few words. Spread the interests across the
+15. Give each day one clear highlight and a theme you can say in a few words. Spread the interests across the
     days in their ranked order. Don't put two stops of the same kind back to back, unless that kind is the top
     interest.
-15. Keep to `dailySpend`: mostly `priceLevel` 1–2 for `low`, up to 3 for `moderate`, any for `high`. Free
+16. Keep to `dailySpend`: mostly `priceLevel` 1–2 for `low`, up to 3 for `moderate`, any for `high`. Free
     sights suit every level.
-16. Respect mobility notes. For anyone who mentions stairs or hills, avoid long climbs late in the day.
-17. Leave slack. A plan with 15 minutes to spare beats one that only just fits.
-18. Mark stops that depend on weather or mood as `flexible: true`.
+17. Respect mobility notes. For anyone who mentions stairs or hills, avoid long climbs late in the day.
+18. Leave slack. A plan with 15 minutes to spare beats one that only just fits.
+19. Mark stops that depend on weather or mood as `flexible: true`.
 
 # Lists
 
 Fill `lists`, the pick lists the guide shows beside the days. Use the keys `eat`, `drink` and `photos`, plus
 `groceries` when there are grocery candidates. Each list holds 3–6 candidate ids, including the ones you
-planned, ordered by `walkFromStay`. Leave a list empty when no candidates fit.
+planned, ordered by `fromStay` minutes. Leave a list empty when no candidates fit.
 
 # How to work
 
