@@ -268,7 +268,12 @@ private extension GuidePipeline {
             model: model, structuredOutput: output("research", ResearchResult.schema()))
         let (research, response): (ResearchResult, ResponsesResult) = try await decoded(
             request, prompt: prompt, step: "research", send: send, evidence: evidence)
-        let resolved = try await ResearchVerification.verify(research, sourceURLs: response.sourceURLs) { suggestion in
+        let venues = ResearchVerification.venueSuggestions(for: research.findings, reportedURLs: response.sourceURLs,
+                                                           existing: research.suggestedPlaces)
+        let suggested = ResearchResult(findings: research.findings,
+                                       suggestedPlaces: research.suggestedPlaces + venues,
+                                       searchNotes: research.searchNotes)
+        let resolved = try await ResearchVerification.verify(suggested, sourceURLs: response.sourceURLs) { suggestion in
             try await resolveSuggestion?(suggestion)
         }
         let (prepared, measurements) = try await prepareCandidates?(resolved, facts, measurements)
@@ -279,7 +284,7 @@ private extension GuidePipeline {
         if research.findings.count != resolved.result.findings.count {
             notes += "\nDropped findings with invalid, duplicate, or unreported sources or IDs."
         }
-        if research.suggestedPlaces.count != admitted.count {
+        if suggested.suggestedPlaces.count != admitted.count {
             notes += "\nDropped unresolved or unprepared suggested places."
         }
         let verified = VerifiedResearch(result: ResearchResult(findings: resolved.result.findings,

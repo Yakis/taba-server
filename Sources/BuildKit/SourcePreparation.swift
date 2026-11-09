@@ -122,14 +122,16 @@ public enum SourcePreparation {
                                   sources: inout [Source],
                                   record: SourceRecord) async throws -> OverpassLookup {
         let started = ContinuousClock.now
+        let baseKinds: [PlaceKind] = [.cafe, .restaurant, .pub, .viewpoint, .museum, .market, .shop, .grocery]
+        let searches = FoursquarePlacesSource.searches(for: baseKinds)
+            + InterestSearches.searches(for: options.preferences.interests)
         let report = await FoursquarePlacesSource(fetcher: fetcher, apiKey: key)
-            .sweep(kinds: [.cafe, .restaurant, .pub, .viewpoint, .museum, .market, .shop, .grocery],
-                   around: centre, limit: 6, checkedAt: today)
+            .sweep(searches: searches, around: centre, limit: 6, checkedAt: today)
         try Task.checkCancellation()
         await record.append(["event": .string("foursquareSweep"),
                              "seconds": .number(seconds(started.duration(to: .now))),
                              "outcomes": .array(report.sweeps.map {
-            .object(["kind": .string($0.kind.rawValue), "returned": .integer($0.returned),
+            .object(["kind": .string($0.label), "returned": .integer($0.returned),
                      "failureCategory": .string($0.failure == nil ? "none" : "sourceFailure")])
         })])
         let additions = report.places.filter { places[$0.id] == nil }

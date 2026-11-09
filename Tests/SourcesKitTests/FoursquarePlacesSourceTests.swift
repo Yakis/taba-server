@@ -82,9 +82,9 @@ struct FoursquarePlacesSourceTests {
         let source = FoursquarePlacesSource(fetcher: fetcher(pubStatus: 429), apiKey: "test-key-not-real")
         let report = await source.sweep(kinds: [.cafe, .pub], around: centre, checkedAt: checkedAt)
         #expect(report.places.map(\.id) == ["fsq:a1", "fsq:b2"])
-        let pub = report.sweeps.first { $0.kind == .pub }
+        let pub = report.sweeps.first { $0.label == "pub" }
         #expect(pub?.failure?.contains("429") == true)
-        #expect(report.sweeps.first { $0.kind == .cafe }?.failure == nil)
+        #expect(report.sweeps.first { $0.label == "cafe" }?.failure == nil)
     }
 
     @Test func aKindWithNoCategoryIsReportedNotSearched() async {
@@ -106,6 +106,35 @@ struct FoursquarePlacesSourceTests {
         #expect(Samples.query(request)["fsq_category_ids"] == cafeCategory)
         #expect(Samples.query(request)["limit"] == "10")
         #expect(!(request.url?.absoluteString.contains("test-key-not-real") ?? true))
+    }
+
+    @Test func aVenueKindSearchesTheMusicVenueCategory() async throws {
+        let recorder = fetcher()
+        let source = FoursquarePlacesSource(fetcher: recorder, apiKey: "test-key-not-real")
+        let report = await source.sweep(kinds: [.venue], around: centre, checkedAt: checkedAt)
+        let request = try #require(await recorder.requests.first)
+        #expect(Samples.query(request)["fsq_category_ids"] == "4bf58dd8d48988d1e5931735")
+        #expect(report.sweeps.map(\.label) == ["venue"])
+    }
+
+    @Test func kindsBecomeOneLabelledSearchEachAndKindsWithoutACategoryAreLeftOut() {
+        let searches = FoursquarePlacesSource.searches(for: [.cafe, .other, .venue])
+        #expect(searches.map(\.label) == ["cafe", "venue"])
+        #expect(searches.last?.categoryIds == ["4bf58dd8d48988d1e5931735"])
+    }
+
+    @Test func aSearchIsSentWithItsOwnCategoriesAndLabelledOutcome() async throws {
+        let recorder = fetcher()
+        let source = FoursquarePlacesSource(fetcher: recorder, apiKey: "test-key-not-real")
+        let search = FoursquarePlacesSource.CategorySearch(
+            label: "parks", categoryIds: ["4bf58dd8d48988d163941735", "4bf58dd8d48988d15a941735"]
+        )
+        let report = await source.sweep(searches: [search], around: centre, limit: 6, checkedAt: checkedAt)
+        let request = try #require(await recorder.requests.first)
+        #expect(Samples.query(request)["fsq_category_ids"] == "4bf58dd8d48988d163941735,4bf58dd8d48988d15a941735")
+        #expect(Samples.query(request)["limit"] == "6")
+        #expect(report.sweeps.map(\.label) == ["parks"])
+        #expect(report.sweeps.first?.failure == nil)
     }
 
     @Test func aHitWithoutACoordinateIsLeftOut() async {

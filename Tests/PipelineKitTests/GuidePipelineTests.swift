@@ -386,6 +386,60 @@ extension GuidePipelineTests {
         })
     }
 
+    /// A market finding on the trip dates whose venue the model did not list: the venue is added as a suggestion, and
+    /// the stub resolver decides whether it becomes a place. The venue is left out of the facts only when it is to be
+    /// resolved, so the draft's references stay valid when it is not.
+    private func marketVenueRun(resolvesVenue: Bool) async throws -> (events: [PipelineEvidence], place: Place) {
+        let fixture = try data()
+        let id = try #require(fixture.draft.lists.first?.placeIds.first)
+        let place = try #require(fixture.facts.places[id])
+        var remaining = fixture.facts.places
+        if resolvesVenue { remaining.removeValue(forKey: id) }
+        let facts = TripFacts(trip: fixture.facts.trip, bookings: fixture.facts.bookings, stay: fixture.facts.stay,
+                              places: remaining, practical: fixture.facts.practical, sources: fixture.facts.sources)
+        let finding = ResearchFinding(id: "f1", kind: .market, title: "Christmas Market",
+            summary: "A seasonal market in the gardens.", startDate: nil, endDate: nil, times: nil,
+            placeName: place.name, address: "Centre", url: "https://example.com/market",
+            sourceTitle: "Market page", confidence: .high, onTripDates: true)
+        let research = ResearchResult(findings: [finding], suggestedPlaces: [], searchNotes: "")
+        let script = try PipelineScript([json(research), json(fixture.draft), json(fixture.draft),
+                                         json(fixture.draft), json(fixture.copy)],
+                                        sourceURLs: [finding.url])
+        _ = try await GuidePipeline().run(id: "test", model: "fake", facts: facts,
+            measurements: fixture.measurements, weather: [], stayArea: "Centre",
+            resolveSuggestion: { suggestion in
+                resolvesVenue && suggestion.name == place.name ? place : nil
+            }, prepareCandidates: { verified, facts, measurements in
+                var places = facts.places
+                for item in verified.places { places[item.id] = item }
+                return (TripFacts(trip: facts.trip, bookings: facts.bookings, stay: facts.stay,
+                                  places: places, practical: facts.practical, sources: facts.sources), measurements)
+            }, send: { try await script.send($0) }, evidence: { await script.record($0) })
+        return (await script.events, place)
+    }
+
+    @Test func aMarketVenueOnTripDatesReachesTheVerifiedPlaces() async throws {
+        let run = try await marketVenueRun(resolvesVenue: true)
+        #expect(run.events.contains {
+            if case let .research(accepted, ids) = $0 {
+                ids == [run.place.id] && accepted.suggestedPlaces.map(\.kind) == [.market]
+            } else {
+                false
+            }
+        })
+    }
+
+    @Test func anUnresolvedVenueIsReportedAsDropped() async throws {
+        let run = try await marketVenueRun(resolvesVenue: false)
+        #expect(run.events.contains {
+            if case let .research(accepted, ids) = $0 {
+                ids.isEmpty && accepted.searchNotes.contains("Dropped unresolved or unprepared suggested places.")
+            } else {
+                false
+            }
+        })
+    }
+
     @Test func transportFailureIsNotRetried() async throws {
         let fixture = try data()
         let script = PipelineScript([])

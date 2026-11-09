@@ -6,7 +6,7 @@ struct PromptLibraryTests {
     func realPrompts(id: String) throws {
         let prompt = try PromptLibrary.load(id)
         #expect(prompt.id == id)
-        let versions = ["plan": 3, "repair": 2, "write": 3]
+        let versions = ["plan": 3, "repair": 2, "research": 2, "write": 3]
         #expect(prompt.version == (versions[id] ?? 1))
         #expect(prompt.body.isEmpty == false)
         #expect(prompt.body.hasPrefix("---") == false)

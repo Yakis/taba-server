@@ -18,11 +18,14 @@ public enum PlaceKindMapper {
         (.cafe, ["cafe", "cafes", "coffee shop", "coffee shops", "coffee", "cafeteria", "cafeterias",
                  "tea house", "tea houses", "tea room"]),
         (.pub, ["pub", "pubs"]),
+        (.venue, ["music venue", "music venues", "concert hall", "concert halls", "jazz club", "jazz clubs",
+                  "live music venue"]),
         (.bar, ["bar", "bars"]),
         (.restaurant, ["restaurant", "restaurants", "diner", "pizzeria", "bistro"]),
         (.shop, ["shop", "shops", "store", "stores", "bakery", "bakeries", "boutique", "boutiques"]),
-        (.landmark, ["park", "parks", "monument", "monuments", "historic site", "historic sites", "castle",
-                     "castles", "church", "churches", "landmark", "landmarks"])
+        (.landmark, ["park", "parks", "garden", "gardens", "monument", "monuments", "historic site", "historic sites",
+                     "historic and protected site", "protected site", "castle", "castles", "church", "churches",
+                     "landmark", "landmarks"])
     ]
 
     public static func kind(for categories: [FoursquareCategory]) -> PlaceKind {

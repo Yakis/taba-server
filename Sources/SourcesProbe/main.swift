@@ -56,7 +56,7 @@ func foursquarePlaces(fetcher: CappedFetcher, centre: GeocodedPlace, today: Loca
     let report = await source.sweep(kinds: [.cafe, .pub], around: centre.coordinate, limit: 10, checkedAt: today)
     for sweep in report.sweeps {
         let note = sweep.failure.map { " (failed: \($0))" } ?? ""
-        print("Foursquare \(sweep.kind.rawValue): \(sweep.returned) returned\(note).")
+        print("Foursquare \(sweep.label): \(sweep.returned) returned\(note).")
     }
     print("Foursquare places after de-duplication and closed filtering: \(report.places.count).")
     return report.places

@@ -68,7 +68,7 @@ public struct LiveStageRunner: Sendable {
             return try checkpoint(result)
         case .candidates:
             let basics: BasicsCheckpoint = try load(.basics, from: work)
-            let fetcher = sourceFetcher(limit: 100)
+            let fetcher = sourceFetcher(limit: 150)
             let geocoder = NominatimGeocoder(fetcher: fetcher)
             let result = try await SourcePreparation.prepareCandidates(input, basics: basics, fetcher: fetcher,
                 key: key, geocoder: geocoder, record: record)

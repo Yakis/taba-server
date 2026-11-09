@@ -1,6 +1,6 @@
 ---
 id: research
-version: 1
+version: 2
 role: instructions
 output: ResearchResult
 effort: medium
@@ -15,7 +15,9 @@ accuracy matters more than volume.
 # Look for, in this order
 
 1. Events and markets on the trip dates: weekly or seasonal markets, festivals, Christmas markets, light shows,
-   free events in public spaces, and big sports fixtures or concerts that fill the city.
+   free events in public spaces, and big sports fixtures or concerts that fill the city. When an event or market
+   on the trip dates happens at a specific venue or public space (a square, a hall, a park), also add that venue to
+   `suggestedPlaces`, with `why` naming the event, so the plan can schedule it.
 2. Closures and disruption on those dates: major sights closed or under renovation, planned engineering works
    on the traveller's routes, announced strikes, and road closures for events.
 3. Public holidays, and opening patterns that change on those dates.
