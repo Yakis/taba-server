@@ -61,7 +61,7 @@ After a guide exists: re-check 3 days before the trip (hours, weather, closures)
 |---|---|---|
 | M0 | GuideKit model, Edinburgh fixture, plan checks, sun times, prompts, Foursquare probe, ChatGPT sign-in and probe | done |
 | M1 | Pipeline on the server (below) | in progress |
-| M2 | App reads and shares guides: guide view, day timeline with walk legs, day map, place detail, offline cache, PDF and HTML export. Built against the Edinburgh fixture | |
+| M2 | App reads and shares guides (steps in `docs/APP.md`): guide view, day timeline with walk legs, day map, place detail, offline cache, PDF and HTML export. Built against the Edinburgh fixture | |
 | M3 | App makes guides: new-trip form, live progress, push notification. On the phone through TestFlight | |
 | M4 | Family and a living guide: iCloud sharing, edit a day, ticket import, re-check before the trip, rain swaps | |
 | M5 | Later: hotel shortlist within budget, spend totals, widget, Live Activity, illustrations | |
@@ -133,7 +133,7 @@ Each step is reviewed, then committed on its own.
    reader. A historical benchmark uses current provider data plus mock facts, not verified historical hours;
    numerical screening and source-URL membership cannot prove factual truth. Unclassified boundary transport
    bookings fail before AI calls; resolve station/airport endpoints rather than silently dropping travel cutoffs.
-5. **Server.** Done, verified with recorded answers; a fresh live API run is still to do.
+5. **Server.** Done.
    Hummingbird 2 service:
    - one swift-jobs job per pipeline step, each saving its result and queuing the next;
    - Postgres via PostgresNIO and postgres-migrations;
@@ -162,7 +162,11 @@ Each step is reviewed, then committed on its own.
    dispatcher still holds the lock is not skipped.
 
    Done when: the service builds for Linux in Docker, runs locally against a local Postgres, and builds the
-   Edinburgh guide through the API. Linux/Postgres/offline API replay passed; fresh live API verification remains.
+   Edinburgh guide through the API. Passed with recorded answers and live.
+   A live Edinburgh build through the API on 2025 dates with mock facts finished in about 10 minutes
+   (research 3 min, plan 2, check with two repairs 2, write 1.5): structurally valid, no plan errors or
+   warnings after repair, one copy flag, which was a checker false positive (now fixed).
+   The flag was booking times written as `2025-11-25T18:52`, which grounded neither the date nor the time.
 6. **Deploy.** Docker image: a static Linux SDK binary, on a base image with `tzdata` and `ca-certificates`.
    A Compose service plus Postgres on the VPS, listening on host port 18090. ChatGPT credentials moved over
    SSH. The tailnet-only HTTPS host already exists (see the private handoff).

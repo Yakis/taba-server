@@ -1,7 +1,7 @@
 # Local TABA server
 
 The server is implemented for M1 step 5. Linux release builds and a local Postgres/API benchmark using
-recorded Edinburgh answers have passed. A **fresh live API build is still pending owner permission**.
+recorded Edinburgh answers have passed. A live Edinburgh build through the API on 2025 dates with mock facts finished in about 10 minutes (research 3 min, plan 2, check with two repairs 2, write 1.5): structurally valid, no plan errors or warnings after repair, one copy flag, which was a checker false positive (now fixed).
 Native x86-64 Linux verification also passed in an isolated, resource-limited VPS workspace, including
 Postgres/API restart persistence. No production services or public ports were changed.
 Nothing here deploys the service; production static-SDK packaging and hosting belong to step 6.
@@ -163,7 +163,7 @@ TABA_REPLAY_TEST_DIRECTORY=/path/to/private/run swift test --filter replayRunsAl
 
 The API test checks authentication, admission, all 15 progress transitions, terminal reconnection, Guide
 structure and plan checks, and the seven preserved benchmark copy flags. This is **offline replay**, not
-fresh live-provider verification. The last remains pending permission.
+fresh live-provider verification; the live run is described at the top.
 
 An additional native x86-64 Linux run used a capped build container (2 CPUs, 4 GiB RAM), a separate
 internal Docker network, and disposable Postgres/API containers with no published ports. Two API replays

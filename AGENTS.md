@@ -125,6 +125,6 @@ continue without asking the owner what happened.
 
 ## Current state
 
-M1 steps 1–5 are reviewed and committed. The server passes local and isolated Linux/Postgres API replays
-with recorded answers. A fresh live API run needs the owner's permission, then step 6 (deploy). See
-`docs/SERVER.md` and `private/HANDOFF.md` before continuing.
+M1 steps 1–5 are done; a live Edinburgh build through the server API passed. Next: M1 step 6 (deploy,
+needs the owner's yes) and M2, the iOS app (`docs/APP.md`, not started). See `docs/SERVER.md` and
+`private/HANDOFF.md` before continuing.
