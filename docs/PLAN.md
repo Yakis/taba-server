@@ -206,6 +206,25 @@ fact instead), and OpenStreetMap tags often carry `website` and `phone` (or `con
 `contact:phone`). Foursquare's phone field is a paid Premium field: never call it without asking. The finished
 sample sets websites on three places whose own site is already one of its sources.
 
+### Guide quality fixes (from the first trip built from the app)
+
+The first guide built through the app had sound picks but serious gaps. Each fix is its own commit.
+
+| # | Fix | Done when | Status |
+|---|---|---|---|
+| Q1 | Opening hours survive a busy Overpass: retry timeouts, lost connections and 429/502/503/504 four times with doubling waits, rotate to a backup server, record the error in the evidence | Tests cover each retry case; a live run records `found` above 0 or an `error` | done |
+| Q2 | Weather on each day: `GuideAssembler` copies the fetched `DayWeather` onto `Day.weather` (see the follow-up above) | Assembled guides carry `weather` on every day the forecast or archive covers; the fixture still round-trips | |
+| Q3 | Bus or taxi for long legs: a leg over a set walking time becomes `transit` with an estimated ride time; the pace check counts walking only; the plan input and `plan.md` say how to reach a far-out stay | A stay 10 km out gives ride legs of minutes, not walks of hours, and no pace warning from them | |
+| Q4 | Interests steer the search: each interest adds Foursquare categories (music venues, markets, …); research findings with a venue are resolved as places so the plan can schedule them | A date-specific event with a venue can appear as a stop | |
+| Q5 | Less repeated copy: `write.md` says unknown hours once in the notes, and on a stop only when it matters | Fewer than a third of stop bodies mention checking hours on a trip with mostly unknown hours | |
+| Q6 | Rebuild the same trip and compare | The owner judges it good | |
+
+Learned in Q1: overpass-api.de often answers 502 when full, and the public mirrors are slow or broken at times,
+so retries with waits matter more than more mirrors. A batch can now take about 8.5 minutes at worst.
+
+Later, if the AI turns out to be the weak link: a second AI provider with its own key, switchable from the app's
+settings. A paid key needs the owner's yes.
+
 ## Decisions already made
 
 - Swift + Hummingbird, not TypeScript, Vapor or Rust.
