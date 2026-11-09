@@ -13,7 +13,8 @@ let package = Package(
         .executable(name: "foursquare-probe", targets: ["FoursquareProbe"]),
         .executable(name: "taba-chatgpt", targets: ["TabaChatGPT"]),
         .library(name: "SourcesKit", targets: ["SourcesKit"]),
-        .executable(name: "taba-sources-probe", targets: ["SourcesProbe"])
+        .executable(name: "taba-sources-probe", targets: ["SourcesProbe"]),
+        .executable(name: "taba", targets: ["Taba"])
     ],
     dependencies: [
         .package(url: "https://github.com/apple/swift-crypto.git", from: "5.1.1")
@@ -28,7 +29,7 @@ let package = Package(
             path: ".",
             exclude: ["AGENTS.md", "CLAUDE.md", "README.md", "docs", "private", "probe-output", "scripts", "Tests",
                       "Sources/GuideKit", "Sources/FoursquareKit", "Sources/FoursquareProbe", "Sources/ResponsesKit",
-                      "Sources/TabaChatGPT", "Sources/SourcesKit", "Sources/SourcesProbe"],
+                      "Sources/TabaChatGPT", "Sources/SourcesKit", "Sources/SourcesProbe", "Sources/Taba"],
             sources: ["Sources/PipelineKit"],
             resources: [.copy("Prompts")]
         ),
@@ -58,6 +59,14 @@ let package = Package(
         .executableTarget(
             name: "SourcesProbe",
             dependencies: ["SourcesKit", "FoursquareKit", "GuideKit"]
+        ),
+        .executableTarget(
+            name: "Taba",
+            dependencies: ["PipelineKit", "SourcesKit", "FoursquareKit", "GuideKit", "ResponsesKit"]
+        ),
+        .testTarget(
+            name: "TabaTests",
+            dependencies: ["Taba", "GuideKit"]
         ),
         .testTarget(
             name: "PipelineKitTests",
