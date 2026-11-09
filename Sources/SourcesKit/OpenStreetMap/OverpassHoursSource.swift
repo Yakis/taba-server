@@ -53,19 +53,24 @@ public struct OverpassLookup: Sendable, Equatable {
 ///
 /// Each batch of up to 25 targets is one Overpass query. Each target is one `nwr["opening_hours"](around:80,...)`
 /// union branch, so only objects with hours come back. Those objects are matched to targets here, by name and by
-/// distance. Batches run one after another. A batch that times out, or gets a 429 or 504, is retried once after
-/// `retryDelay`, on the next endpoint in the list. Any other failure is not retried. No failure throws: it is
-/// reported in `OverpassLookup.error`, and the affected places are `.unavailable`.
+/// distance. Batches run one after another. A batch that times out, loses its connection, or gets a 429, 502, 503 or
+/// 504, is retried up to three times, with waits of `retryDelay`, then twice that, then four times that. Each attempt
+/// uses the next endpoint in the list, so the endpoints take turns. Any other failure is not retried. No failure
+/// throws: it is reported in `OverpassLookup.error`, and the affected places are `.unavailable`.
 public struct OverpassHoursSource: Sendable {
     public typealias Sleep = @Sendable (Duration) async throws -> Void
 
     public static let radiusMetres = 80
-    /// Attempts per batch: the first try and one retry.
-    static let attempts = 2
+    /// Attempts per batch: the first try and three retries.
+    static let attempts = 4
     /// Overpass's own limit for one query. A larger batch size is capped here.
     static let maximumBatchSize = 25
 
     public static let defaultEndpoint = "https://overpass-api.de/api/interpreter"
+    static let backupEndpoint = "https://overpass.kumi.systems/api/interpreter"
+
+    /// The public Overpass servers, in the order they are tried: the main one, then the backup.
+    public static let defaultEndpoints: [URL] = [defaultEndpointURL, url(for: backupEndpoint)]
 
     private let fetcher: any HTTPFetching
     private let endpoints: [URL]
@@ -75,21 +80,22 @@ public struct OverpassHoursSource: Sendable {
     private let sleep: Sleep
 
     /// - Parameters:
-    ///   - endpoints: Tried in order. Empty falls back to the default endpoint.
+    ///   - endpoints: Tried in rotation, one per attempt, so the first attempt uses the first endpoint, the second
+    ///     attempt the second, and so on, wrapping round. Empty falls back to `defaultEndpoints`.
     ///   - timeoutSeconds: The `[timeout:]` in each query. The request waits 30 seconds longer than this.
     ///   - batchSize: Targets per query, between 1 and 25.
-    ///   - retryDelay: The wait before the one retry.
+    ///   - retryDelay: The wait before the first retry. Each later retry waits twice as long as the one before.
     ///   - sleep: Injected so tests do not wait.
     public init(
         fetcher: any HTTPFetching,
-        endpoints: [URL] = [OverpassHoursSource.defaultEndpointURL],
+        endpoints: [URL] = OverpassHoursSource.defaultEndpoints,
         timeoutSeconds: Int = 90,
         batchSize: Int = 25,
-        retryDelay: Duration = .seconds(30),
+        retryDelay: Duration = .seconds(10),
         sleep: @escaping Sleep = { try await Task.sleep(for: $0) }
     ) {
         self.fetcher = fetcher
-        self.endpoints = endpoints.isEmpty ? [Self.defaultEndpointURL] : endpoints
+        self.endpoints = endpoints.isEmpty ? Self.defaultEndpoints : endpoints
         self.timeoutSeconds = timeoutSeconds
         self.batchSize = min(max(batchSize, 1), Self.maximumBatchSize)
         self.retryDelay = retryDelay
@@ -97,7 +103,11 @@ public struct OverpassHoursSource: Sendable {
     }
 
     public static var defaultEndpointURL: URL {
-        guard let url = URL(string: defaultEndpoint) else {
+        url(for: defaultEndpoint)
+    }
+
+    private static func url(for string: String) -> URL {
+        guard let url = URL(string: string) else {
             preconditionFailure("the Overpass endpoint is a valid URL")
         }
         return url
@@ -134,7 +144,7 @@ public struct OverpassHoursSource: Sendable {
         }
     }
 
-    /// One batch, with its one permitted retry for a retryable failure.
+    /// One batch, with its permitted retries for a retryable failure. The wait before retry N doubles each time.
     private func fetch(_ batch: [HoursLookupTarget]) async -> Result<[OverpassElement], SourcesError> {
         let query = Self.query(for: batch, timeoutSeconds: timeoutSeconds)
         var lastError = SourcesError.refused("no attempt was made")
@@ -149,7 +159,8 @@ public struct OverpassHoursSource: Sendable {
                     return .failure(error)
                 }
                 do {
-                    try await sleep(retryDelay)
+                    // After attempt 0 this is retryDelay, after attempt 1 twice that, after attempt 2 four times that.
+                    try await sleep(retryDelay * (1 << attempt))
                 } catch {
                     return .failure(lastError)
                 }
@@ -158,9 +169,12 @@ public struct OverpassHoursSource: Sendable {
         return .failure(lastError)
     }
 
+    /// Failures worth another attempt: a timeout, a lost connection, or an overloaded server (429, 502, 503, 504).
     static func isRetryable(_ error: SourcesError) -> Bool {
         switch error {
-        case .timedOut, .http(status: 429), .http(status: 504):
+        case .timedOut, .network:
+            return true
+        case .http(status: 429), .http(status: 502), .http(status: 503), .http(status: 504):
             return true
         default:
             return false

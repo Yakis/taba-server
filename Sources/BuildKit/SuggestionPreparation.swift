@@ -97,6 +97,7 @@ public actor SuggestionPreparation {
             HoursLookupTarget(placeId: $0.id, name: $0.name, coordinate: $0.location.coordinate)
         }, cityName: facts.trip.destination.name, checkedAt: today)
         try Task.checkCancellation()
+        await record.append(SourcePreparation.overpassEvent(lookup, seconds: seconds(start.duration(to: .now))))
         for result in lookup.results {
             guard case .found(let found) = result.outcome, let old = places[result.placeId] else { continue }
             places[old.id] = Place(id: old.id, name: old.name, kind: old.kind, location: old.location,

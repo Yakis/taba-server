@@ -152,10 +152,7 @@ public enum SourcePreparation {
                                                         coordinate: $0.location.coordinate) }
         let lookup = await OverpassHoursSource(fetcher: fetcher).hours(for: targets, cityName: city, checkedAt: today)
         try Task.checkCancellation()
-        let unavailable = lookup.results.filter { if case .unavailable = $0.outcome { true } else { false } }.count
-        let foundHours = lookup.results.filter { if case .found = $0.outcome { true } else { false } }.count
-        await record.append(["event": .string("overpass"), "unavailable": .integer(unavailable),
-                             "found": .integer(foundHours), "seconds": .number(seconds(started.duration(to: .now)))])
+        await record.append(overpassEvent(lookup, seconds: seconds(started.duration(to: .now))))
         for result in lookup.results {
             guard case .found(let found) = result.outcome, let old = places[result.placeId] else { continue }
             places[old.id] = Place(id: old.id, name: old.name, kind: old.kind, location: old.location,
@@ -164,6 +161,18 @@ public enum SourcePreparation {
             if !sources.contains(where: { $0.id == found.source.id }) { sources.append(found.source) }
         }
         return lookup
+    }
+
+    /// The evidence event for one Overpass lookup. `error` is recorded only when a batch failed, as its text.
+    static func overpassEvent(_ lookup: OverpassLookup, seconds: Double) -> [String: JSONValue] {
+        let unavailable = lookup.results.filter { if case .unavailable = $0.outcome { true } else { false } }.count
+        let foundHours = lookup.results.filter { if case .found = $0.outcome { true } else { false } }.count
+        var event: [String: JSONValue] = ["event": .string("overpass"), "found": .integer(foundHours),
+                                          "unavailable": .integer(unavailable), "seconds": .number(seconds)]
+        if let error = lookup.error {
+            event["error"] = .string(String(describing: error))
+        }
+        return event
     }
 
     // swiftlint:disable:next function_parameter_count

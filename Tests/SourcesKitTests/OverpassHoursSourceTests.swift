@@ -3,6 +3,7 @@ import GuideKit
 import SourcesKit
 import Testing
 
+// swiftlint:disable:next type_body_length
 struct OverpassHoursSourceTests {
     private let checkedAt = Samples.date("2026-11-08")
     private let oink = HoursLookupTarget(
@@ -22,6 +23,7 @@ struct OverpassHoursSourceTests {
     )
     private let firstEndpoint = URL(string: "https://first.example.com/api/interpreter")!
     private let secondEndpoint = URL(string: "https://second.example.com/api/interpreter")!
+    private let thirdEndpoint = URL(string: "https://third.example.com/api/interpreter")!
 
     private var targets: [HoursLookupTarget] {
         [oink, makars, quiet]
@@ -65,7 +67,7 @@ struct OverpassHoursSourceTests {
             fetcher: fetcher,
             endpoints: endpoints,
             batchSize: batchSize,
-            retryDelay: .seconds(30),
+            retryDelay: .seconds(10),
             sleep: { clock.sleep($0) }
         )
         let result = await source.hours(for: targets ?? self.targets, cityName: "Edinburgh", checkedAt: checkedAt)
@@ -180,11 +182,11 @@ struct OverpassHoursSourceTests {
 
     // MARK: Retries
 
-    @Test func aGatewayTimeoutIsRetriedOnceAfterThirtySeconds() async {
+    @Test func aGatewayTimeoutIsRetriedAfterTenSeconds() async {
         let clock = FakeClock()
         let (result, fetcher) = await lookup([status(504), success(elementsJSON)], clock: clock)
         #expect(await fetcher.requests.count == 2)
-        #expect(clock.sleeps == [.seconds(30)])
+        #expect(clock.sleeps == [.seconds(10)])
         #expect(result.error == nil)
         guard case .found = outcome(result, "fsq:oink") else {
             Issue.record("Oink should be found on the retry")
@@ -196,7 +198,7 @@ struct OverpassHoursSourceTests {
         let clock = FakeClock()
         let (result, fetcher) = await lookup([status(429), success(elementsJSON)], clock: clock)
         #expect(await fetcher.requests.count == 2)
-        #expect(clock.sleeps == [.seconds(30)])
+        #expect(clock.sleeps == [.seconds(10)])
         #expect(result.error == nil)
     }
 
@@ -212,8 +214,49 @@ struct OverpassHoursSourceTests {
         let clock = FakeClock()
         let (result, fetcher) = await lookup([success(timedOut), success(elementsJSON)], clock: clock)
         #expect(await fetcher.requests.count == 2)
-        #expect(clock.sleeps == [.seconds(30)])
+        #expect(clock.sleeps == [.seconds(10)])
         #expect(result.error == nil)
+    }
+
+    @Test(arguments: [502, 503])
+    func aBadGatewayOrAnUnavailableServerIsRetried(code: Int) async {
+        let clock = FakeClock()
+        let (result, fetcher) = await lookup([status(code), success(elementsJSON)], clock: clock)
+        #expect(await fetcher.requests.count == 2)
+        #expect(clock.sleeps == [.seconds(10)])
+        #expect(result.error == nil)
+    }
+
+    @Test func aLostConnectionIsRetried() async {
+        let clock = FakeClock()
+        let (result, fetcher) = await lookup(
+            [.fail(.network("connection lost")), success(elementsJSON)],
+            clock: clock
+        )
+        #expect(await fetcher.requests.count == 2)
+        #expect(clock.sleeps == [.seconds(10)])
+        #expect(result.error == nil)
+    }
+
+    @Test func theEndpointsTakeTurnsAcrossTheAttempts() async {
+        let (_, fetcher) = await lookup(
+            [.fail(.timedOut), .fail(.timedOut), .fail(.timedOut), success(elementsJSON)],
+            endpoints: [firstEndpoint, secondEndpoint, thirdEndpoint]
+        )
+        let hosts = await fetcher.requests.map { $0.url?.host ?? "" }
+        #expect(hosts == ["first.example.com", "second.example.com", "third.example.com", "first.example.com"])
+    }
+
+    @Test func theDefaultEndpointsAreTheMainServerThenTheBackup() {
+        #expect(OverpassHoursSource.defaultEndpoints.map(\.absoluteString) == [
+            "https://overpass-api.de/api/interpreter",
+            "https://overpass.kumi.systems/api/interpreter"
+        ])
+    }
+
+    @Test func noEndpointsFallsBackToTheDefaults() async {
+        let (_, fetcher) = await lookup([success(elementsJSON)], endpoints: [])
+        #expect(await fetcher.requests.first?.url?.host == "overpass-api.de")
     }
 
     @Test func theRetryUsesTheNextEndpoint() async {
@@ -245,11 +288,11 @@ struct OverpassHoursSourceTests {
 
     // MARK: Failure is reported, never thrown
 
-    @Test func aBatchThatFailsTwiceLeavesItsPlacesUnavailable() async {
+    @Test func aBatchThatFailsEveryAttemptLeavesItsPlacesUnavailable() async {
         let clock = FakeClock()
-        let (result, fetcher) = await lookup([status(504), status(504)], clock: clock)
-        #expect(await fetcher.requests.count == 2)
-        #expect(clock.sleeps == [.seconds(30)])
+        let (result, fetcher) = await lookup(Array(repeating: status(504), count: 4), clock: clock)
+        #expect(await fetcher.requests.count == 4)
+        #expect(clock.sleeps == [.seconds(10), .seconds(20), .seconds(40)])
         #expect(result.error == .http(status: 504))
         #expect(result.results.map(\.placeId) == ["fsq:oink", "fsq:makars", "fsq:quiet"])
         #expect(result.results.allSatisfy { $0.outcome == .unavailable })
@@ -261,10 +304,11 @@ struct OverpassHoursSourceTests {
             HoursLookupTarget(placeId: "fsq:f\(index)", name: "Filler \(index)", coordinate: Samples.coordinate(0, 0))
         }
         let (result, fetcher) = await lookup(
-            [.fail(.network("connection lost")), success(elementsJSON)],
+            Array(repeating: ScriptedFetcher.Step.fail(.network("connection lost")), count: 4)
+                + [success(elementsJSON)],
             targets: fillers + targets
         )
-        #expect(await fetcher.requests.count == 2)
+        #expect(await fetcher.requests.count == 5)
         #expect(outcome(result, "fsq:f1") == .unavailable)
         guard case .found = outcome(result, "fsq:oink") else {
             Issue.record("Oink, in the batch after the failure, should still be found")
