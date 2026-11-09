@@ -28,7 +28,8 @@ enum CopyTextChecks {
     // swiftlint:disable:next cyclomatic_complexity
     static func check(_ fields: [CopyField], input: String) -> [CopyCheckIssue] {
         var issues: [CopyCheckIssue] = []
-        let inputNumbers = Set(groundingValues(input).flatMap { matches(numberPattern, $0) }.map(normalNumber))
+        let inputNumbers = Set(groundingValues(input).map(splitDateTimes)
+            .flatMap { matches(numberPattern, $0) }.map(normalNumber))
         let iconicAllowed = containsIconicFact(input)
         var exclamations = 0
         var hearts = 0
@@ -75,6 +76,13 @@ enum CopyTextChecks {
             }
         }
         return issues
+    }
+
+    /// Booking times arrive as ISO local date-times (`2025-11-25T18:52`). The `T` would make the whole value
+    /// one token that grounds neither the date nor the time, so it becomes a space first.
+    private static func splitDateTimes(_ value: String) -> String {
+        value.replacingOccurrences(of: #"(\d{4}-\d{2}-\d{2})T(\d{2}:\d{2})"#, with: "$1 $2",
+                                   options: .regularExpression)
     }
 
     private static func normalNumber(_ value: String) -> String {

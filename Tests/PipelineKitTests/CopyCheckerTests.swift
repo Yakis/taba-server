@@ -156,6 +156,9 @@ struct CopyCheckerTests {
         (#"{"n":21}"#, "Walk twenty-one minutes.", true),
         (#"{"n":10}"#, "It’s 10 minutes.", false),
         (#"{"n":10}"#, "It’s 11 minutes.", true),
+        (#"{"arrives":"2025-11-25T18:52"}"#, "Arriving at 18:52.", false),
+        (#"{"arrives":"2025-11-25T18:52"}"#, "Arriving on 2025-11-25.", false),
+        (#"{"arrives":"2025-11-25T18:52"}"#, "Arriving at 18:53.", true),
         ("not JSON 10", "Walk 10 minutes.", true)
     ])
     func numericTokenContract(input: String, text: String, flagged: Bool) throws {
