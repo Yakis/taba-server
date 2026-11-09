@@ -133,7 +133,8 @@ Each step is reviewed, then committed on its own.
    reader. A historical benchmark uses current provider data plus mock facts, not verified historical hours;
    numerical screening and source-URL membership cannot prove factual truth. Unclassified boundary transport
    bookings fail before AI calls; resolve station/airport endpoints rather than silently dropping travel cutoffs.
-5. **Server.** Hummingbird 2 service:
+5. **Server.** Done, verified with recorded answers; a fresh live API run is still to do.
+   Hummingbird 2 service:
    - one swift-jobs job per pipeline step, each saving its result and queuing the next;
    - Postgres via PostgresNIO and postgres-migrations;
    - a single app token (hummingbird-auth);
@@ -143,8 +144,25 @@ Each step is reviewed, then committed on its own.
    Use AsyncHTTPClient on the server, because `URLSession.bytes` does not exist on Linux: put it behind the
    `HTTPFetching` seam and the ResponsesKit transport.
 
+   Verified locally: Linux release Docker build, Postgres migrations and durable seven-stage swift-jobs
+   execution, bearer-token routes, authenticated resumable SSE, and an Edinburgh API build using recorded
+   sources/answers. Replay returned a structurally valid guide with no plan errors and retained all seven
+   numeric copy flags. Native x86-64 Linux verification also passed in an isolated VPS test setup;
+   restarting both Postgres and the API preserved the guide, review flags and checkpoint/evidence counts,
+   without public ports or changes to existing services. Postgres tests cover duplicates, restart
+   checkpoints/outbox, admission bounds,
+   backend termination/cancellation, recovery and stale-attempt evidence fencing. Fresh provider calls
+   through the API have not been authorized or run. Setup and API details: `docs/SERVER.md`.
+
+   Learned for deployment: exactly-once provider calls cannot be guaranteed across crashes; recover only
+   the in-flight stage, fence evidence by attempt ID, and keep copy review distinct from completion.
+   The local image uses a full Swift runtime; the small static-SDK deployment image is still step 6.
+   Review fixes: an idle read timeout on the HTTP client (a request timeout only covers the response head,
+   so a stalled AI stream could hold the single worker), and a short lock wait so a job pushed while the
+   dispatcher still holds the lock is not skipped.
+
    Done when: the service builds for Linux in Docker, runs locally against a local Postgres, and builds the
-   Edinburgh guide through the API.
+   Edinburgh guide through the API. Linux/Postgres/offline API replay passed; fresh live API verification remains.
 6. **Deploy.** Docker image: a static Linux SDK binary, on a base image with `tzdata` and `ca-certificates`.
    A Compose service plus Postgres on the VPS, listening on host port 18090. ChatGPT credentials moved over
    SSH. The tailnet-only HTTPS host already exists (see the private handoff).

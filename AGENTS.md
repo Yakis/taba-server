@@ -125,6 +125,6 @@ continue without asking the owner what happened.
 
 ## Current state
 
-M1 steps 1–4 are reviewed and committed. `taba build` produced the Edinburgh mock guide with no plan
-issues; copy review flags and a comparison are saved beside its run record. Ambiguous boundary bookings fail safely.
-Next is M1 step 5, the server (`docs/PLAN.md`); no server or deployment changes yet.
+M1 steps 1–5 are reviewed and committed. The server passes local and isolated Linux/Postgres API replays
+with recorded answers. A fresh live API run needs the owner's permission, then step 6 (deploy). See
+`docs/SERVER.md` and `private/HANDOFF.md` before continuing.
