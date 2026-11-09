@@ -185,6 +185,13 @@ Each step is reviewed, then committed on its own.
 
    Done when: a results table is in `docs/` and the default model and effort per step are set in config.
 
+Follow-up from the iOS app (its M2 step 2): `Day.weather` (`DayOutlook`: summary, high and low in °C, rain
+chance, forecast or typical) is in GuideKit, and the app shows it in each day's header. The pipeline already
+fetches this weather in its sources step; it should copy it onto each day when it assembles the guide. Until
+then it is nil and the app leaves the weather out. `GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-guide.json`
+is the finished sample the app ships: the mock assembled by `GuideAssembler` with mocked hero, notes, open
+questions and weather.
+
 ## Decisions already made
 
 - Swift + Hummingbird, not TypeScript, Vapor or Rust.

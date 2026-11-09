@@ -23,6 +23,44 @@ struct RoundTripTests {
         #expect(decoded == stop)
     }
 
+    @Test func dayWithWeatherRoundTrips() throws {
+        let plain = SampleGuide.day()
+        let outlook = DayOutlook(
+            summary: "Rain likely",
+            highCelsius: 8,
+            lowCelsius: 3,
+            rainChance: 70,
+            isForecast: false
+        )
+        let day = Day(date: plain.date, copy: plain.copy, stops: plain.stops, weather: outlook)
+        #expect(try roundTrip(day) == day)
+        let json = try encodedJSON(day)
+        #expect(json.contains("\"weather\""))
+        #expect(json.contains("\"rainChance\" : 70"))
+    }
+
+    @Test func dayWithoutWeatherOmitsTheKey() throws {
+        let day = SampleGuide.day()
+        #expect(day.weather == nil)
+        #expect(try roundTrip(day) == day)
+        #expect(!(try encodedJSON(day)).contains("\"weather\""))
+    }
+
+    @Test func weatherOutlookOmitsUnknownNumbers() throws {
+        let outlook = DayOutlook(
+            summary: "Dry",
+            highCelsius: nil,
+            lowCelsius: nil,
+            rainChance: nil,
+            isForecast: true
+        )
+        #expect(try roundTrip(outlook) == outlook)
+        let json = try encodedJSON(outlook)
+        #expect(!json.contains("highCelsius"))
+        #expect(!json.contains("lowCelsius"))
+        #expect(!json.contains("rainChance"))
+    }
+
     @Test func bookingRoundTrips() throws {
         let booking = SampleGuide.trainBooking()
         let decoded = try roundTrip(booking)

@@ -14,6 +14,19 @@ enum Fixture {
         return try Data(contentsOf: url)
     }
 
+    /// The finished Edinburgh guide: the mock trip assembled with its hero, notes, open questions and weather. Written
+    /// by `FinishedGuide.make()`, and kept in sync by `EdinburghGuideFixtureTests`.
+    static func edinburghGuideData() throws -> Data {
+        guard let url = Bundle.module.url(
+            forResource: "edinburgh-guide",
+            withExtension: "json",
+            subdirectory: "Fixtures"
+        ) else {
+            throw MissingFixtureError()
+        }
+        return try Data(contentsOf: url)
+    }
+
     /// The golden plan schema, as text. Compared byte for byte, so a change to the schema shows up in review.
     static func planSchemaText() throws -> String {
         guard let url = Bundle.module.url(
