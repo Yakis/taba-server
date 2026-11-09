@@ -214,7 +214,7 @@ The first guide built through the app had sound picks but serious gaps. Each fix
 |---|---|---|---|
 | Q1 | Opening hours survive a busy Overpass: retry timeouts, lost connections and 429/502/503/504 four times with doubling waits, rotate to a backup server, record the error in the evidence | Tests cover each retry case; a live run records `found` above 0 or an `error` | done |
 | Q2 | Weather on each day: `GuideAssembler` copies the fetched `DayWeather` onto `Day.weather` (see the follow-up above) | Assembled guides carry `weather` on every day the forecast or archive covers; the fixture still round-trips | done |
-| Q3 | Bus or taxi for long legs: a leg over a set walking time becomes `transit` with an estimated ride time; the pace check counts walking only; the plan input and `plan.md` say how to reach a far-out stay | A stay 10 km out gives ride legs of minutes, not walks of hours, and no pace warning from them | |
+| Q3 | Bus or taxi for long legs: a leg over a set walking time becomes `transit` with an estimated ride time; the pace check counts walking only; the plan input and `plan.md` say how to reach a far-out stay | A stay 10 km out gives ride legs of minutes, not walks of hours, and no pace warning from them | done |
 | Q4 | Interests steer the search: each interest adds Foursquare categories (music venues, markets, …); research findings with a venue are resolved as places so the plan can schedule them | A date-specific event with a venue can appear as a stop | |
 | Q5 | Less repeated copy: `write.md` says unknown hours once in the notes, and on a stop only when it matters | Fewer than a third of stop bodies mention checking hours on a trip with mostly unknown hours | |
 | Q6 | Rebuild the same trip and compare | The owner judges it good | |
@@ -223,6 +223,9 @@ Learned in Q1: overpass-api.de often answers 502 when full, and the public mirro
 so retries with waits matter more than more mirrors. A batch can now take about 8.5 minutes at worst.
 Q2: the assemble stage loads the candidates checkpoint for the weather; `GuideAssembler.assemble` takes an optional
 weather-by-date map, so older callers and the fixture are unchanged.
+Q3: `Travel` in GuideKit is the one rule (walk up to 30 minutes, else a ride of 10 min + road distance at 30 km/h). AI
+inputs renamed: `fromStay`, `areaTravelMinutes`, `fromPrevious`; plan v3, repair v2, write v3. In Edinburgh one area
+pair (36 walk minutes) became a 16-minute ride.
 
 Later, if the AI turns out to be the weak link: a second AI provider with its own key, switchable from the app's
 settings. A paid key needs the owner's yes.
