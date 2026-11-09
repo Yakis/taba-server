@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
+<title>Three short days in Edinburgh</title>
+<style>
+:root {
+  --paper: #F7F2E9;
+  --card: #FFFDF8;
+  --ink: #172A2B;
+  --muted: #6C655B;
+  --stroke: #DDD2C2;
+  --wine: #6E2A3C;
+  --brick: #A14B30;
+  --gold: #D3A75F;
+  --deep: #102528;
+  --on-deep: #F7F0E3;
+  --serif: "New York", ui-serif, "Iowan Old Style", Georgia, serif;
+  --sans: -apple-system, system-ui, "Helvetica Neue", Arial, sans-serif;
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #102528;
+    --card: #172A2B;
+    --ink: #F7F0E3;
+    --muted: #B9AE9C;
+    --stroke: #2E4446;
+    --wine: #E39AAE;
+    --brick: #E59A7E;
+    --gold: #F0C98E;
+    --deep: #0A1A1C;
+    --on-deep: #F7F0E3;
+  }
+  .hero { border-bottom: 1px solid var(--stroke); }
+}
+
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 17px;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--wine);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+h1, h2, h3 { margin: 0; line-height: 1.2; }
+h1, h2 { font-family: var(--serif); font-weight: 600; }
+h3 { font-family: var(--serif); font-weight: 400; }
+p { margin: 0; }
+
+.wrap { max-width: 680px; margin: 0 auto; padding: 0 20px; }
+
+.eyebrow {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 0.35em;
+}
+
+.hero {
+  background: var(--deep);
+  color: var(--on-deep);
+  padding: 56px 0 48px;
+}
+.hero h1 { font-size: 2.4rem; margin: 0.3em 0 0.4em; }
+.hero .eyebrow { color: var(--gold); }
+.hero .subtitle { font-size: 1.15rem; margin-bottom: 0.6em; }
+.hero .dates, .hero .summary { font-size: 0.95rem; }
+.hero .summary { margin-top: 0.2em; }
+.hero .tagline {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 1.1rem;
+  margin-top: 1.4em;
+}
+
+.checks { margin-top: 32px; }
+.checks h2 { font-size: 1.5rem; margin-bottom: 12px; }
+.checklist { list-style: none; margin: 0; padding: 0; }
+.checklist li {
+  position: relative;
+  padding: 10px 0 10px 2em;
+  border-bottom: 1px solid var(--stroke);
+}
+.checklist li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 12px;
+  width: 1.05em;
+  height: 1.05em;
+  border: 1.5px solid var(--muted);
+  border-radius: 4px;
+}
+
+.day { margin-top: 48px; }
+.day-head h2 { font-size: 1.75rem; margin-bottom: 0.4em; }
+.day-head .summary { margin-bottom: 0.5em; }
+.conditions {
+  font-size: 0.9rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.timeline { list-style: none; margin: 24px 0 0; padding: 0; }
+.row {
+  display: grid;
+  grid-template-columns: 3.6em 1.5rem minmax(0, 1fr);
+}
+.time {
+  font-size: 0.95rem;
+  font-weight: 600;
+  padding-top: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.rail { position: relative; }
+.rail::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 50%;
+  width: 1px;
+  margin-left: -0.5px;
+  background: var(--stroke);
+}
+.dot {
+  position: absolute;
+  top: 21px;
+  left: 50%;
+  width: 0.65rem;
+  height: 0.65rem;
+  margin-left: -0.325rem;
+  border-radius: 50%;
+  background: var(--ink);
+}
+.quiet .dot {
+  top: 23px;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-left: -0.225rem;
+  background: var(--muted);
+}
+.meal .dot { background: var(--brick); }
+.drink .dot { background: var(--wine); }
+.meal .eyebrow { color: var(--brick); }
+.drink .eyebrow { color: var(--wine); }
+
+.leg-text {
+  align-self: center;
+  font-size: 0.85rem;
+  color: var(--muted);
+  padding: 4px 0 12px 0;
+  font-variant-numeric: tabular-nums;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--stroke);
+  border-radius: 20px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.card.optional {
+  background: transparent;
+  border-style: dashed;
+}
+.stop h3 { font-size: 1.2rem; margin-bottom: 0.25em; }
+.stop h3 a { color: inherit; text-decoration: none; }
+.stop-place { font-size: 0.9rem; color: var(--muted); margin-bottom: 0.4em; }
+.body { margin-bottom: 0.6em; }
+.meta { font-size: 0.9rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.alt { font-size: 0.9rem; color: var(--muted); margin-top: 0.6em; }
+.tag {
+  display: inline-block;
+  margin-left: 0.6em;
+  padding: 0 0.5em;
+  border: 1px solid var(--stroke);
+  border-radius: 999px;
+  color: var(--muted);
+}
+.badge {
+  display: inline-block;
+  margin-left: 0.4em;
+  padding: 0 0.6em;
+  border: 1px solid var(--wine);
+  border-radius: 999px;
+  color: var(--wine);
+  font-size: 0.8rem;
+  text-decoration: none;
+}
+.info-mark { font-style: normal; }
+
+.part { margin-top: 48px; }
+.list { margin-top: 40px; }
+.list h2 { font-size: 1.5rem; margin-bottom: 0.2em; }
+.caption { color: var(--muted); font-style: italic; margin-bottom: 0.6em; }
+.list-rows { list-style: none; margin: 0; padding: 0; }
+.list-rows li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--stroke);
+}
+.row-name { font-weight: 600; }
+.row-meta { font-size: 0.9rem; color: var(--muted); margin-top: 2px; }
+
+.place { margin-top: 0; }
+.place h3 { font-size: 1.35rem; margin-bottom: 0.25em; }
+.place .blurb { margin-bottom: 0.8em; }
+.info {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  gap: 8px 16px;
+  margin: 0 0 0.9em;
+  font-size: 0.92rem;
+}
+.info dt { color: var(--muted); }
+.info dd { margin: 0; }
+.hours { list-style: none; margin: 0; padding: 0; }
+.note { display: block; font-size: 0.85rem; color: var(--muted); }
+.fact { font-size: 0.92rem; margin-top: 0.5em; }
+.source { font-size: 0.85rem; }
+.muted { color: var(--muted); }
+
+.trip-note h3 { font-size: 1.1rem; margin-bottom: 0.3em; }
+#good-to-know { margin-top: 40px; }
+#good-to-know h2, #tasting h2 { font-size: 1.5rem; margin-bottom: 12px; }
+.facts { margin: 0; padding-left: 1.2em; }
+.facts li { margin-bottom: 0.6em; }
+#tasting { margin-top: 40px; }
+.taste-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+.taste { margin-bottom: 0; }
+.taste h3 { font-size: 1.1rem; margin-bottom: 0.3em; }
+.taste p { font-size: 0.92rem; color: var(--muted); }
+
+.sources { margin-top: 40px; }
+.sources ol { margin: 0; padding-left: 1.3em; font-size: 0.92rem; }
+.sources li { margin-bottom: 0.5em; }
+
+.colophon {
+  text-align: center;
+  color: var(--muted);
+  font-size: 0.8rem;
+  padding: 48px 20px 56px;
+}
+
+@page { size: A4; margin: 14mm; }
+
+@media print {
+  :root {
+    --paper: #F7F2E9;
+    --card: #FFFDF8;
+    --ink: #172A2B;
+    --muted: #6C655B;
+    --stroke: #DDD2C2;
+    --wine: #6E2A3C;
+    --brick: #A14B30;
+    --gold: #D3A75F;
+    --deep: #102528;
+    --on-deep: #F7F0E3;
+  }
+  body { font-size: 10.5pt; }
+  .hero { border-bottom: 0; }
+  .wrap { max-width: none; }
+  .hero, .eyebrow, .dot, .rail::before, .card, .tag, .badge, .checklist li::before {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  a { text-decoration: none; }
+  .day, .part { break-before: page; }
+  .day, .list, .part { margin-top: 0; }
+  .row, .card, .checklist li, .fact, .list-rows li { break-inside: avoid; }
+  h2, h3 { break-after: avoid; }
+  .colophon { padding-bottom: 0; }
+}
+</style>
+</head>
+<body>
+<header class="hero">
+<div class="wrap">
+<p class="eyebrow">Edinburgh</p>
+<h1>Three short days in Edinburgh</h1>
+<p class="subtitle">Markets, closes and a pint by the fire</p>
+<p class="dates">23–25 Nov 2025</p>
+<p class="summary">1–9° · Sunrise 08:05 · Sunset 15:53</p>
+<p class="tagline"><em>Dress for drizzle, plan for magic.</em></p>
+</div>
+</header>
+<main class="wrap">
+<section class="checks">
+<h2>Check before you go</h2>
+<ul class="checklist">
+<li>Check the luggage store&#39;s Sunday hours before you travel.</li>
+<li>Opening hours for Calton Hill are not confirmed.</li>
+<li>Decide whether to book Monday&#39;s dinner or keep it loose.</li>
+</ul>
+</section>
+<section class="day" id="day-1">
+<header class="day-head">
+<p class="eyebrow">Day 1 · Sunday 23 Nov</p>
+<h2>Market first. Magic later.</h2>
+<p class="summary">The Sunday market closes at 16:00, so it gets first dibs on your afternoon.</p>
+<p class="conditions">Cloudy with dry spells, 9° · Sunrise 08:05 · Sunset 15:53</p>
+</header>
+<ol class="timeline">
+<li class="row stop quiet" id="stop-d1-s1">
+<span class="time">12:29</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card">
+<p class="eyebrow">Travel</p>
+<h3><a href="#place-osm-node-7149998196">Arrive at Waverley</a></h3>
+<p class="stop-place"><a href="#place-osm-node-7149998196">Waverley Station</a></p>
+<p class="body">Arrive in Edinburgh. If the apartment is not ready, leave your bags at the luggage store on Rose Street before heading out to Stockbridge.</p>
+<p class="meta">20 min</p>
+</article>
+</li>
+<li class="row leg">
+<span class="time"></span>
+<span class="rail"></span>
+<p class="leg-text">21 min walk · long walk</p>
+</li>
+<li class="row stop meal" id="stop-d1-s2">
+<span class="time">13:15</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card optional">
+<p class="eyebrow">Lunch<span class="tag">Optional</span></p>
+<h3><a href="#place-osm-node-2338447599">Stockbridge Market</a></h3>
+<p class="body">Build your own lunch from whichever hot-food traders are there. Browse the breads, cheese, bakes and little independent stands. Sunday only, 10:00-16:00.</p>
+<p class="meta">1 h 30 min · Open until 16:00</p>
+</article>
+</li>
+<li class="row leg">
+<span class="time"></span>
+<span class="rail"></span>
+<p class="leg-text">11 min walk</p>
+</li>
+<li class="row stop quiet" id="stop-d1-s3">
+<span class="time">15:00</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card">
+<p class="eyebrow">Practical</p>
+<h3><a href="#place-manual-stay-new-town">Bags, check-in and warm up</a></h3>
+<p class="stop-place"><a href="#place-manual-stay-new-town">New Town Test Apartment</a></p>
+<p class="body">Walk back via Rose Street to pick up the bags, then check in, get the kettle on and rest your feet. There is no lift, so take the stairs slowly.</p>
+<p class="meta">1 h</p>
+</article>
+</li>
+<li class="row leg">
+<span class="time"></span>
+<span class="rail"></span>
+<p class="leg-text">8 min walk</p>
+</li>
+<li class="row stop sight" id="stop-d1-s4">
+<span class="time">16:30</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card optional">
+<p class="eyebrow">Sight<span class="tag">Optional</span></p>
+<h3><a href="#place-osm-way-5585005">Christmas market after dark</a></h3>
+<p class="stop-place"><a href="#place-osm-way-5585005">Edinburgh&#39;s Christmas</a></p>
+<p class="body">Big Wheel, festive stalls, drinks and illuminated architecture. East Princes Street Gardens is free to enter; buy only what looks delicious. Come at blue hour.</p>
+<p class="meta">1 h 30 min · Open until 22:00</p>
+</article>
+</li>
+<li class="row leg">
+<span class="time"></span>
+<span class="rail"></span>
+<p class="leg-text">4 min walk</p>
+</li>
+<li class="row stop drink" id="stop-d1-s5">
+<span class="time">19:00</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card optional">
+<p class="eyebrow">Drink<span class="tag">Optional</span></p>
+<h3><a href="#place-osm-node-1367337816">First Edinburgh pint</a></h3>
+<p class="stop-place"><a href="#place-osm-node-1367337816">The Abbotsford</a></p>
+<p class="body">The Abbotsford is close to the apartment and a traditional Scottish pub to start with. No queue required.</p>
+<p class="meta">1 h · <span class="info-mark" aria-hidden="true">ⓘ</span> Hours not confirmed</p>
+</article>
+</li>
+</ol>
+</section>
+<section class="day" id="day-2">
+<header class="day-head">
+<p class="eyebrow">Day 2 · Monday 24 Nov</p>
+<h2>Old stones. Hot food. Cold beer.</h2>
+<p class="summary">Photograph the Old Town by daylight; end near a warm food hall and historic pubs.</p>
+<p class="conditions">Rain likely, 8° · Sunrise 08:07 · Sunset 15:51</p>
+</header>
+<ol class="timeline">
+<li class="row stop sight" id="stop-d2-s1">
+<span class="time">09:30</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card optional">
+<p class="eyebrow">Sight<span class="tag">Optional</span></p>
+<h3><a href="#place-manual-royal-mile">Royal Mile and Castle Esplanade</a></h3>
+<p class="body">Start high, before the streets fill. The castle&#39;s outside forecourt is free; the historic interior needs a ticket.</p>
+<p class="meta">1 h 30 min</p>
+</article>
+</li>
+<li class="row leg">
+<span class="time"></span>
+<span class="rail"></span>
+<p class="leg-text">2 min walk</p>
+</li>
+<li class="row stop meal" id="stop-d2-s2">
+<span class="time">11:30</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card optional">
+<p class="eyebrow">Lunch<span class="tag">Optional</span></p>
+<h3><a href="#place-osm-node-2339288064">Victoria Street and a hog roast</a></h3>
+<p class="stop-place"><a href="#place-osm-node-2339288064">Oink Victoria Street</a></p>
+<p class="body">Photograph the colourful curve, then grab an Oink pork roll with haggis stuffing if you fancy something properly Scottish.</p>
+<p class="meta">1 h · <span class="info-mark" aria-hidden="true">ⓘ</span> Hours not confirmed</p>
+</article>
+</li>
+<li class="row leg">
+<span class="time"></span>
+<span class="rail"></span>
+<p class="leg-text">3 min walk</p>
+</li>
+<li class="row stop sight" id="stop-d2-s3">
+<span class="time">13:00</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card optional">
+<p class="eyebrow">Sight<span class="tag">Optional</span></p>
+<h3><a href="#place-osm-way-192212388">Grassmarket and The Vennel</a></h3>
+<p class="body">Explore the little closes and climb The Vennel for the classic castle view. If it is cold, The Bow Bar is a few steps away on West Bow.</p>
+<p class="meta">1 h</p>
+</article>
+</li>
+<li class="row leg">
+<span class="time"></span>
+<span class="rail"></span>
+<p class="leg-text">21 min walk · long walk</p>
+</li>
+<li class="row stop sight" id="stop-d2-s4">
+<span class="time">15:10</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card optional">
+<p class="eyebrow">Sight<span class="tag">Optional</span></p>
+<h3><a href="#place-osm-node-1149620440">Calton Hill, if skies cooperate</a></h3>
+<p class="body">Get up the hill before the 15:53 sunset. It is windy up there. If the weather turns, swap it for a pub.</p>
+<p class="meta">1 h 15 min</p>
+<p class="alt">If it rains: <a href="#place-osm-node-10785545157">Edinburgh Street Food</a>, 4 min away</p>
+</article>
+</li>
+<li class="row leg">
+<span class="time"></span>
+<span class="rail"></span>
+<p class="leg-text">4 min walk</p>
+</li>
+<li class="row stop meal" id="stop-d2-s5">
+<span class="time">16:45</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card optional">
+<p class="eyebrow">Dinner<span class="tag">Optional</span></p>
+<h3><a href="#place-osm-node-10785545157">Edinburgh Street Food</a></h3>
+<p class="body">Eleven independent kitchens and three bars: an easy dinner of interesting dishes without having to pick one cuisine. Just below Calton Hill.</p>
+<p class="meta">1 h 15 min · <span class="info-mark" aria-hidden="true">ⓘ</span> Hours not confirmed</p>
+</article>
+</li>
+<li class="row leg">
+<span class="time"></span>
+<span class="rail"></span>
+<p class="leg-text">6 min walk</p>
+</li>
+<li class="row stop drink" id="stop-d2-s6">
+<span class="time">19:00</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card optional">
+<p class="eyebrow">Drink<span class="tag">Optional</span></p>
+<h3><a href="#place-osm-node-33185107">One for the road: Guildford Arms</a></h3>
+<p class="stop-place"><a href="#place-osm-node-33185107">The Guildford Arms</a></p>
+<p class="body">Admire the carved interior and ceiling over a Scottish cask ale. The apartment is only a short walk away.</p>
+<p class="meta">1 h · <span class="info-mark" aria-hidden="true">ⓘ</span> Hours not confirmed</p>
+</article>
+</li>
+</ol>
+</section>
+<section class="day" id="day-3">
+<header class="day-head">
+<p class="eyebrow">Day 3 · Tuesday 25 Nov</p>
+<h2>One last wander. Then home.</h2>
+<p class="summary">With a 14:30 train there is time for a slow morning, an unhurried coffee and one final photo stop.</p>
+<p class="conditions">Bright and cold, 7° · Sunrise 08:09 · Sunset 15:50</p>
+</header>
+<ol class="timeline">
+<li class="row stop meal" id="stop-d3-s1">
+<span class="time">08:45</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card optional">
+<p class="eyebrow">Breakfast<span class="tag">Optional</span></p>
+<h3><a href="#place-manual-stay-new-town">A proper Scottish breakfast</a></h3>
+<p class="stop-place"><a href="#place-manual-stay-new-town">New Town Test Apartment</a></p>
+<p class="body">Tattie scones, Lorne sausage and morning rolls at the apartment, or pick a nearby cafe. Take it slowly.</p>
+<p class="meta">1 h</p>
+</article>
+</li>
+<li class="row leg">
+<span class="time"></span>
+<span class="rail"></span>
+<p class="leg-text">6 min walk</p>
+</li>
+<li class="row stop quiet" id="stop-d3-s2">
+<span class="time">10:00</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card">
+<p class="eyebrow">Practical</p>
+<h3><a href="#place-manual-luggage-rose">Check out and leave your bags</a></h3>
+<p class="stop-place"><a href="#place-manual-luggage-rose">Test Luggage Store</a></p>
+<p class="body">Check out before 11:00 and leave your luggage at the test luggage store on Rose Street (published hours 09:00-17:00; check before you go).</p>
+<p class="meta">25 min</p>
+</article>
+</li>
+<li class="row leg">
+<span class="time"></span>
+<span class="rail"></span>
+<p class="leg-text">17 min walk</p>
+</li>
+<li class="row stop sight" id="stop-d3-s3">
+<span class="time">10:30</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card optional">
+<p class="eyebrow">Sight<span class="tag">Optional</span></p>
+<h3><a href="#place-osm-relation-18573379">Dean Village, camera in hand</a></h3>
+<p class="body">About 20-25 minutes on foot, then 40-50 minutes photographing the Water of Leith and old stone buildings. Start heading back by 11:45-12:00.</p>
+<p class="meta">1 h 15 min</p>
+</article>
+</li>
+<li class="row stop meal" id="stop-d3-s4">
+<span class="time">12:20</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card optional">
+<p class="eyebrow">Lunch<span class="tag">Optional</span></p>
+<h3>A quick last bite, or a coffee</h3>
+<p class="body">Back in the New Town, keep lunch simple and close to Queen or Rose Street. No last-minute cross-city detours.</p>
+<p class="meta">45 min</p>
+</article>
+</li>
+<li class="row stop quiet" id="stop-d3-s5">
+<span class="time">13:10</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card">
+<p class="eyebrow">Travel</p>
+<h3><a href="#place-osm-node-7149998196">Collect bags, then Waverley</a></h3>
+<p class="stop-place"><a href="#place-osm-node-7149998196">Waverley Station</a></p>
+<p class="body">Pick up luggage on Rose Street. Allow 15-20 minutes to walk to Waverley plus a margin for the station entrances, and aim to arrive by 13:45.</p>
+<p class="meta">35 min</p>
+</article>
+</li>
+<li class="row stop quiet" id="stop-d3-s6">
+<span class="time">14:30</span>
+<span class="rail"><span class="dot"></span></span>
+<article class="card">
+<p class="eyebrow">Travel</p>
+<h3><a href="#place-osm-node-7149998196">Edinburgh to London King&#39;s Cross</a></h3>
+<p class="stop-place"><a href="#place-osm-node-7149998196">Waverley Station</a></p>
+<p class="body">Your return train leaves Waverley at 14:30 and arrives at London King&#39;s Cross at 18:52. Check the live platform and service status on the day.</p>
+<p class="meta">4 h 22 min</p>
+</article>
+</li>
+</ol>
+</section>
+<section class="part" id="lists">
+<section class="list">
+<h2>Eat</h2>
+<p class="caption">Go hungry. Leave curious.</p>
+<ul class="list-rows">
+<li>
+<p class="row-name"><a href="#place-osm-node-2441578938">Oink Hanover Street</a></p>
+<p class="row-meta">Quick bite · 4 min from the stay</p>
+</li>
+<li>
+<p class="row-name"><a href="#place-osm-node-2338447599">Stockbridge Market</a></p>
+<p class="row-meta">Sunday market · 11 min from the stay</p>
+</li>
+<li>
+<p class="row-name"><a href="#place-osm-node-10785545157">Edinburgh Street Food</a></p>
+<p class="row-meta">Food hall · 14 min from the stay</p>
+</li>
+<li>
+<p class="row-name"><a href="#place-osm-node-658120552">Makars Mash Bar</a></p>
+<p class="row-meta">Comfort food · 11 min from the stay</p>
+</li>
+<li>
+<p class="row-name"><a href="#place-osm-way-5585005">Edinburgh&#39;s Christmas</a></p>
+<p class="row-meta">Winter market · 8 min from the stay</p>
+</li>
+</ul>
+</section>
+<section class="list">
+<h2>Drink</h2>
+<p class="caption">Classic interiors, interesting pints.</p>
+<ul class="list-rows">
+<li>
+<p class="row-name"><a href="#place-osm-node-1367337816">The Abbotsford</a></p>
+<p class="row-meta">Pub · 6 min from the stay</p>
+</li>
+<li>
+<p class="row-name"><a href="#place-osm-node-1367318907">The Bow Bar</a></p>
+<p class="row-meta">Beer and whisky · 13 min from the stay</p>
+</li>
+<li>
+<p class="row-name"><a href="#place-osm-node-33185107">The Guildford Arms</a></p>
+<p class="row-meta">Best interior · 10 min from the stay</p>
+</li>
+<li>
+<p class="row-name"><a href="#place-osm-node-57543992">The Cumberland Bar</a></p>
+<p class="row-meta">Neighbourhood pub · 8 min from the stay</p>
+</li>
+</ul>
+</section>
+<section class="list">
+<h2>Photos</h2>
+<p class="caption">Free views and memorable corners.</p>
+<ul class="list-rows">
+<li>
+<p class="row-name"><a href="#place-osm-way-416314343">Victoria Street</a></p>
+<p class="row-meta">Colour · 13 min from the stay</p>
+</li>
+<li>
+<p class="row-name"><a href="#place-manual-the-vennel">The Vennel</a></p>
+<p class="row-meta">Castle view · 14 min from the stay</p>
+</li>
+<li>
+<p class="row-name"><a href="#place-osm-relation-18573379">Dean Village</a></p>
+<p class="row-meta">Riverside · 20 min from the stay</p>
+</li>
+<li>
+<p class="row-name"><a href="#place-osm-node-1149620440">Calton Hill</a></p>
+<p class="row-meta">Panorama · 18 min from the stay</p>
+</li>
+<li>
+<p class="row-name"><a href="#place-manual-castle-esplanade">Castle Esplanade</a></p>
+<p class="row-meta">Viewpoint · 11 min from the stay</p>
+</li>
+</ul>
+</section>
+<section class="list">
+<h2>Groceries</h2>
+<p class="caption">A few edible souvenirs for the apartment.</p>
+<ul class="list-rows">
+<li>
+<p class="row-name"><a href="#place-osm-node-4752606949">M&amp;S Food Stockbridge</a></p>
+<p class="row-meta">Groceries · 15 min from the stay</p>
+</li>
+</ul>
+</section>
+</section>
+<section class="part" id="places">
+<h2>Places</h2>
+<article class="card place" id="place-osm-node-1149620440">
+<p class="eyebrow">Panorama</p>
+<h3>Calton Hill</h3>
+<p class="blurb">Wide skyline compositions and iconic monuments. Exposed and windy, but worth it.</p>
+<dl class="info">
+<dt>Address</dt><dd>Calton Hill, Edinburgh EH7 5AA<br><span class="note">Approximate location</span></dd>
+<dt>Walk</dt><dd>18 min walk from the stay</dd>
+</dl>
+</article>
+<article class="card place" id="place-manual-castle-esplanade">
+<p class="eyebrow">Viewpoint</p>
+<h3>Castle Esplanade</h3>
+<p class="blurb">The big open forecourt outside Edinburgh Castle is free; the castle interior is ticketed.</p>
+<dl class="info">
+<dt>Address</dt><dd>Castle Esplanade, Edinburgh EH1 2NG<br><span class="note">Approximate location</span></dd>
+<dt>Walk</dt><dd>11 min walk from the stay</dd>
+</dl>
+</article>
+<article class="card place" id="place-osm-relation-18573379">
+<p class="eyebrow">Riverside</p>
+<h3>Dean Village</h3>
+<p class="blurb">Stone houses, bridges and the Water of Leith; a peaceful break from busy streets.</p>
+<dl class="info">
+<dt>Address</dt><dd>Dean Village, Edinburgh EH4 3AY<br><span class="note">Approximate location</span></dd>
+<dt>Walk</dt><dd>20 min walk from the stay</dd>
+</dl>
+</article>
+<article class="card place" id="place-osm-node-10785545157">
+<p class="eyebrow">Food hall</p>
+<h3>Edinburgh Street Food</h3>
+<p class="blurb">Eleven independent kitchens and three bars.</p>
+<dl class="info">
+<dt>Hours</dt><dd><span class="info-mark" aria-hidden="true">ⓘ</span> Hours not confirmed, check before you go</dd>
+<dt>Address</dt><dd>Leith Street, Edinburgh EH1 3AU</dd>
+<dt>Walk</dt><dd>14 min walk from the stay</dd>
+</dl>
+<p class="fact">Opens daily from noon. Closing time not confirmed. <a href="https://omniedinburgh.co.uk/brand-directory/edinburgh-street-food" class="source">Source: omniedinburgh.co.uk</a></p>
+</article>
+<article class="card place" id="place-osm-way-5585005">
+<p class="eyebrow">Winter market</p>
+<h3>Edinburgh&#39;s Christmas</h3>
+<p class="blurb">Street snacks and festive drinks against the lit-up skyline. Free entry; purchases extra.</p>
+<dl class="info">
+<dt>Hours</dt><dd><ul class="hours"><li>Sun 23 Nov: 10:00–22:00</li><li>Mon 24 Nov: 10:00–22:00</li><li>Tue 25 Nov: 10:00–22:00</li></ul></dd>
+<dt>Address</dt><dd>East Princes Street Gardens, Edinburgh<br><span class="note">Approximate location</span></dd>
+<dt>Walk</dt><dd>8 min walk from the stay</dd>
+</dl>
+<p class="fact">Free entry. Purchases extra. <a href="https://edinburgh.org/festivals/edinburghs-christmas/" class="source">Source: edinburgh.org</a></p>
+</article>
+<article class="card place" id="place-osm-way-192212388">
+<p class="eyebrow">Old Town</p>
+<h3>Grassmarket</h3>
+<p class="blurb">Explore the little closes below the castle.</p>
+<dl class="info">
+<dt>Address</dt><dd>Grassmarket, Edinburgh<br><span class="note">Approximate location</span></dd>
+<dt>Walk</dt><dd>14 min walk from the stay</dd>
+</dl>
+</article>
+<article class="card place" id="place-osm-node-4752606949">
+<p class="eyebrow">Groceries</p>
+<h3>M&amp;S Food Stockbridge</h3>
+<p class="blurb">A handy grocery stop after the Sunday market.</p>
+<dl class="info">
+<dt>Hours</dt><dd><span class="info-mark" aria-hidden="true">ⓘ</span> Hours not confirmed, check before you go</dd>
+<dt>Address</dt><dd>36-38 Raeburn Place, Edinburgh EH4 1HN</dd>
+<dt>Walk</dt><dd>15 min walk from the stay</dd>
+</dl>
+</article>
+<article class="card place" id="place-osm-node-658120552">
+<p class="eyebrow">Comfort food</p>
+<h3>Makars Mash Bar</h3>
+<p class="blurb">Slow-cooked mains paired with excellent mashed potatoes.</p>
+<dl class="info">
+<dt>Hours</dt><dd><span class="info-mark" aria-hidden="true">ⓘ</span> Hours not confirmed, check before you go</dd>
+<dt>Address</dt><dd>9-12 Bank Street, Edinburgh EH1 2LN</dd>
+<dt>Walk</dt><dd>11 min walk from the stay</dd>
+</dl>
+</article>
+<article class="card place" id="place-manual-stay-new-town">
+<p class="eyebrow">Stay</p>
+<h3>New Town Test Apartment</h3>
+<dl class="info">
+<dt>Address</dt><dd>Queen Street, Edinburgh EH2<br><span class="note">Approximate location</span></dd>
+</dl>
+</article>
+<article class="card place" id="place-osm-node-2441578938">
+<p class="eyebrow">Quick bite</p>
+<h3>Oink Hanover Street</h3>
+<p class="blurb">A local hog-roast roll with your choice of stuffing: the closest delicious detour.</p>
+<dl class="info">
+<dt>Hours</dt><dd><ul class="hours"><li>Sun 23 Nov: 11:00–17:00</li><li>Mon 24 Nov: 11:00–17:00</li><li>Tue 25 Nov: 11:00–17:00</li></ul></dd>
+<dt>Address</dt><dd>38 Hanover Street, Edinburgh EH2 2DR</dd>
+<dt>Walk</dt><dd>4 min walk from the stay</dd>
+<dt>Website</dt><dd><a href="https://www.oinkhogroast.co.uk/">oinkhogroast.co.uk</a></dd>
+</dl>
+<p class="fact">Open 11:00-17:00 daily, or until sold out. <a href="https://www.oinkhogroast.co.uk/shops/hanover-street/" class="source">Source: oinkhogroast.co.uk</a></p>
+</article>
+<article class="card place" id="place-osm-node-2339288064">
+<p class="eyebrow">Hog roast</p>
+<h3>Oink Victoria Street</h3>
+<p class="blurb">A local hog-roast roll with your choice of stuffing.</p>
+<dl class="info">
+<dt>Hours</dt><dd><span class="info-mark" aria-hidden="true">ⓘ</span> Hours not confirmed, check before you go</dd>
+<dt>Address</dt><dd>34 Victoria Street, Edinburgh EH1 2JW</dd>
+<dt>Walk</dt><dd>13 min walk from the stay</dd>
+</dl>
+</article>
+<article class="card place" id="place-manual-royal-mile">
+<p class="eyebrow">Old Town</p>
+<h3>Royal Mile</h3>
+<p class="blurb">Start high, before the streets fill.</p>
+<dl class="info">
+<dt>Address</dt><dd>Royal Mile, Edinburgh<br><span class="note">Approximate location</span></dd>
+<dt>Walk</dt><dd>12 min walk from the stay</dd>
+</dl>
+</article>
+<article class="card place" id="place-osm-node-2338447599">
+<p class="eyebrow">Sunday market</p>
+<h3>Stockbridge Market</h3>
+<p class="blurb">Independent producers, bakes and rotating hot-food stalls.</p>
+<dl class="info">
+<dt>Hours</dt><dd><ul class="hours"><li>Sun 23 Nov: 10:00–16:00</li><li>Mon 24 Nov: Closed</li><li>Tue 25 Nov: Closed</li></ul></dd>
+<dt>Address</dt><dd>Saunders Street, Edinburgh EH3 6TQ</dd>
+<dt>Walk</dt><dd>11 min walk from the stay</dd>
+</dl>
+<p class="fact">Sunday only, 10:00-16:00. <a href="https://edinburgh.org/things-to-do/markets/" class="source">Source: edinburgh.org</a></p>
+</article>
+<article class="card place" id="place-manual-luggage-rose">
+<p class="eyebrow">Luggage store</p>
+<h3>Test Luggage Store</h3>
+<dl class="info">
+<dt>Hours</dt><dd><ul class="hours"><li>Sun 23 Nov: 09:00–17:00</li><li>Mon 24 Nov: 09:00–17:00</li><li>Tue 25 Nov: 09:00–17:00</li></ul></dd>
+<dt>Address</dt><dd>Rose Street, Edinburgh EH2<br><span class="note">Approximate location</span></dd>
+<dt>Walk</dt><dd>6 min walk from the stay</dd>
+</dl>
+</article>
+<article class="card place" id="place-osm-node-1367337816">
+<p class="eyebrow">Pub</p>
+<h3>The Abbotsford</h3>
+<p class="blurb">A beautifully preserved Edwardian pub with an island bar and real ale.</p>
+<dl class="info">
+<dt>Hours</dt><dd><span class="info-mark" aria-hidden="true">ⓘ</span> Hours not confirmed, check before you go</dd>
+<dt>Address</dt><dd>3-5 Rose Street, Edinburgh EH2 2PR</dd>
+<dt>Walk</dt><dd>6 min walk from the stay</dd>
+</dl>
+</article>
+<article class="card place" id="place-osm-node-1367318907">
+<p class="eyebrow">Beer and whisky</p>
+<h3>The Bow Bar</h3>
+<p class="blurb">A snug Old Town pub with cask beer and a deep whisky list.</p>
+<dl class="info">
+<dt>Hours</dt><dd><span class="info-mark" aria-hidden="true">ⓘ</span> Hours not confirmed, check before you go</dd>
+<dt>Address</dt><dd>80 West Bow, Edinburgh EH1 2HH</dd>
+<dt>Walk</dt><dd>13 min walk from the stay</dd>
+<dt>Website</dt><dd><a href="https://www.thebowbar.co.uk/">thebowbar.co.uk</a></dd>
+</dl>
+<p class="fact">Cask beer and a deep whisky list. <a href="https://www.thebowbar.co.uk/" class="source">Source: thebowbar.co.uk</a></p>
+</article>
+<article class="card place" id="place-osm-node-57543992">
+<p class="eyebrow">Neighbourhood pub</p>
+<h3>The Cumberland Bar</h3>
+<p class="blurb">A calmer, residential New Town pub near Stockbridge.</p>
+<dl class="info">
+<dt>Hours</dt><dd><span class="info-mark" aria-hidden="true">ⓘ</span> Hours not confirmed, check before you go</dd>
+<dt>Address</dt><dd>1-3 Cumberland Street, Edinburgh EH3 6RT</dd>
+<dt>Walk</dt><dd>8 min walk from the stay</dd>
+</dl>
+</article>
+<article class="card place" id="place-osm-node-33185107">
+<p class="eyebrow">Best interior</p>
+<h3>The Guildford Arms</h3>
+<p class="blurb">Ornate Victorian interior, elegant ceiling, Scottish cask ales.</p>
+<dl class="info">
+<dt>Hours</dt><dd><span class="info-mark" aria-hidden="true">ⓘ</span> Hours not confirmed, check before you go</dd>
+<dt>Address</dt><dd>1 West Register Street, Edinburgh EH2 2AA</dd>
+<dt>Walk</dt><dd>10 min walk from the stay</dd>
+<dt>Website</dt><dd><a href="https://guildfordarms.com/">guildfordarms.com</a></dd>
+</dl>
+<p class="fact">Scottish cask ales on rotating taps. <a href="https://guildfordarms.com/visit" class="source">Source: guildfordarms.com</a></p>
+</article>
+<article class="card place" id="place-manual-the-vennel">
+<p class="eyebrow">Castle view</p>
+<h3>The Vennel</h3>
+<p class="blurb">The castle framed above the stairway. Strongest in soft daylight or at blue hour.</p>
+<dl class="info">
+<dt>Address</dt><dd>The Vennel, Edinburgh EH1 2HU<br><span class="note">Approximate location</span></dd>
+<dt>Walk</dt><dd>14 min walk from the stay</dd>
+</dl>
+</article>
+<article class="card place" id="place-osm-way-416314343">
+<p class="eyebrow">Colour</p>
+<h3>Victoria Street</h3>
+<p class="blurb">Curved, colourful shopfronts and cobbles; best before the crowds arrive.</p>
+<dl class="info">
+<dt>Address</dt><dd>Victoria Street, Edinburgh EH1 2EX<br><span class="note">Approximate location</span></dd>
+<dt>Walk</dt><dd>13 min walk from the stay</dd>
+</dl>
+</article>
+<article class="card place" id="place-osm-node-7149998196">
+<p class="eyebrow">Station</p>
+<h3>Waverley Station</h3>
+<p class="blurb">Your arrival and return point.</p>
+<dl class="info">
+<dt>Address</dt><dd>Edinburgh Waverley Station, Edinburgh</dd>
+<dt>Walk</dt><dd>11 min walk from the stay</dd>
+</dl>
+</article>
+</section>
+<section class="part" id="notes">
+<h2>Notes</h2>
+<article class="card trip-note"><h3>Weather</h3><p>Expect 1 to 9°C, short days and rain on at least one of them. A waterproof and good shoes matter more than anything smart.</p></article>
+<article class="card trip-note"><h3>Light</h3><p>The sun rises after eight and sets before four. Blue hour is the best time for the Christmas lights.</p></article>
+<article class="card trip-note"><h3>Backup plan</h3><p>If it pours, swap Calton Hill for the street food hall and save the views for a dry hour.</p></article>
+<article class="card trip-note"><h3>Rules of the trip</h3><p>Eat when you&#39;re hungry, not when the plan says. One pub an evening is plenty. Stairs are fine; hurry is not.</p></article>
+</section>
+<section id="good-to-know">
+<h2>Good to know</h2>
+<ul class="facts">
+<li>Late-November Scotland can be cold, wet and windy. A waterproof layer and comfortable shoes beat a formal outfit. <a href="https://example.com/mock-planning-notes" class="source">Source: example.com</a></li>
+<li>Sunrise roughly 08:03-08:07, sunset around 15:52-15:54 across the visit. Plan outdoor photos before dark. <a href="https://www.timeanddate.com/sun/uk/edinburgh?month=11" class="source">Source: timeanddate.com</a></li>
+<li>New Town Test Apartment: check-in from 15:00, check-out by 11:00, no lift, so expect stairs. Luggage store on Rose Street, 09:00-17:00 daily. <a href="https://example.com/mock-planning-notes" class="source">Source: example.com</a></li>
+<li>Stockbridge Market runs on Sundays, 10:00-16:00. <a href="https://edinburgh.org/things-to-do/markets/" class="source">Source: edinburgh.org</a></li>
+<li>Edinburgh&#39;s Christmas runs 15 Nov 2025 to 4 Jan 2026; the main market is generally 10:00-22:00. <a href="https://edinburgh.org/festivals/edinburghs-christmas/" class="source">Source: edinburgh.org</a></li>
+<li>Rain? Edinburgh Street Food indoors, then the Guildford Arms and a browse for Scottish groceries. Still an excellent day. <a href="https://example.com/mock-planning-notes" class="source">Source: example.com</a></li>
+<li>999 for emergencies. 111 (NHS 24) for urgent medical advice that is not an emergency. <a href="https://example.com/mock-planning-notes" class="source">Source: example.com</a></li>
+</ul>
+</section>
+<section id="tasting">
+<h2>Tasting</h2>
+<div class="taste-grid">
+<article class="card taste"><h3>Lorne sausage</h3><p>Square sausage. Brilliant in a morning roll, especially with a tattie scone.</p></article>
+<article class="card taste"><h3>Haggis, neeps &amp; tatties</h3><p>Peppery, savoury haggis with mashed turnip and potatoes. Order it cooked, not as a souvenir.</p></article>
+<article class="card taste"><h3>Scotch pie or bridie</h3><p>Warm meat pastries from a bakery, ideal when the air is cold.</p></article>
+<article class="card taste"><h3>Black pudding</h3><p>Look for Stornoway black pudding, or try it as part of a Scottish breakfast.</p></article>
+<article class="card taste"><h3>Cullen skink</h3><p>Rich smoked-haddock, potato and onion soup. Made for a wintry day.</p></article>
+<article class="card taste"><h3>Scottish tablet</h3><p>Crumbly, caramel-like and intensely sweet. Buy a small packet first.</p></article>
+<article class="card taste"><h3>Cranachan</h3><p>Cream, toasted oats and raspberries, sometimes with whisky and honey.</p></article>
+<article class="card taste"><h3>A locally brewed pint</h3><p>Scottish cask ale or an Edinburgh lager. It counts as cultural research.</p></article>
+</div>
+</section>
+<section class="sources">
+<h2>Sources</h2>
+<ol>
+<li><a href="https://www.thebowbar.co.uk/">Bow Bar</a> <span class="muted">checked 4 Nov 2025</span></li>
+<li><a href="https://edinburgh.org/festivals/edinburghs-christmas/">Edinburgh&#39;s Christmas</a> <span class="muted">checked 4 Nov 2025</span></li>
+<li><a href="https://guildfordarms.com/visit">Guildford Arms</a> <span class="muted">checked 4 Nov 2025</span></li>
+<li><a href="https://edinburgh.org/things-to-do/markets/">Forever Edinburgh markets</a> <span class="muted">checked 4 Nov 2025</span></li>
+<li><a href="https://example.com/mock-planning-notes">Mock planning notes</a> <span class="muted">checked 4 Nov 2025</span></li>
+<li><a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a> <span class="muted">checked 4 Nov 2025</span></li>
+<li><a href="https://www.oinkhogroast.co.uk/shops/hanover-street/">Oink Hanover Street</a> <span class="muted">checked 4 Nov 2025</span></li>
+<li><a href="https://omniedinburgh.co.uk/brand-directory/edinburgh-street-food">Street Food opening hours</a> <span class="muted">checked 4 Nov 2025</span></li>
+<li><a href="https://www.timeanddate.com/sun/uk/edinburgh?month=11">Sunrise &amp; sunset</a> <span class="muted">checked 4 Nov 2025</span></li>
+</ol>
+</section>
+</main>
+<footer class="colophon"><p>Made with TABA</p></footer>
+</body>
+</html>
