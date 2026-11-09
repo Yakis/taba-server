@@ -5,16 +5,16 @@ extension GuideHTMLStyle {
 
     @media print {
       :root {
-        --paper: #F7F2E9;
-        --card: #FFFDF8;
-        --ink: #172A2B;
-        --muted: #6C655B;
-        --stroke: #DDD2C2;
-        --wine: #6E2A3C;
-        --brick: #A14B30;
+        --paper: #F7F7FF;
+        --card: #FFFFFF;
+        --ink: #1F2731;
+        --muted: #495867;
+        --stroke: #D3E1EE;
+        --coral: #C2372E;
+        --steel: #577399;
         --gold: #D3A75F;
-        --deep: #102528;
-        --on-deep: #F7F0E3;
+        --deep: #495867;
+        --on-deep: #F7F7FF;
       }
       body { font-size: 10.5pt; }
       .hero { border-bottom: 0; }

@@ -49,10 +49,10 @@ extension GuideHTMLStyle {
       margin-left: -0.225rem;
       background: var(--muted);
     }
-    .meal .dot { background: var(--brick); }
-    .drink .dot { background: var(--wine); }
-    .meal .eyebrow { color: var(--brick); }
-    .drink .eyebrow { color: var(--wine); }
+    .meal .dot { background: var(--steel); }
+    .drink .dot { background: var(--coral); }
+    .meal .eyebrow { color: var(--steel); }
+    .drink .eyebrow { color: var(--coral); }
 
     .leg-text {
       align-self: center;
@@ -91,9 +91,9 @@ extension GuideHTMLStyle {
       display: inline-block;
       margin-left: 0.4em;
       padding: 0 0.6em;
-      border: 1px solid var(--wine);
+      border: 1px solid var(--coral);
       border-radius: 999px;
-      color: var(--wine);
+      color: var(--coral);
       font-size: 0.8rem;
       text-decoration: none;
     }

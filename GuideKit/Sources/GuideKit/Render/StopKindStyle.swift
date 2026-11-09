@@ -1,5 +1,5 @@
 /// How a stop is labelled and coloured on the page: its eyebrow words and its CSS class. Mirrors the app's
-/// `KindStyle`. Meals are `meal` (brick), drinks `drink` (wine), sights `sight`, and rest, practical and travel
+/// `KindStyle`. Meals are `meal` (steel), drinks `drink` (coral), sights `sight`, and rest, practical and travel
 /// are `quiet`.
 struct StopKindStyle: Equatable {
     /// Title case, for example "Lunch" or "Sight". The page uppercases it with CSS.

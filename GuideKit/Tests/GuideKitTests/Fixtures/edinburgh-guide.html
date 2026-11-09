@@ -7,16 +7,16 @@
 <title>Three short days in Edinburgh</title>
 <style>
 :root {
-  --paper: #F7F2E9;
-  --card: #FFFDF8;
-  --ink: #172A2B;
-  --muted: #6C655B;
-  --stroke: #DDD2C2;
-  --wine: #6E2A3C;
-  --brick: #A14B30;
+  --paper: #F7F7FF;
+  --card: #FFFFFF;
+  --ink: #1F2731;
+  --muted: #495867;
+  --stroke: #D3E1EE;
+  --coral: #C2372E;
+  --steel: #577399;
   --gold: #D3A75F;
-  --deep: #102528;
-  --on-deep: #F7F0E3;
+  --deep: #495867;
+  --on-deep: #F7F7FF;
   --serif: "New York", ui-serif, "Iowan Old Style", Georgia, serif;
   --sans: -apple-system, system-ui, "Helvetica Neue", Arial, sans-serif;
   color-scheme: light dark;
@@ -24,16 +24,16 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --paper: #102528;
-    --card: #172A2B;
-    --ink: #F7F0E3;
-    --muted: #B9AE9C;
-    --stroke: #2E4446;
-    --wine: #E39AAE;
-    --brick: #E59A7E;
+    --paper: #1B2129;
+    --card: #242C36;
+    --ink: #F7F7FF;
+    --muted: #AFC2D6;
+    --stroke: #36414E;
+    --coral: #FE5F55;
+    --steel: #9DB6D8;
     --gold: #F0C98E;
-    --deep: #0A1A1C;
-    --on-deep: #F7F0E3;
+    --deep: #12171D;
+    --on-deep: #F7F7FF;
   }
   .hero { border-bottom: 1px solid var(--stroke); }
 }
@@ -51,7 +51,7 @@ body {
 }
 
 a {
-  color: var(--wine);
+  color: var(--coral);
   text-decoration: underline;
   text-decoration-thickness: 1px;
   text-underline-offset: 3px;
@@ -157,10 +157,10 @@ p { margin: 0; }
   margin-left: -0.225rem;
   background: var(--muted);
 }
-.meal .dot { background: var(--brick); }
-.drink .dot { background: var(--wine); }
-.meal .eyebrow { color: var(--brick); }
-.drink .eyebrow { color: var(--wine); }
+.meal .dot { background: var(--steel); }
+.drink .dot { background: var(--coral); }
+.meal .eyebrow { color: var(--steel); }
+.drink .eyebrow { color: var(--coral); }
 
 .leg-text {
   align-self: center;
@@ -199,9 +199,9 @@ p { margin: 0; }
   display: inline-block;
   margin-left: 0.4em;
   padding: 0 0.6em;
-  border: 1px solid var(--wine);
+  border: 1px solid var(--coral);
   border-radius: 999px;
-  color: var(--wine);
+  color: var(--coral);
   font-size: 0.8rem;
   text-decoration: none;
 }
@@ -267,16 +267,16 @@ p { margin: 0; }
 
 @media print {
   :root {
-    --paper: #F7F2E9;
-    --card: #FFFDF8;
-    --ink: #172A2B;
-    --muted: #6C655B;
-    --stroke: #DDD2C2;
-    --wine: #6E2A3C;
-    --brick: #A14B30;
+    --paper: #F7F7FF;
+    --card: #FFFFFF;
+    --ink: #1F2731;
+    --muted: #495867;
+    --stroke: #D3E1EE;
+    --coral: #C2372E;
+    --steel: #577399;
     --gold: #D3A75F;
-    --deep: #102528;
-    --on-deep: #F7F0E3;
+    --deep: #495867;
+    --on-deep: #F7F7FF;
   }
   body { font-size: 10.5pt; }
   .hero { border-bottom: 0; }
