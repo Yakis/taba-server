@@ -19,6 +19,9 @@ public struct Guide: Hashable, Sendable, Codable {
     public let notes: GuideNotes?
     /// Things the traveller should check or decide. Omitted when there are none.
     public let openQuestions: [String]?
+    /// The AI model that wrote this guide, as the provider names it, such as gpt-6.1-terra. Omitted for guides
+    /// made before this was recorded.
+    public let aiModel: String?
 
     public init(
         id: String,
@@ -35,7 +38,8 @@ public struct Guide: Hashable, Sendable, Codable {
         sources: [Source],
         hero: GuideHero? = nil,
         notes: GuideNotes? = nil,
-        openQuestions: [String]? = nil
+        openQuestions: [String]? = nil,
+        aiModel: String? = nil
     ) {
         self.id = id
         self.version = version
@@ -52,5 +56,6 @@ public struct Guide: Hashable, Sendable, Codable {
         self.hero = hero
         self.notes = notes
         self.openQuestions = openQuestions
+        self.aiModel = aiModel
     }
 }
