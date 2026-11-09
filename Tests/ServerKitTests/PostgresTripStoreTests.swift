@@ -90,7 +90,8 @@ struct PostgresTripStoreTests {
         }
         let id = try #require(trips.first?.id)
         let guideURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .deletingLastPathComponent().appendingPathComponent("GuideKitTests/Fixtures/edinburgh-mock.json")
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json")
         let guide = try GuideKit.jsonDecoder().decode(Guide.self, from: Data(contentsOf: guideURL))
         let calls = StageCalls()
         let runner: StageRunner = { work, evidence in

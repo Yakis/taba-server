@@ -81,7 +81,7 @@ version.
 
 ## How prompts are judged
 
-The Edinburgh test trip (`Tests/GuideKitTests/Fixtures/edinburgh-mock.json`) is the benchmark. For each
+The Edinburgh test trip (`GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json`) is the benchmark. For each
 prompt version and model, the Milestone 1 bake-off records:
 
 - plan-check errors and warnings on the first answer, and after repair;

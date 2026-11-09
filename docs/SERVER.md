@@ -83,7 +83,7 @@ Create body (14 calendar days maximum; names at most 120 UTF-8 bytes):
 Optional `facts` is an inline Guide scaffold instead of `stay`. Only facts, not its existing plan or copy,
 are used. The dates/destination must match. Unknown top-level fields, server file paths and caller-selected
 provider configuration are not accepted. Request bodies are limited to 1 MiB. An Edinburgh benchmark request
-can embed `Tests/GuideKitTests/Fixtures/edinburgh-mock.json` as `facts`.
+can embed `GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json` as `facts`.
 
 SSE sends durable increasing event IDs and safe status only—not the destination, bookings, provider output
 or raw errors. It emits heartbeats, disables proxy buffering, observes disconnect/cancellation, and closes

@@ -6,8 +6,8 @@ This is a personal project. It is not a product, and it is not accepting contrib
 
 ## Layout
 
-- `Sources/GuideKit`: the shared data model and plan checks. Uses only Foundation APIs that also exist on Linux, so the backend can run it.
-- `Tests/GuideKitTests`: Swift Testing tests.
+- `GuideKit/Sources/GuideKit`: the shared data model and plan checks. Uses only Foundation APIs that also exist on Linux, so the backend can run it.
+- `GuideKit/Tests/GuideKitTests`: Swift Testing tests.
 
 ## Requirements
 

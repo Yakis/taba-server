@@ -3,7 +3,7 @@
 TABA ("There and Back Again") is a personal iOS app. You enter a destination, dates and a budget, and it builds
 a walking field guide: a day-by-day plan of places to see, eat and drink, with opening hours, sun times,
 weather and practical notes. The model is a hand-made Edinburgh guide; the mocked version of it in
-`Tests/GuideKitTests/Fixtures/edinburgh-mock.json` is the benchmark.
+`GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json` is the benchmark.
 
 It is for one person and their family. There is no monetization and no App Store release: the app goes out
 through TestFlight.
@@ -119,7 +119,7 @@ Each step is reviewed, then committed on its own.
 
    ```sh
    swift run taba build --destination Edinburgh --from 2025-11-23 --to 2025-11-25 \
-     --facts Tests/GuideKitTests/Fixtures/edinburgh-mock.json
+     --facts GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json
    ```
 
    `--facts` reads a Guide as a facts scaffold (trip, stay, bookings, places, practical facts and sources),

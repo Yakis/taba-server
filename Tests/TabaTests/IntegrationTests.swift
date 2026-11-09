@@ -23,7 +23,7 @@ private actor SearchFetcher: HTTPFetching {
 }
 
 private func fixture() throws -> Guide {
-    let url = URL(fileURLWithPath: "Tests/GuideKitTests/Fixtures/edinburgh-mock.json")
+    let url = URL(fileURLWithPath: "GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json")
     return try JSONDecoder().decode(Guide.self, from: Data(contentsOf: url))
 }
 

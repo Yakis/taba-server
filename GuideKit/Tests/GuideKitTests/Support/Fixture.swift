@@ -1,6 +1,6 @@
 import Foundation
 
-/// Loads the test resources bundled from Tests/GuideKitTests/Fixtures.
+/// Loads the test resources bundled from GuideKit/Tests/GuideKitTests/Fixtures.
 enum Fixture {
     /// The mock Edinburgh guide: the public venues from a real guide, with personal details replaced.
     static func edinburghMockData() throws -> Data {

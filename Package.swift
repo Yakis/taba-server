@@ -8,7 +8,6 @@ let package = Package(
         .macOS(.v26)
     ],
     products: [
-        .library(name: "GuideKit", targets: ["GuideKit"]),
         .library(name: "PipelineKit", targets: ["PipelineKit"]),
         .executable(name: "foursquare-probe", targets: ["FoursquareProbe"]),
         .executable(name: "taba-chatgpt", targets: ["TabaChatGPT"]),
@@ -18,6 +17,7 @@ let package = Package(
         .executable(name: "taba-server", targets: ["TabaServer"])
     ],
     dependencies: [
+        .package(path: "GuideKit"),
         .package(url: "https://github.com/apple/swift-crypto.git", from: "5.1.1"),
         .package(url: "https://github.com/apple/swift-nio.git", from: "2.81.0"),
         .package(url: "https://github.com/swift-server/async-http-client.git", from: "1.26.0"),
@@ -32,14 +32,11 @@ let package = Package(
     ],
     targets: [
         .target(
-            name: "GuideKit"
-        ),
-        .target(
             name: "PipelineKit",
-            dependencies: ["GuideKit", "SourcesKit", "ResponsesKit"],
+            dependencies: [.product(name: "GuideKit", package: "GuideKit"), "SourcesKit", "ResponsesKit"],
             path: ".",
             exclude: ["AGENTS.md", "CLAUDE.md", "README.md", "docs", "private", "probe-output", "scripts", "Tests",
-                      "Sources/GuideKit", "Sources/FoursquareKit", "Sources/FoursquareProbe", "Sources/ResponsesKit",
+                      "GuideKit", "Sources/FoursquareKit", "Sources/FoursquareProbe", "Sources/ResponsesKit",
                       "Sources/TabaChatGPT", "Sources/SourcesKit", "Sources/SourcesProbe", "Sources/Taba",
                       "Sources/ServerHTTPKit", "Sources/ServerKit", "Sources/BuildKit",
                       "Sources/LivePipelineKit", "Sources/TabaServer", "Dockerfile", "compose.local.yml",
@@ -49,11 +46,11 @@ let package = Package(
         ),
         .target(
             name: "FoursquareKit",
-            dependencies: ["GuideKit"]
+            dependencies: [.product(name: "GuideKit", package: "GuideKit")]
         ),
         .executableTarget(
             name: "FoursquareProbe",
-            dependencies: ["FoursquareKit", "GuideKit"]
+            dependencies: ["FoursquareKit", .product(name: "GuideKit", package: "GuideKit")]
         ),
         .target(
             name: "ResponsesKit",
@@ -64,16 +61,16 @@ let package = Package(
         ),
         .executableTarget(
             name: "TabaChatGPT",
-            dependencies: ["ResponsesKit", "GuideKit"]
+            dependencies: ["ResponsesKit", .product(name: "GuideKit", package: "GuideKit")]
         ),
         .target(
             name: "SourcesKit",
-            dependencies: ["GuideKit", "FoursquareKit"]
+            dependencies: [.product(name: "GuideKit", package: "GuideKit"), "FoursquareKit"]
         ),
         .target(
             name: "ServerKit",
             dependencies: [
-                "GuideKit", "PipelineKit", "ResponsesKit",
+                .product(name: "GuideKit", package: "GuideKit"), "PipelineKit", "ResponsesKit",
                 .product(name: "Hummingbird", package: "hummingbird"),
                 .product(name: "HummingbirdAuth", package: "hummingbird-auth"),
                 .product(name: "Crypto", package: "swift-crypto"),
@@ -96,12 +93,16 @@ let package = Package(
         ),
         .target(
             name: "BuildKit",
-            dependencies: ["GuideKit", "PipelineKit", "SourcesKit", "FoursquareKit", "ResponsesKit"]
+            dependencies: [
+                .product(name: "GuideKit", package: "GuideKit"),
+                "PipelineKit", "SourcesKit", "FoursquareKit", "ResponsesKit"
+            ]
         ),
         .target(
             name: "LivePipelineKit",
-            dependencies: ["BuildKit", "ServerKit", "ServerHTTPKit", "GuideKit", "PipelineKit", "SourcesKit",
-                           "ResponsesKit", .product(name: "AsyncHTTPClient", package: "async-http-client")]
+            dependencies: ["BuildKit", "ServerKit", "ServerHTTPKit", .product(name: "GuideKit", package: "GuideKit"),
+                           "PipelineKit", "SourcesKit", "ResponsesKit",
+                           .product(name: "AsyncHTTPClient", package: "async-http-client")]
         ),
         .executableTarget(
             name: "TabaServer",
@@ -115,16 +116,20 @@ let package = Package(
                            .product(name: "Logging", package: "swift-log"),
                            .product(name: "ServiceLifecycle", package: "swift-service-lifecycle")]
         ),
-        .testTarget(name: "BuildKitTests", dependencies: ["BuildKit", "GuideKit", "PipelineKit", "ResponsesKit"]),
+        .testTarget(name: "BuildKitTests",
+                    dependencies: ["BuildKit", .product(name: "GuideKit", package: "GuideKit"), "PipelineKit",
+                                   "ResponsesKit"]),
         .testTarget(name: "LivePipelineKitTests",
-                    dependencies: ["LivePipelineKit", "ServerKit", "GuideKit", "PipelineKit", "ResponsesKit"]),
+                    dependencies: ["LivePipelineKit", "ServerKit", .product(name: "GuideKit", package: "GuideKit"),
+                                   "PipelineKit", "ResponsesKit"]),
         .executableTarget(
             name: "SourcesProbe",
-            dependencies: ["SourcesKit", "FoursquareKit", "GuideKit"]
+            dependencies: ["SourcesKit", "FoursquareKit", .product(name: "GuideKit", package: "GuideKit")]
         ),
         .executableTarget(
             name: "Taba",
-            dependencies: ["BuildKit", "PipelineKit", "SourcesKit", "FoursquareKit", "GuideKit", "ResponsesKit"]
+            dependencies: ["BuildKit", "PipelineKit", "SourcesKit", "FoursquareKit",
+                           .product(name: "GuideKit", package: "GuideKit"), "ResponsesKit"]
         ),
         .testTarget(
             name: "ServerHTTPKitTests",
@@ -137,7 +142,7 @@ let package = Package(
         ),
         .testTarget(
             name: "ServerKitTests",
-            dependencies: ["ServerKit", "GuideKit", "PipelineKit", "ResponsesKit",
+            dependencies: ["ServerKit", .product(name: "GuideKit", package: "GuideKit"), "PipelineKit", "ResponsesKit",
                            .product(name: "PostgresNIO", package: "postgres-nio"),
                            .product(name: "PostgresMigrations", package: "postgres-migrations"),
                            .product(name: "Jobs", package: "swift-jobs"),
@@ -147,25 +152,21 @@ let package = Package(
         ),
         .testTarget(
             name: "TabaTests",
-            dependencies: ["Taba", "GuideKit"]
+            dependencies: ["Taba", .product(name: "GuideKit", package: "GuideKit")]
         ),
         .testTarget(
             name: "PipelineKitTests",
-            dependencies: ["PipelineKit", "GuideKit", "SourcesKit", "ResponsesKit"],
+            dependencies: ["PipelineKit", .product(name: "GuideKit", package: "GuideKit"), "SourcesKit",
+                           "ResponsesKit"],
             resources: [.copy("Fixtures")]
         ),
         .testTarget(
             name: "SourcesKitTests",
-            dependencies: ["SourcesKit", "FoursquareKit", "GuideKit"]
-        ),
-        .testTarget(
-            name: "GuideKitTests",
-            dependencies: ["GuideKit"],
-            resources: [.copy("Fixtures")]
+            dependencies: ["SourcesKit", "FoursquareKit", .product(name: "GuideKit", package: "GuideKit")]
         ),
         .testTarget(
             name: "FoursquareProbeTests",
-            dependencies: ["FoursquareKit", "GuideKit"]
+            dependencies: ["FoursquareKit", .product(name: "GuideKit", package: "GuideKit")]
         ),
         .testTarget(
             name: "ResponsesKitTests",

@@ -17,7 +17,8 @@ struct ServerAPITests {
         let base = try #require(environment["TABA_TEST_SERVER_URL"])
         let token = try #require(environment["TABA_APP_TOKEN"])
         let fixtureURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
-            .deletingLastPathComponent().appendingPathComponent("GuideKitTests/Fixtures/edinburgh-mock.json")
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json")
         let fixture = try JSONDecoder().decode(Guide.self, from: Data(contentsOf: fixtureURL))
         let input = try TripBuildInput(destination: fixture.trip.destination.name,
             from: fixture.trip.dates.start, to: fixture.trip.dates.end, facts: fixture)

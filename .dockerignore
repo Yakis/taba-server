@@ -8,3 +8,5 @@ probe-output
 *.pem
 *.key
 .DS_Store
+GuideKit/.build
+GuideKit/.swiftpm

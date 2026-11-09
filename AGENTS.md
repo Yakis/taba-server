@@ -45,12 +45,12 @@ This repo is public, because the ChatGPT plan route requires an open-source clie
 
 | Path | What |
 |---|---|
-| `Sources/GuideKit` | Shared model (`Guide`, places, plan, bookings, AI outputs), `PlanChecker`, `SunTimes`, `JSONSchema` builders, `GuideAssembler`. Foundation only, must build on Linux |
+| `GuideKit/` | Nested package: shared model (`Guide`, places, plan, bookings, AI outputs), `PlanChecker`, `SunTimes`, `JSONSchema` builders, `GuideAssembler`. Foundation only, must build on Linux; the iOS app depends on it by path |
 | `Sources/FoursquareKit`, `Sources/FoursquareProbe` | Foursquare wire types and mapping; `foursquare-probe` tool |
 | `Sources/ResponsesKit`, `Sources/TabaChatGPT` | Sign in with ChatGPT (PKCE, ID-token verification), credentials, Responses API streaming client; `taba-chatgpt sign-in` and `taba-chatgpt probe --model <slug>` |
 | `Sources/SourcesKit`, `Sources/SourcesProbe` | Data sources: place matching, OSM hours, weather, geocoding; `taba-sources-probe` |
 | `Prompts/` | The AI prompts, versioned with front matter. See `Prompts/README.md` |
-| `Tests/` | Swift Testing. `Tests/GuideKitTests/Fixtures/edinburgh-mock.json` is the benchmark trip |
+| `Tests/` | Swift Testing. `GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json` is the benchmark trip |
 | `scripts/` | `privacy-scan.sh`, `hooks/pre-commit` |
 | `docs/PLAN.md` | The plan and roadmap |
 | `probe-output/` | Probe reports and raw responses. Gitignored |
@@ -125,6 +125,6 @@ continue without asking the owner what happened.
 
 ## Current state
 
-M1 steps 1–5 are done; a live Edinburgh build through the server API passed. Next: M1 step 6 (deploy,
-needs the owner's yes) and M2, the iOS app, which lives in `../taba-ios` (see `docs/APP.md`). Its first
-step moves GuideKit into `GuideKit/` here. See `docs/SERVER.md` and `private/HANDOFF.md` first.
+M1 steps 1–5 are done; a live Edinburgh build through the server API passed. GuideKit is now a nested
+package in `GuideKit/` (the iOS app's M2 step 1), and the iOS app in `../taba-ios` depends on it by path.
+Next: M1 step 6 (deploy, needs the owner's yes). See `docs/SERVER.md` and `private/HANDOFF.md` first.

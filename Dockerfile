@@ -2,6 +2,7 @@
 FROM swift:6.2-noble AS build
 WORKDIR /build
 COPY Package.swift Package.resolved ./
+COPY GuideKit/Package.swift GuideKit/Package.swift
 RUN --mount=type=cache,id=taba-swift-build,target=/build/.build swift package resolve
 COPY . .
 RUN --mount=type=cache,id=taba-swift-build,target=/build/.build \

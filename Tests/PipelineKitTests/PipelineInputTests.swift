@@ -10,7 +10,8 @@ struct PipelineInputTests {
 
     private func guide() throws -> Guide {
         let url = directory.deletingLastPathComponent()
-            .appendingPathComponent("GuideKitTests/Fixtures/edinburgh-mock.json")
+            .deletingLastPathComponent()
+            .appendingPathComponent("GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json")
         return try JSONDecoder().decode(Guide.self, from: Data(contentsOf: url))
     }
     private func draft(_ guide: Guide) -> PlanDraft {

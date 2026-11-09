@@ -16,7 +16,8 @@ private actor EvidenceLog {
 func replayRunsAllSevenStagesOffline() async throws {
     let directory = try #require(ProcessInfo.processInfo.environment["TABA_REPLAY_TEST_DIRECTORY"])
     let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
-        .appendingPathComponent("GuideKitTests/Fixtures/edinburgh-mock.json")
+        .deletingLastPathComponent()
+        .appendingPathComponent("GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json")
     let guide = try JSONDecoder().decode(Guide.self, from: Data(contentsOf: fixture))
     let input = try TripBuildInput(destination: guide.trip.destination.name, from: guide.trip.dates.start,
                                    to: guide.trip.dates.end, facts: guide)

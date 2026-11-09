@@ -35,7 +35,8 @@ struct GuidePipelineTests {
     private func data() throws -> Fixture {
         let directory = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
         let guide = try JSONDecoder().decode(Guide.self, from: Data(contentsOf: directory
-            .appendingPathComponent("GuideKitTests/Fixtures/edinburgh-mock.json")))
+            .deletingLastPathComponent()
+            .appendingPathComponent("GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json")))
         let day = guide.trip.dates.start
         let trip = Trip(destination: guide.trip.destination, dates: TripDates(start: day, end: day),
                         party: guide.trip.party, budget: guide.trip.budget, interests: guide.trip.interests,
