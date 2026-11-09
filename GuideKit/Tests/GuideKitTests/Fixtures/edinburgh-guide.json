@@ -741,7 +741,8 @@
           "longitude" : -3.1941366
         }
       },
-      "name" : "The Bow Bar"
+      "name" : "The Bow Bar",
+      "website" : "https://www.thebowbar.co.uk/"
     },
     "osm:node/1367337816" : {
       "booking" : {
@@ -931,7 +932,8 @@
           "longitude" : -3.1973604
         }
       },
-      "name" : "Oink Hanover Street"
+      "name" : "Oink Hanover Street",
+      "website" : "https://www.oinkhogroast.co.uk/"
     },
     "osm:node/33185107" : {
       "booking" : {
@@ -971,7 +973,8 @@
           "longitude" : -3.1901937
         }
       },
-      "name" : "The Guildford Arms"
+      "name" : "The Guildford Arms",
+      "website" : "https://guildfordarms.com/"
     },
     "osm:node/4752606949" : {
       "booking" : {

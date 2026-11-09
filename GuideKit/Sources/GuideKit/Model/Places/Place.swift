@@ -14,6 +14,10 @@ public struct Place: Hashable, Sendable, Codable {
     public let facts: [Fact]
     /// Written later by the AI. Omitted until then.
     public let copy: PlaceCopy?
+    /// The place's own website, as a full "https://" address. Omitted when unknown.
+    public let website: String?
+    /// The phone number as the place publishes it, for example "+44 131 496 0000". Omitted when unknown.
+    public let phone: String?
 
     public init(
         id: String,
@@ -26,7 +30,9 @@ public struct Place: Hashable, Sendable, Codable {
         indoor: Bool,
         images: [ImageRef],
         facts: [Fact],
-        copy: PlaceCopy?
+        copy: PlaceCopy?,
+        website: String? = nil,
+        phone: String? = nil
     ) {
         self.id = id
         self.name = name
@@ -39,5 +45,7 @@ public struct Place: Hashable, Sendable, Codable {
         self.images = images
         self.facts = facts
         self.copy = copy
+        self.website = website
+        self.phone = phone
     }
 }

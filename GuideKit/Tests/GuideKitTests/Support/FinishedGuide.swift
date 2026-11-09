@@ -59,7 +59,7 @@ enum FinishedGuide {
         )
     }
 
-    /// The assembled guide, marked ready, with the weather added to each day.
+    /// The assembled guide, marked ready, with the weather added to each day and websites added to a few places.
     private static func finished(_ assembled: Guide) -> Guide {
         let days = assembled.days.map { day in
             Day(date: day.date, copy: day.copy, stops: day.stops, weather: outlook(for: day.date))
@@ -71,7 +71,7 @@ enum FinishedGuide {
             trip: assembled.trip,
             bookings: assembled.bookings,
             stay: assembled.stay,
-            places: assembled.places,
+            places: assembled.places.mapValues(withWebsite),
             days: days,
             lists: assembled.lists,
             tasting: assembled.tasting,
@@ -80,6 +80,32 @@ enum FinishedGuide {
             hero: assembled.hero,
             notes: assembled.notes,
             openQuestions: assembled.openQuestions
+        )
+    }
+
+    /// Websites for the places whose own site is already one of the mock's sources.
+    private static let websites = [
+        "osm:node/1367318907": "https://www.thebowbar.co.uk/",
+        "osm:node/33185107": "https://guildfordarms.com/",
+        "osm:node/2441578938": "https://www.oinkhogroast.co.uk/"
+    ]
+
+    private static func withWebsite(_ place: Place) -> Place {
+        guard let website = websites[place.id] else { return place }
+        return Place(
+            id: place.id,
+            name: place.name,
+            kind: place.kind,
+            location: place.location,
+            hours: place.hours,
+            priceLevel: place.priceLevel,
+            booking: place.booking,
+            indoor: place.indoor,
+            images: place.images,
+            facts: place.facts,
+            copy: place.copy,
+            website: website,
+            phone: place.phone
         )
     }
 

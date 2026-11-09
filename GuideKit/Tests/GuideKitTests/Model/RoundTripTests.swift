@@ -39,6 +39,36 @@ struct RoundTripTests {
         #expect(json.contains("\"rainChance\" : 70"))
     }
 
+    @Test func placeWithWebsiteAndPhoneRoundTrips() throws {
+        let plain = try #require(SampleGuide.samplePlaces().values.first)
+        let place = Place(
+            id: plain.id,
+            name: plain.name,
+            kind: plain.kind,
+            location: plain.location,
+            hours: plain.hours,
+            priceLevel: plain.priceLevel,
+            booking: plain.booking,
+            indoor: plain.indoor,
+            images: plain.images,
+            facts: plain.facts,
+            copy: plain.copy,
+            website: "https://example.com/",
+            phone: "+44 131 496 0000"
+        )
+        #expect(try roundTrip(place) == place)
+        let json = try encodedJSON(place)
+        #expect(json.contains("\"website\" : \"https://example.com/\""))
+        #expect(json.contains("\"phone\" : \"+44 131 496 0000\""))
+    }
+
+    @Test func placeWithoutWebsiteOrPhoneOmitsTheKeys() throws {
+        let place = try #require(SampleGuide.samplePlaces().values.first)
+        let json = try encodedJSON(place)
+        #expect(!json.contains("\"website\""))
+        #expect(!json.contains("\"phone\""))
+    }
+
     @Test func dayWithoutWeatherOmitsTheKey() throws {
         let day = SampleGuide.day()
         #expect(day.weather == nil)

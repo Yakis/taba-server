@@ -192,6 +192,13 @@ then it is nil and the app leaves the weather out. `GuideKit/Tests/GuideKitTests
 is the finished sample the app ships: the mock assembled by `GuideAssembler` with mocked hero, notes, open
 questions and weather.
 
+Follow-up from the iOS app (its M2 step 3): `Place.website` and `Place.phone` are in GuideKit (optional,
+omitted when unknown), and the place sheet shows Website and Call buttons only when they are set. The
+pipeline should fill them: Foursquare's free fields include the website (today it becomes a "Website: …"
+fact instead), and OpenStreetMap tags often carry `website` and `phone` (or `contact:website`,
+`contact:phone`). Foursquare's phone field is a paid Premium field: never call it without asking. The finished
+sample sets websites on three places whose own site is already one of its sources.
+
 ## Decisions already made
 
 - Swift + Hummingbird, not TypeScript, Vapor or Rust.

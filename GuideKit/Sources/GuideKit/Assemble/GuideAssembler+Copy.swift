@@ -132,7 +132,9 @@ extension Place {
             indoor: indoor,
             images: images,
             facts: facts,
-            copy: copy
+            copy: copy,
+            website: website,
+            phone: phone
         )
     }
 }

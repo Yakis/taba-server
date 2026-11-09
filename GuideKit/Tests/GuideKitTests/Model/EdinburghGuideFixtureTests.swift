@@ -75,7 +75,16 @@ struct EdinburghGuideFixtureTests {
         #expect(guide.trip == mock.trip)
         #expect(guide.bookings == mock.bookings)
         #expect(guide.stay == mock.stay)
-        #expect(guide.places == mock.places)
+        #expect(Set(guide.places.keys) == Set(mock.places.keys))
+        // The sample adds websites to a few places; everything else about each place is the mock's.
+        for (id, place) in guide.places {
+            let original = try #require(mock.places[id])
+            #expect(place.website == nil || original.website == nil, "\(id) website comes from the sample")
+            #expect(place.name == original.name && place.kind == original.kind && place.location == original.location)
+            #expect(place.hours == original.hours && place.facts == original.facts && place.copy == original.copy)
+            #expect(place.priceLevel == original.priceLevel && place.booking == original.booking)
+        }
+        #expect(guide.places.values.filter { $0.website != nil }.count == 3)
         #expect(guide.tasting == mock.tasting)
         let lists = guide.lists.map { PlaceList(title: $0.title, caption: $0.caption, placeIds: $0.placeIds) }
         #expect(lists == mock.lists)
