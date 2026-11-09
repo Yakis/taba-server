@@ -106,11 +106,13 @@ public struct LiveStageRunner: Sendable {
             return try await checkpoint(pipeline.copyStage(id: id, model: model, researched: researched, draft: draft,
                 weather: candidates.weather.map(\.value), send: send, evidence: emit))
         case .assemble:
+            let candidates: CandidatesCheckpoint = try load(.candidates, from: work)
             let researched: ResearchedPipeline = try load(.research, from: work)
             let draft: PlanDraft = try load(.check, from: work)
             let copy: GuideCopy = try load(.write, from: work)
             let guide = try await pipeline.assembleStage(id: id, researched: researched, draft: draft,
-                                                          copy: copy, evidence: emit)
+                                                          copy: copy, weather: candidates.weather.map(\.value),
+                                                          evidence: emit)
             let final = assumptions(guide, input: work.input)
             return StageResult(checkpoint: try JSONEncoder().encode(final), guide: final)
         }

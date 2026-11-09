@@ -150,6 +150,23 @@ struct GuidePipelineTests {
         #expect(await script.events.contains { if case .completed = $0 { true } else { false } })
     }
 
+    @Test func assembledGuideTakesTheWeatherForItsDay() async throws {
+        let fixture = try data()
+        let day = fixture.draft.days[0].date
+        let script = PipelineScript([research])
+        let pipeline = GuidePipeline()
+        let researched = try await pipeline.researchStage(
+            model: "fake", facts: fixture.facts, measurements: fixture.measurements, stayArea: "Centre",
+            send: { try await script.send($0) }, evidence: { await script.record($0) })
+        let weather = DayWeather(date: day, rainChance: 40, tempMax: 12.5, tempMin: -0.4, summary: "Rain",
+                                 isForecast: true)
+        let guide = try await pipeline.assembleStage(
+            id: "test", researched: researched, draft: fixture.draft, copy: fixture.copy, weather: [weather],
+            evidence: { await script.record($0) })
+        #expect(guide.days.first?.weather == DayOutlook(summary: "Rain", highCelsius: 13, lowCelsius: 0,
+                                                        rainChance: 40, isForecast: true))
+    }
+
     @Test func completesWithDecodeAndCopyRetries() async throws {
         let fixture = try data()
         let (facts, measurements) = (fixture.facts, fixture.measurements)

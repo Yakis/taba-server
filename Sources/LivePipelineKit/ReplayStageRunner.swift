@@ -103,11 +103,13 @@ public struct ReplayStageRunner: Sendable {
             return try await result(pipeline.copyStage(id: id, model: model, researched: researched, draft: draft,
                 weather: candidate.weather.map(\.value), send: send, evidence: emit))
         case .assemble:
+            let candidate: CandidatesCheckpoint = try load(.candidates, work)
             let researched: ResearchedPipeline = try load(.research, work)
             let draft: PlanDraft = try load(.check, work)
             let copy: GuideCopy = try load(.write, work)
             let output = try await pipeline.assembleStage(id: id, researched: researched, draft: draft,
-                                                           copy: copy, evidence: emit)
+                                                           copy: copy, weather: candidate.weather.map(\.value),
+                                                           evidence: emit)
             return StageResult(checkpoint: try JSONEncoder().encode(output), guide: output)
         }
     }

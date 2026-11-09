@@ -187,7 +187,8 @@ public struct GuidePipeline: Sendable {
     ) async throws -> Guide {
         let copy = try await copyStage(id: id, model: model, researched: researched, draft: draft,
                                        weather: weather, locale: locale, send: send, evidence: evidence)
-        return try await assembleStage(id: id, researched: researched, draft: draft, copy: copy, evidence: evidence)
+        return try await assembleStage(id: id, researched: researched, draft: draft, copy: copy,
+                                       weather: weather, evidence: evidence)
     }
 
     // Writes and checks copy without marking the guide complete.
@@ -236,12 +237,15 @@ public struct GuidePipeline: Sendable {
         throw GuidePipelineError.invalidPlan("No accepted copy")
     }
 
-    /// Assembles and validates the finished guide; completion is emitted only on success.
+    /// Assembles and validates the finished guide; completion is emitted only on success. Each day gets the weather
+    /// for its date from `weather`, when there is some.
     public func assembleStage(
-        id: String, researched: ResearchedPipeline, draft: PlanDraft, copy: GuideCopy, evidence: EvidenceSink
+        id: String, researched: ResearchedPipeline, draft: PlanDraft, copy: GuideCopy,
+        weather: [DayWeather] = [], evidence: EvidenceSink
     ) async throws -> Guide {
         let result = GuideAssembler(walkTimes: walkTimes).assemble(id: id, facts: researched.facts,
-                                                                   draft: draft, copy: copy)
+                                                                   draft: draft, copy: copy,
+                                                                   weather: DayOutlook.outlooks(weather))
         guard result.problems.isEmpty else { throw GuidePipelineError.assemblyProblems(result.problems) }
         try result.guide.validateStructure()
         let finalIssues = PlanChecker(walkTimes: walkTimes).check(result.guide)
