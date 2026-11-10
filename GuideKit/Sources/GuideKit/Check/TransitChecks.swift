@@ -33,9 +33,12 @@ extension PlanChecker {
             let journey = journeyMinutes(station, and: stop.placeId, context)
             let start = stop.start.minutesSinceMidnight
             if start < arrivalMinutes + journey {
-                let message = "\(context.label(stop)) starts at \(Clock.text(start)), "
-                    + "but the train arrives at \(Clock.text(arrivalMinutes)) "
-                    + "and the journey from the station takes \(journey) minutes."
+                let message = arrival.isBooking
+                    ? "\(context.label(stop)) starts at \(Clock.text(start)), "
+                        + "but the train arrives at \(Clock.text(arrivalMinutes)) "
+                        + "and the journey from the station takes \(journey) minutes."
+                    : "\(context.label(stop)) starts at \(Clock.text(start)), "
+                        + "but you arrive at \(Clock.text(arrivalMinutes))."
                 findings.append(Finding(.error, .beforeArrival, date: day.date, stop: stop, message: message))
             }
         }
@@ -56,8 +59,10 @@ extension PlanChecker {
         let leaveBy = departMinutes - 30 - journey
         if end > leaveBy {
             let message = "\(context.label(stop)) ends at \(Clock.text(end)), "
-                + "but you need to leave by \(Clock.text(leaveBy)) for the \(Clock.text(departMinutes)) train, "
-                + "with a 30-minute margin and a \(journey)-minute journey."
+                + (departure.isBooking
+                    ? "but you need to leave by \(Clock.text(leaveBy)) for the \(Clock.text(departMinutes)) train, "
+                        + "with a 30-minute margin and a \(journey)-minute journey."
+                    : "but you need to leave by \(Clock.text(leaveBy)) to be away at \(Clock.text(departMinutes)).")
             return [Finding(.error, .missedDeparture, date: day.date, stop: stop, message: message)]
         }
         if leaveBy - end < 15 {

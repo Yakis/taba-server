@@ -22,6 +22,9 @@ public struct Guide: Hashable, Sendable, Codable {
     /// The AI model that wrote this guide, as the provider names it, such as gpt-6.1-terra. Omitted for guides
     /// made before this was recorded.
     public let aiModel: String?
+    /// How long the server took to make this guide. Omitted for guides made before this was recorded, and for guides
+    /// made on the phone.
+    public let buildTime: BuildTime?
 
     public init(
         id: String,
@@ -39,7 +42,8 @@ public struct Guide: Hashable, Sendable, Codable {
         hero: GuideHero? = nil,
         notes: GuideNotes? = nil,
         openQuestions: [String]? = nil,
-        aiModel: String? = nil
+        aiModel: String? = nil,
+        buildTime: BuildTime? = nil
     ) {
         self.id = id
         self.version = version
@@ -57,5 +61,6 @@ public struct Guide: Hashable, Sendable, Codable {
         self.notes = notes
         self.openQuestions = openQuestions
         self.aiModel = aiModel
+        self.buildTime = buildTime
     }
 }

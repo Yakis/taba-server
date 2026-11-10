@@ -3,6 +3,8 @@
 struct TransitTime {
     let time: LocalDateTime
     let stationPlaceId: String?
+    /// True for a transport booking, false for the arrival or leaving time the traveller typed.
+    var isBooking = true
 }
 
 /// Shared data for the checks, worked out once per guide.
@@ -39,8 +41,16 @@ struct CheckContext {
             .min { $0.departs < $1.departs }
         self.arrivalBooking = arrivalBooking
         self.departureBooking = departureBooking
+        let dates = guide.trip.dates
+        // A booking wins over the times the traveller typed.
         self.arrival = arrivalBooking.map { TransitTime(time: $0.arrives, stationPlaceId: $0.toPlaceId) }
+            ?? dates.arrives.map {
+                TransitTime(time: LocalDateTime(date: dates.start, time: $0), stationPlaceId: nil, isBooking: false)
+            }
         self.departure = departureBooking.map { TransitTime(time: $0.departs, stationPlaceId: $0.fromPlaceId) }
+            ?? dates.leaves.map {
+                TransitTime(time: LocalDateTime(date: dates.end, time: $0), stationPlaceId: nil, isBooking: false)
+            }
     }
 
     func place(_ id: String?) -> Place? {
