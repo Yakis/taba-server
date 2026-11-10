@@ -67,12 +67,12 @@ public enum SourcePreparation {
         let base = basics.facts.value
         var places = base.places
         var sources = base.sources
-        let lookup = try await collectCandidates(options, fetcher: fetcher, key: key, today: basics.today,
-            centre: base.trip.destination.centre, seed: options.facts, places: &places,
+        let (lookup, searchLabels) = try await collectCandidates(options, fetcher: fetcher, key: key,
+            today: basics.today, centre: base.trip.destination.centre, seed: options.facts, places: &places,
             sources: &sources, record: record)
         let facts = TripFacts(trip: base.trip, bookings: base.bookings, stay: base.stay, places: places,
                               practical: base.practical, sources: sources)
-        let (measurements, stayWalks) = try await measure(facts, geocoder: geocoder)
+        let (measurements, stayWalks) = try await measure(facts, geocoder: geocoder, searchLabels: searchLabels)
         let weather = basics.weather.map(\.value)
         await recordSources(facts, measurements: measurements, walks: stayWalks, weather: weather,
                             lookup: lookup, started: started, record: record)
@@ -107,6 +107,7 @@ public enum SourcePreparation {
                                 "summary": .string(day.summary), "forecast": .bool(day.isForecast)
                              ]) }), "stayWalks": value(walks),
                              "areas": value(measurements.areas), "areaLabels": value(measurements.areaLabels),
+                             "searchLabels": value(measurements.searchLabels),
                              "areaWalks": measurements.areaWalkMinutes,
                              "arrivalWalkMinutes": .integer(measurements.arrivalWalkMinutes),
                              "departureWalkMinutes": .integer(measurements.departureWalkMinutes),
@@ -116,15 +117,26 @@ public enum SourcePreparation {
                              "seconds": .number(seconds(started.duration(to: .now)))])
     }
 
+    /// The interest search labels that found each place, by place id. Only the labels of `interestSearches` count.
+    static func searchLabels(_ report: FoursquarePlacesSource.SweepReport,
+                             interestSearches: [FoursquarePlacesSource.CategorySearch]) -> [String: [String]] {
+        let interestLabels = Set(interestSearches.map(\.label))
+        var labels: [String: Set<String>] = [:]
+        for sweep in report.sweeps where interestLabels.contains(sweep.label) {
+            for id in sweep.placeIds { labels[id, default: []].insert(sweep.label) }
+        }
+        return labels.mapValues { $0.sorted() }
+    }
+
     // swiftlint:disable:next function_parameter_count
     static func collectCandidates(_ options: SourceInput, fetcher: CappedFetcher, key: String, today: LocalDate,
                                   centre: Coordinate, seed: Guide?, places: inout [String: Place],
                                   sources: inout [Source],
-                                  record: SourceRecord) async throws -> OverpassLookup {
+                                  record: SourceRecord) async throws -> (OverpassLookup, [String: [String]]) {
         let started = ContinuousClock.now
         let baseKinds: [PlaceKind] = [.cafe, .restaurant, .pub, .viewpoint, .museum, .market, .shop, .grocery]
-        let searches = FoursquarePlacesSource.searches(for: baseKinds)
-            + InterestSearches.searches(for: options.preferences.interests)
+        let interestSearches = InterestSearches.searches(for: options.preferences.interests)
+        let searches = FoursquarePlacesSource.searches(for: baseKinds) + interestSearches
         let report = await FoursquarePlacesSource(fetcher: fetcher, apiKey: key)
             .sweep(searches: searches, around: centre, limit: 6, checkedAt: today)
         try Task.checkCancellation()
@@ -141,8 +153,9 @@ public enum SourcePreparation {
             sources.append(Source(id: FoursquarePlacesSource.sourceId, url: "https://foursquare.com",
                                   title: "Foursquare", checkedAt: today))
         }
-        return try await addHours(additions, city: options.destination, today: today, fetcher: fetcher,
-                                  places: &places, sources: &sources, record: record)
+        let lookup = try await addHours(additions, city: options.destination, today: today, fetcher: fetcher,
+                                        places: &places, sources: &sources, record: record)
+        return (lookup, searchLabels(report, interestSearches: interestSearches))
     }
 
     // swiftlint:disable:next function_parameter_count
@@ -211,7 +224,8 @@ public enum SourcePreparation {
         return TripFacts(trip: trip, bookings: [], stay: stay, places: [place.id: place], practical: [], sources: [])
     }
 
-    public static func measure(_ facts: TripFacts, geocoder: NominatimGeocoder) async throws
+    public static func measure(_ facts: TripFacts, geocoder: NominatimGeocoder,
+                               searchLabels: [String: [String]] = [:]) async throws
         -> (PipelineInputMeasurements, [String: Int]) {
         let places = facts.places
         guard let stayPlace = places[facts.stay.placeId] else { throw SourcePreparationError.factsMismatch }
@@ -231,7 +245,8 @@ public enum SourcePreparation {
             } }.max() ?? 0
         }
         return (PipelineInputMeasurements(areas: areas, places: places, stayWalks: walks,
-                    arrivalWalkMinutes: maximum(arrivals), departureWalkMinutes: maximum(departures)), walks)
+                    arrivalWalkMinutes: maximum(arrivals), departureWalkMinutes: maximum(departures),
+                    searchLabels: searchLabels), walks)
     }
 
     public static func currency(for country: String) -> String {

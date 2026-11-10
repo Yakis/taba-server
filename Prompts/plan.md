@@ -1,6 +1,6 @@
 ---
 id: plan
-version: 3
+version: 4
 role: instructions
 output: PlanDraft
 effort: high
@@ -29,7 +29,7 @@ the words. Your job is choosing and timing.
   `priceLevel` (1–4 or `null`), `bookingNeeded`, and
   `hours` for each trip date. Hours are one of: a list of open periods such as `"10:00-16:00"` (a close time
   earlier than the open time means it closes after midnight), `"closed"`, `"always"` for public spaces, or
-  `"unknown"`.
+  `"unknown"`. `interests` (when present): which of the traveller's interests this place serves.
 - `findings`: time-bound facts for these dates from earlier research, such as markets, events and closures.
   Each has an `id` and other structured fields at the top level; `external` contains `title`, `summary`,
   `times`, `placeName`, `address` and `sourceTitle`.
@@ -96,9 +96,12 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
 
 ## C. Taste.
 
-15. Give each day one clear highlight and a theme you can say in a few words. Spread the interests across the
-    days in their ranked order. Don't put two stops of the same kind back to back, unless that kind is the top
-    interest.
+15. Give each day one clear highlight and a theme you can say in a few words. Give every interest at least one
+    stop over the trip, using a candidate whose `interests` include it or a finding about it, and the top-ranked
+    interests more than one. Time them to suit: music in the evening (a gig, a session or a venue's bar),
+    photography at an outdoor place near `sunset` or before `blueHourEnds`. If no candidate or finding serves an
+    interest, say so in `openQuestions`. Don't put two stops of the same kind back to back, unless that kind is
+    the top interest.
 16. Keep to `dailySpend`: mostly `priceLevel` 1–2 for `low`, up to 3 for `moderate`, any for `high`. Free
     sights suit every level.
 17. Respect mobility notes. For anyone who mentions stairs or hills, avoid long climbs late in the day.

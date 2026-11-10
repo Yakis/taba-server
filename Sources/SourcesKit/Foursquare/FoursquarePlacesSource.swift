@@ -43,6 +43,9 @@ public struct FoursquarePlacesSource: Sendable {
         public let returned: Int
         /// Why the search failed, or nil when it worked.
         public let failure: String?
+        /// The ids of the places this search returned, after closed-place filtering. A place another search also
+        /// returned is listed here too, so a search's places can be told apart from the others.
+        public let placeIds: [String]
     }
 
     public struct SweepReport: Sendable, Equatable {
@@ -109,7 +112,7 @@ public struct FoursquarePlacesSource: Sendable {
         for request in requests {
             guard let categoryIds = request.categoryIds else {
                 outcomes.append(SweepOutcome(label: request.label, returned: 0,
-                                             failure: "no Foursquare category for this kind"))
+                                             failure: "no Foursquare category for this kind", placeIds: []))
                 continue
             }
             do {
@@ -119,17 +122,19 @@ public struct FoursquarePlacesSource: Sendable {
                     radiusMetres: radiusMetres,
                     limit: limit
                 )
+                var returnedIds: [String] = []
                 for hit in hits where !Self.isClosed(hit) {
-                    guard let place = Self.candidate(from: hit, checkedAt: checkedAt),
-                          seenIds.insert(place.id).inserted
-                    else {
-                        continue
+                    guard let place = Self.candidate(from: hit, checkedAt: checkedAt) else { continue }
+                    returnedIds.append(place.id)
+                    if seenIds.insert(place.id).inserted {
+                        places.append(place)
                     }
-                    places.append(place)
                 }
-                outcomes.append(SweepOutcome(label: request.label, returned: hits.count, failure: nil))
+                outcomes.append(SweepOutcome(label: request.label, returned: hits.count, failure: nil,
+                                             placeIds: returnedIds))
             } catch {
-                outcomes.append(SweepOutcome(label: request.label, returned: 0, failure: String(describing: error)))
+                outcomes.append(SweepOutcome(label: request.label, returned: 0, failure: String(describing: error),
+                                             placeIds: []))
             }
         }
         return SweepReport(places: places, sweeps: outcomes)

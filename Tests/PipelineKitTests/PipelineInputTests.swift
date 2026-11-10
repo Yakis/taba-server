@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import Foundation
 import GuideKit
 import PipelineKit
@@ -148,6 +149,34 @@ extension PipelineInputTests {
         let research = try PipelineInputBuilder.research(trip: guide.trip, stayArea: "Old Town")
         try checkGolden("research-input", PipelineInputBuilder.json(research))
     }
+    @Test func planCandidatesNameOnlyTheInterestsTheyServe() throws {
+        let source = try guide()
+        let base = try measurements(source)
+        let stay = try #require(source.places[source.stay.placeId])
+        let venue = try #require(source.places.values.sorted { $0.id < $1.id }.first { $0.kind != .lodging })
+        let trip = Trip(destination: source.trip.destination, dates: source.trip.dates, party: source.trip.party,
+                        budget: source.trip.budget, interests: ["Music"], pace: source.trip.pace,
+                        voice: source.trip.voice)
+        let guide = Guide(id: source.id, version: source.version, status: source.status, trip: trip,
+                          bookings: source.bookings, stay: source.stay, places: source.places, days: source.days,
+                          lists: source.lists, tasting: source.tasting, practical: source.practical,
+                          sources: source.sources)
+        let labelled = PipelineInputMeasurements(areas: base.areas, areaLabels: base.areaLabels,
+            walkFromStay: base.walkFromStay, areaWalkMinutes: base.areaWalkMinutes, alwaysOpenPlaceIDs: [],
+            arrivalWalkMinutes: 10, departureWalkMinutes: 12, arrivalMarginMinutes: 0, departureMarginMinutes: 30,
+            searchLabels: [venue.id: ["music"]])
+        let input = try PipelineInputBuilder.plan(guide: guide, measurements: labelled, weather: [],
+                                                  findings: [], requests: .null)
+        let candidates = try #require(input.objectValue?["candidates"]?.arrayValue).compactMap(\.objectValue)
+        let found = try #require(candidates.first { $0["id"] == .string(venue.id) })
+        #expect(found["interests"] == .array([.string("Music")]))
+        let stayEntry = try #require(candidates.first { $0["id"] == .string(stay.id) })
+        #expect(stayEntry["interests"] == nil)
+        for entry in candidates where entry["interests"] != nil {
+            #expect(entry["interests"]?.arrayValue?.isEmpty == false)
+        }
+    }
+
     @Test func hoursCarryOverAndExceptions() throws {
         let friday = try #require(LocalDate("2025-11-21"))
         let saturday = try #require(friday.adding(days: 1))

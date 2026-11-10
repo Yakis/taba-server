@@ -111,11 +111,13 @@ public actor SuggestionPreparation {
         }
         let newFacts = TripFacts(trip: facts.trip, bookings: facts.bookings, stay: facts.stay, places: places,
                                  practical: facts.practical, sources: sources)
-        let (updated, walks) = try await SourcePreparation.measure(newFacts, geocoder: geocoder)
+        let (updated, walks) = try await SourcePreparation.measure(newFacts, geocoder: geocoder,
+                                                                   searchLabels: measurements.searchLabels)
         await record.append(["event": .string("suggestionPreparation"), "added": value(additions.map(\.id)),
                              "overpassUnavailable": .bool(lookup.error != nil),
                              "seconds": .number(seconds(start.duration(to: .now))), "places": value(places),
                              "sources": value(sources), "areas": value(updated.areas),
+                             "searchLabels": value(updated.searchLabels),
                              "areaWalks": updated.areaWalkMinutes, "stayWalks": value(walks)])
         try await record.check()
         return (newFacts, updated)

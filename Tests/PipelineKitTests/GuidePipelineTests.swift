@@ -522,6 +522,58 @@ extension GuidePipelineTests {
         })
     }
 
+    @Test func unservedInterestIsRecordedOnTheAcceptedPlanWithoutRepair() async throws {
+        let fixture = try data()
+        let place = try #require(fixture.facts.places.values.first {
+            !$0.hours.hoursKnown && $0.kind.needsCopy && $0.indoor
+                && ![.lodging, .station, .luggage].contains($0.kind)
+        })
+        // A music candidate that no stop uses, found by the music search.
+        let venue = try #require(fixture.facts.places.values.sorted { $0.id < $1.id }.first {
+            $0.id != place.id && $0.kind != .lodging
+        })
+        let trip = fixture.facts.trip
+        let facts = TripFacts(trip: Trip(destination: trip.destination, dates: trip.dates, party: trip.party,
+            budget: trip.budget, interests: ["Music"], pace: trip.pace, voice: trip.voice),
+            bookings: fixture.facts.bookings, stay: fixture.facts.stay, places: fixture.facts.places,
+            practical: fixture.facts.practical, sources: fixture.facts.sources)
+        let base = fixture.measurements
+        let measurements = PipelineInputMeasurements(areas: base.areas, areaLabels: base.areaLabels,
+            walkFromStay: base.walkFromStay, areaWalkMinutes: base.areaWalkMinutes, alwaysOpenPlaceIDs: [],
+            arrivalWalkMinutes: base.arrivalWalkMinutes, departureWalkMinutes: base.departureWalkMinutes,
+            arrivalMarginMinutes: base.arrivalMarginMinutes, departureMarginMinutes: base.departureMarginMinutes,
+            searchLabels: [venue.id: ["music"]])
+        let day = fixture.draft.days[0].date
+        let stops = try [("breakfast", "09:00", MealSlot.breakfast), ("lunch", "12:00", .lunch),
+                         ("dinner", "18:00", .dinner)].map { id, time, slot in
+            PlanDraftStop(id: id, placeId: nil, kind: .meal, mealSlot: slot,
+                          start: try #require(LocalTime(time)), minutes: 30, flexible: false,
+                          alternative: nil, reason: "Meal", findingIds: [])
+        } + [PlanDraftStop(id: "sight", placeId: place.id, kind: .sight, mealSlot: nil,
+                           start: try #require(LocalTime("10:00")), minutes: 30, flexible: true,
+                           alternative: nil, reason: "Check hours", findingIds: [])]
+        let draft = PlanDraft(days: [.init(date: day, theme: "Walk", stops: stops)],
+            lists: fixture.draft.lists, skippedMeals: [], openQuestions: [], changes: [])
+        let existing = fixture.copy.places
+        let places = existing.contains { $0.id == place.id } ? existing
+            : existing + [.init(id: place.id, tag: "Local", blurb: "Enjoy a visit.")]
+        let copy = GuideCopy(hero: fixture.copy.hero, days: fixture.copy.days,
+            stops: stops.map { GuideCopyStop(id: $0.id, title: "Stop", body: "Enjoy the day.", actionLabel: nil) },
+            places: places, lists: fixture.copy.lists, tasting: fixture.copy.tasting, notes: fixture.copy.notes)
+        let script = try PipelineScript([research, json(draft), json(copy)])
+        _ = try await GuidePipeline().run(id: "test", model: "fake", facts: facts,
+            measurements: measurements, weather: [], stayArea: "Centre",
+            send: { try await script.send($0) }, evidence: { await script.record($0) })
+        #expect(await script.requests.count == 3)
+        let planIssues = await script.events.compactMap { event -> [PlanIssue]? in
+            if case let .plan(round, issues) = event, round == 0 { return issues }
+            return nil
+        }.first ?? []
+        let missed = planIssues.filter { $0.kind == .interestMissed }
+        #expect(missed.map(\.message) == ["No stop for Music, though 1 candidate serves it."])
+        #expect(missed.allSatisfy { $0.severity == .info && $0.stopId == nil })
+    }
+
     @Test func duplicateStopIDsReachRepairWithoutAssembly() async throws {
         let fixture = try data()
         let day = fixture.draft.days[0]

@@ -218,7 +218,8 @@ The first guide built through the app had sound picks but serious gaps. Each fix
 | Q4 | Interests steer the search: each interest adds Foursquare categories (music venues, markets, …); research findings with a venue are resolved as places so the plan can schedule them | A date-specific event with a venue can appear as a stop | done |
 | Q5 | Less repeated copy: `write.md` says unknown hours once in the notes, and on a stop only when it matters | Fewer than a third of stop bodies mention checking hours on a trip with mostly unknown hours | done |
 | Q5b | Model choice: a trip may name its AI model from a short allowed list (Sol, Terra, Luna on the ChatGPT plan, slugs checked against the account first); `GET /models` tells the app what is offered; the guide records which model made it; the app has a picker in its server settings | A trip built with each model shows which model made it | done |
-| Q6 | Rebuild the same trip and compare | The owner judges it good | |
+| Q6 | Rebuild the same trip and compare | The owner judges it good | run: Sol and Terra good, Luna failed; Terra is the default |
+| Q7 | Every interest gets a stop: candidates say which interests they serve (by kind and by the interest search that found them); plan.md v4 asks for each interest at least once, music in the evening, photography near sunset; an `interestMissed` info issue records misses | A rebuilt Sheffield trip has a music stop and a photography stop, or says why not | |
 
 Learned in Q1: overpass-api.de often answers 502 when full, and the public mirrors are slow or broken at times,
 so retries with waits matter more than more mirrors. A batch can now take about 8.5 minutes at worst.

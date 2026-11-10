@@ -15,11 +15,14 @@ public struct PipelineInputMeasurements: Sendable {
     public let departureWalkMinutes: Int
     public let arrivalMarginMinutes: Int
     public let departureMarginMinutes: Int
+    /// The interest searches that found each place, by place id: the labels of `InterestSearches`, sorted. Places
+    /// found by no interest search are absent.
+    public let searchLabels: [String: [String]]
 
     public init(areas: [String: String], walkFromStay: [String: Int], areaWalkMinutes: JSONValue,
                 arrivalWalkMinutes: Int, departureWalkMinutes: Int,
                 arrivalMarginMinutes: Int = 0, departureMarginMinutes: Int = 30,
-                alwaysOpenPlaceIDs: Set<String> = []) {
+                alwaysOpenPlaceIDs: Set<String> = [], searchLabels: [String: [String]] = [:]) {
         self.areas = areas
         self.areaLabels = areas
         self.walkFromStay = walkFromStay
@@ -29,12 +32,14 @@ public struct PipelineInputMeasurements: Sendable {
         self.departureWalkMinutes = departureWalkMinutes
         self.arrivalMarginMinutes = arrivalMarginMinutes
         self.departureMarginMinutes = departureMarginMinutes
+        self.searchLabels = searchLabels
     }
 
     /// Reconstructs a measured input without losing the distinction between area IDs and labels.
     public init(areas: [String: String], areaLabels: [String: String], walkFromStay: [String: Int],
                 areaWalkMinutes: JSONValue, alwaysOpenPlaceIDs: Set<String>, arrivalWalkMinutes: Int,
-                departureWalkMinutes: Int, arrivalMarginMinutes: Int, departureMarginMinutes: Int) {
+                departureWalkMinutes: Int, arrivalMarginMinutes: Int, departureMarginMinutes: Int,
+                searchLabels: [String: [String]] = [:]) {
         self.areas = areas
         self.areaLabels = areaLabels
         self.walkFromStay = walkFromStay
@@ -44,12 +49,13 @@ public struct PipelineInputMeasurements: Sendable {
         self.departureWalkMinutes = departureWalkMinutes
         self.arrivalMarginMinutes = arrivalMarginMinutes
         self.departureMarginMinutes = departureMarginMinutes
+        self.searchLabels = searchLabels
     }
 
     public init(areas: Areas, places: [String: Place], stayWalks: [String: Int],
                 arrivalWalkMinutes: Int, departureWalkMinutes: Int,
                 arrivalMarginMinutes: Int = 0, departureMarginMinutes: Int = 30,
-                alwaysOpenPlaceIDs: Set<String> = []) {
+                alwaysOpenPlaceIDs: Set<String> = [], searchLabels: [String: [String]] = [:]) {
         var ids: [String: String] = [:]
         var labels: [String: String] = [:]
         var matrix: [String: [String: JSONValue]] = [:]
@@ -72,6 +78,7 @@ public struct PipelineInputMeasurements: Sendable {
         self.arrivalMarginMinutes = arrivalMarginMinutes
         self.departureMarginMinutes = departureMarginMinutes
         self.alwaysOpenPlaceIDs = alwaysOpenPlaceIDs
+        self.searchLabels = searchLabels
     }
 }
 
@@ -271,8 +278,9 @@ public enum PipelineInputBuilder {
                                                                     to: place.location.coordinate))
         return travelValue(mode: leg.mode, minutes: leg.minutes)
     }
+    // Interests are only for the plan's candidates, so the writer's input is unchanged.
     private static func place(_ place: Place, dates: [LocalDate], measurements: PipelineInputMeasurements,
-                              writing: Bool, stay: Place?) throws -> JSONValue {
+                              writing: Bool, stay: Place?, interests: [String] = []) throws -> JSONValue {
         guard let area = measurements.areas[place.id] else { throw PipelineInputError.missingArea(place.id) }
         guard let walk = measurements.walkFromStay[place.id], walk >= 0 else {
             throw PipelineInputError.missingWalk(place.id)
@@ -290,6 +298,10 @@ public enum PipelineInputBuilder {
         if writing {
             result["address"] = try optional(place.location.address)
             result["external"] = .object(["facts": try value(place.facts)])
+        } else {
+            let served = InterestMatch.interests(for: interests, kind: place.kind, indoor: place.indoor,
+                                                 searchLabels: measurements.searchLabels[place.id] ?? [])
+            if !served.isEmpty { result["interests"] = .array(served.map { .string($0) }) }
         }
         return .object(result)
     }
@@ -304,7 +316,8 @@ public enum PipelineInputBuilder {
         }
         let stay = guide.places[guide.stay.placeId]
         let places = try guide.places.values.sorted { $0.id < $1.id }.map {
-            try place($0, dates: dates, measurements: measurements, writing: false, stay: stay)
+            try place($0, dates: dates, measurements: measurements, writing: false, stay: stay,
+                      interests: guide.trip.interests)
         }
         return .object(["trip": try trip(guide.trip, writing: false, locale: ""), "anchors": try anchors(guide),
                         "days": .array(days), "areaTravelMinutes": measurements.areaWalkMinutes,

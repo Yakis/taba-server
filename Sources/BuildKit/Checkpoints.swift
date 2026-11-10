@@ -48,18 +48,22 @@ public struct MeasurementsSnapshot: Codable, Sendable {
     public let departureWalkMinutes: Int
     public let arrivalMarginMinutes: Int
     public let departureMarginMinutes: Int
+    /// Optional so that checkpoints written before this key existed still decode; nil means no interest labels.
+    public let searchLabels: [String: [String]]?
     public init(_ input: PipelineInputMeasurements) {
         areas = input.areas; areaLabels = input.areaLabels; walkFromStay = input.walkFromStay
         areaWalkMinutes = input.areaWalkMinutes; alwaysOpenPlaceIDs = input.alwaysOpenPlaceIDs
         arrivalWalkMinutes = input.arrivalWalkMinutes; departureWalkMinutes = input.departureWalkMinutes
         arrivalMarginMinutes = input.arrivalMarginMinutes; departureMarginMinutes = input.departureMarginMinutes
+        searchLabels = input.searchLabels
     }
     public var value: PipelineInputMeasurements {
         PipelineInputMeasurements(areas: areas, areaLabels: areaLabels, walkFromStay: walkFromStay,
                                   areaWalkMinutes: areaWalkMinutes, alwaysOpenPlaceIDs: alwaysOpenPlaceIDs,
                                   arrivalWalkMinutes: arrivalWalkMinutes, departureWalkMinutes: departureWalkMinutes,
                                   arrivalMarginMinutes: arrivalMarginMinutes,
-                                  departureMarginMinutes: departureMarginMinutes)
+                                  departureMarginMinutes: departureMarginMinutes,
+                                  searchLabels: searchLabels ?? [:])
     }
 }
 

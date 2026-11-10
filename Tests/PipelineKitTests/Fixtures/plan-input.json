@@ -135,6 +135,9 @@
       },
       "id" : "manual:castle-esplanade",
       "indoor" : false,
+      "interests" : [
+        "photography"
+      ],
       "kind" : "viewpoint",
       "name" : "Castle Esplanade",
       "priceLevel" : null
@@ -179,6 +182,9 @@
       },
       "id" : "manual:royal-mile",
       "indoor" : false,
+      "interests" : [
+        "photography"
+      ],
       "kind" : "street",
       "name" : "Royal Mile",
       "priceLevel" : null
@@ -217,6 +223,9 @@
       },
       "id" : "manual:the-vennel",
       "indoor" : false,
+      "interests" : [
+        "photography"
+      ],
       "kind" : "street",
       "name" : "The Vennel",
       "priceLevel" : null
@@ -236,6 +245,10 @@
       },
       "id" : "osm:node/10785545157",
       "indoor" : true,
+      "interests" : [
+        "food",
+        "markets"
+      ],
       "kind" : "foodHall",
       "name" : "Edinburgh Street Food",
       "priceLevel" : null
@@ -255,6 +268,9 @@
       },
       "id" : "osm:node/1149620440",
       "indoor" : false,
+      "interests" : [
+        "photography"
+      ],
       "kind" : "viewpoint",
       "name" : "Calton Hill",
       "priceLevel" : null
@@ -274,6 +290,9 @@
       },
       "id" : "osm:node/1367318907",
       "indoor" : true,
+      "interests" : [
+        "pubs"
+      ],
       "kind" : "pub",
       "name" : "The Bow Bar",
       "priceLevel" : null
@@ -293,6 +312,9 @@
       },
       "id" : "osm:node/1367337816",
       "indoor" : true,
+      "interests" : [
+        "pubs"
+      ],
       "kind" : "pub",
       "name" : "The Abbotsford",
       "priceLevel" : null
@@ -314,6 +336,10 @@
       },
       "id" : "osm:node/2338447599",
       "indoor" : false,
+      "interests" : [
+        "food",
+        "markets"
+      ],
       "kind" : "market",
       "name" : "Stockbridge Market",
       "priceLevel" : null
@@ -333,6 +359,9 @@
       },
       "id" : "osm:node/2339288064",
       "indoor" : true,
+      "interests" : [
+        "food"
+      ],
       "kind" : "restaurant",
       "name" : "Oink Victoria Street",
       "priceLevel" : null
@@ -358,6 +387,9 @@
       },
       "id" : "osm:node/2441578938",
       "indoor" : true,
+      "interests" : [
+        "food"
+      ],
       "kind" : "restaurant",
       "name" : "Oink Hanover Street",
       "priceLevel" : null
@@ -377,6 +409,9 @@
       },
       "id" : "osm:node/33185107",
       "indoor" : true,
+      "interests" : [
+        "pubs"
+      ],
       "kind" : "pub",
       "name" : "The Guildford Arms",
       "priceLevel" : null
@@ -396,6 +431,9 @@
       },
       "id" : "osm:node/4752606949",
       "indoor" : true,
+      "interests" : [
+        "food"
+      ],
       "kind" : "grocery",
       "name" : "M&S Food Stockbridge",
       "priceLevel" : null
@@ -415,6 +453,9 @@
       },
       "id" : "osm:node/57543992",
       "indoor" : true,
+      "interests" : [
+        "pubs"
+      ],
       "kind" : "pub",
       "name" : "The Cumberland Bar",
       "priceLevel" : null
@@ -434,6 +475,9 @@
       },
       "id" : "osm:node/658120552",
       "indoor" : true,
+      "interests" : [
+        "food"
+      ],
       "kind" : "restaurant",
       "name" : "Makars Mash Bar",
       "priceLevel" : null
@@ -472,6 +516,9 @@
       },
       "id" : "osm:relation/18573379",
       "indoor" : false,
+      "interests" : [
+        "photography"
+      ],
       "kind" : "neighbourhood",
       "name" : "Dean Village",
       "priceLevel" : null
@@ -491,6 +538,9 @@
       },
       "id" : "osm:way/192212388",
       "indoor" : false,
+      "interests" : [
+        "photography"
+      ],
       "kind" : "street",
       "name" : "Grassmarket",
       "priceLevel" : null
@@ -510,6 +560,9 @@
       },
       "id" : "osm:way/416314343",
       "indoor" : false,
+      "interests" : [
+        "photography"
+      ],
       "kind" : "street",
       "name" : "Victoria Street",
       "priceLevel" : null
@@ -535,6 +588,10 @@
       },
       "id" : "osm:way/5585005",
       "indoor" : false,
+      "interests" : [
+        "food",
+        "markets"
+      ],
       "kind" : "market",
       "name" : "Edinburgh's Christmas",
       "priceLevel" : null

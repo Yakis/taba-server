@@ -163,7 +163,7 @@ private func weather(_ event: [String: JSONValue]) throws -> [DayWeather] {
                    summary: try decode(day, "summary"), isForecast: try decode(day, "forecast"))
     }
 }
-private func measurements(_ event: [String: JSONValue], fallback: PipelineInputMeasurements?, facts: TripFacts) throws
+func measurements(_ event: [String: JSONValue], fallback: PipelineInputMeasurements?, facts: TripFacts) throws
     -> PipelineInputMeasurements {
     let areas: [String: String] = try decode(event, "areas")
     let labels: [String: String]
@@ -172,6 +172,11 @@ private func measurements(_ event: [String: JSONValue], fallback: PipelineInputM
         for (place, area) in fallback.areas { names[area] = fallback.areaLabels[place] }
         labels = areas.mapValues { names[$0] ?? $0 }
     } else { labels = try decode(event, "areaLabels") }
+    // Evidence from before interest labels existed has no key: keep the fallback's labels, or none.
+    let searchLabels: [String: [String]]
+    if event["searchLabels"] == nil { searchLabels = fallback?.searchLabels ?? [:] } else {
+        searchLabels = try decode(event, "searchLabels")
+    }
     let walker = StraightLineWalkTimes()
     func maximum(_ anchors: [Place]) -> Int {
         anchors.flatMap { anchor in facts.places.values.map {
@@ -187,5 +192,6 @@ private func measurements(_ event: [String: JSONValue], fallback: PipelineInputM
         arrivalWalkMinutes: fallback == nil ? try decode(event, "arrivalWalkMinutes") : maximum(arrivals),
         departureWalkMinutes: fallback == nil ? try decode(event, "departureWalkMinutes") : maximum(departures),
         arrivalMarginMinutes: try fallback?.arrivalMarginMinutes ?? decode(event, "arrivalMarginMinutes"),
-        departureMarginMinutes: try fallback?.departureMarginMinutes ?? decode(event, "departureMarginMinutes"))
+        departureMarginMinutes: try fallback?.departureMarginMinutes ?? decode(event, "departureMarginMinutes"),
+        searchLabels: searchLabels)
 }

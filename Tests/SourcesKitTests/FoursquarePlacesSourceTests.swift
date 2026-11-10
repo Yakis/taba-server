@@ -137,6 +137,19 @@ struct FoursquarePlacesSourceTests {
         #expect(report.sweeps.first?.failure == nil)
     }
 
+    @Test func eachSearchRecordsTheIdsItReturned() async {
+        let source = FoursquarePlacesSource(fetcher: fetcher(), apiKey: "test-key-not-real")
+        let cafe = FoursquarePlacesSource.CategorySearch(label: "cafe", categoryIds: [cafeCategory])
+        let pubs = FoursquarePlacesSource.CategorySearch(label: "pubs", categoryIds: [pubCategory])
+        let report = await source.sweep(searches: [cafe, pubs], around: centre, limit: 6, checkedAt: checkedAt)
+        let cafeIds = report.sweeps[0].placeIds
+        #expect(cafeIds.count == 2)
+        // Beta is returned by both searches, so the pub search lists it too. The closed pub is not listed.
+        #expect(report.sweeps[1].placeIds == [cafeIds[1]])
+        #expect(report.sweeps.flatMap(\.placeIds).allSatisfy { id in report.places.contains { $0.id == id } })
+        #expect(report.places.count == 2)
+    }
+
     @Test func aHitWithoutACoordinateIsLeftOut() async {
         let category = "{\"fsq_category_id\":\"\(cafeCategory)\",\"name\":\"Cafe\"}"
         let noPoint = HitJSON.search([

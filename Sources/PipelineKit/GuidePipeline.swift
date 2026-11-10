@@ -159,11 +159,15 @@ public struct GuidePipeline: Sendable {
                               stopId: issue.stopId.map { reverse[$0] ?? $0 }, message: issue.message)
                 }
             }
-            await evidence(.plan(round: round, issues: issues))
-            if !issues.contains(where: { $0.severity != .info })
-                || (round == 2 && !issues.contains(where: { $0.severity == .error })) {
+            let accepted = !issues.contains(where: { $0.severity != .info })
+                || (round == 2 && !issues.contains(where: { $0.severity == .error }))
+            if accepted {
+                // Interest misses are reported with the accepted plan only, so they never reach a repair.
+                let misses = interestMisses(withTransit, facts: facts, measurements: researched.measurements)
+                await evidence(.plan(round: round, issues: issues + misses))
                 return withTransit
             }
+            await evidence(.plan(round: round, issues: issues))
             guard round < 2 else { throw GuidePipelineError.planErrors(issues) }
             let legs = measuredLegs(withTransit, facts: facts)
             let payload = try PipelineInputBuilder.repair(issues: issues, legs: legs)
@@ -377,6 +381,28 @@ private extension GuidePipeline {
                                          "mode": mode, "minutes": minutes])
             }
         })
+    }
+
+    /// One info issue for each trip interest that no stop's place serves, while at least one candidate serves it.
+    /// The issue's date is the trip's first day, since the miss is about the whole trip.
+    private func interestMisses(_ draft: PlanDraft, facts: TripFacts,
+                                measurements: PipelineInputMeasurements) -> [PlanIssue] {
+        func served(_ place: Place) -> [String] {
+            InterestMatch.interests(for: facts.trip.interests, kind: place.kind, indoor: place.indoor,
+                                    searchLabels: measurements.searchLabels[place.id] ?? [])
+        }
+        let stopPlaces = draft.days.flatMap(\.stops).compactMap { $0.placeId.flatMap { facts.places[$0] } }
+        let covered = Set(stopPlaces.flatMap(served))
+        let candidates = facts.places.values.map { served($0) }
+        var reported = Set<String>()
+        return facts.trip.interests.compactMap { interest in
+            guard !covered.contains(interest), reported.insert(interest).inserted else { return nil }
+            let count = candidates.filter { $0.contains(interest) }.count
+            guard count > 0 else { return nil }
+            let phrase = count == 1 ? "1 candidate serves it" : "\(count) candidates serve it"
+            return PlanIssue(severity: .info, kind: .interestMissed, date: facts.trip.dates.start, stopId: nil,
+                             message: "No stop for \(interest), though \(phrase).")
+        }
     }
 
     // swiftlint:disable:next cyclomatic_complexity
