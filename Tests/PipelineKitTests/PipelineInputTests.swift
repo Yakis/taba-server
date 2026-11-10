@@ -266,6 +266,25 @@ extension PipelineInputTests {
         #expect(day["window"] == .object(["start": .string("10:10"), "end": .string("17:18")]))
     }
 
+    @Test func handLuggageOnlyReachesTheStayInTheAnchors() throws {
+        let source = try guide()
+        func plan(_ stay: Stay) throws -> JSONValue {
+            let guide = Guide(id: source.id, version: source.version, status: source.status, trip: source.trip,
+                              bookings: source.bookings, stay: stay, places: source.places, days: source.days,
+                              lists: source.lists, tasting: source.tasting, practical: source.practical,
+                              sources: source.sources)
+            return try PipelineInputBuilder.plan(guide: guide, measurements: try measurements(guide), weather: [],
+                                                 findings: [], requests: .object([:]))
+        }
+        let base = source.stay
+        let withOnly = try plan(Stay(placeId: base.placeId, checkIn: base.checkIn, checkOut: base.checkOut,
+                                     luggage: nil, handLuggageOnly: true))
+        let stayFields = withOnly.objectValue?["anchors"]?.objectValue?["stay"]?.objectValue
+        #expect(stayFields?["handLuggageOnly"] == .bool(true))
+        let unsaid = try plan(base)
+        #expect(unsaid.objectValue?["anchors"]?.objectValue?["stay"]?.objectValue?["handLuggageOnly"] == nil)
+    }
+
     /// The fixture with its trip dates replaced by the given times, and optionally its bookings.
     private func withTimes(_ source: Guide, dates: TripDates? = nil, bookings: [Booking]? = nil,
                            arrives: LocalTime? = nil, leaves: LocalTime? = nil) -> Guide {

@@ -104,4 +104,19 @@ struct InterestMatchTests {
                                              searchLabels: ["music", "parks"])
         #expect(served == ["Music", "Nature"])
     }
+
+    @Test func researchLabelServesItsInterestWhateverTheKind() {
+        #expect(serves("Photography", .other, indoor: true, labels: [InterestMatch.interestLabel(for: "Photography")]))
+        #expect(serves("photography", .other, indoor: true, labels: ["interest:Photography"]))
+        #expect(serves("Photos", .other, indoor: true, labels: ["interest:photos"]))
+        #expect(!serves("Food", .other, indoor: true, labels: ["interest:photos"]))
+        #expect(!serves("Photography", .other, indoor: true, labels: ["interest:photos"]))
+    }
+
+    @Test func researchLabelsServeOnlyTheirOwnWords() {
+        let served = InterestMatch.interests(for: ["Food", "Photos", "Art"], kind: .other, indoor: true,
+                                             searchLabels: ["interest:Photos", "interest:Art Deco"])
+        #expect(served == ["Photos"])
+        #expect(InterestMatch.interestLabel(for: "Art") == "interest:Art")
+    }
 }

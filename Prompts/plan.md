@@ -1,6 +1,6 @@
 ---
 id: plan
-version: 6
+version: 7
 role: instructions
 output: PlanDraft
 effort: high
@@ -17,7 +17,8 @@ the words. Your job is choosing and timing.
   `leaves` (when they leave it on the last day). When there is no transport booking, these are the arrival and
   departure, and the windows already allow for them.
 - `anchors`: fixed times. Arrivals and departures, the stay's check-in and check-out times, luggage storage
-  hours, and ticketed bookings. Code adds the arrival and departure travel stops itself. Don't plan them.
+  hours, ticketed bookings, and whether the travellers carry only hand luggage (`stay.handLuggageOnly`). Code
+  adds the arrival and departure travel stops itself. Don't plan them.
 - `days`: for each date: weekday, `window` (the earliest start and latest end for anything you plan that day),
   `sunrise`, `sunset`, `blueHourEnds`, and `weather` with `rainChance` (0–100). Code has already worked out
   the windows from arrivals, departures and safety margins. On a departure day, `window.end` is the latest time
@@ -66,6 +67,11 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
    - With no luggage store, keep the time spent carrying bags short. On the arrival day, stay near the stay
      until check-in. On the departure day, plan the check-out stop as late as check-out time and the morning
      allow, and keep what follows close together.
+   - When `anchors.stay.handLuggageOnly` is true, the travellers carry only a small bag. Plan no luggage stops,
+     and don't shape the arrival or departure day around bags: go straight into the day on arrival, check in any
+     time after check-in, check out by check-out time, and use the rest of the last day until `window.end`.
+   - On a one-day trip there is no night, so plan no check-in or check-out. The stay is only used if a rest
+     there helps.
 7. Ticketed bookings in `anchors` appear exactly at their booked time.
 
 ## B. Quality. Break only to satisfy section A.

@@ -224,6 +224,7 @@ The first guide built through the app had sound picks but serious gaps. Each fix
 | Q9 | Delete a guide: `DELETE /trips/:id` removes a finished trip and all its rows (409 while building); the app's Library deletes a guide on the phone and asks the server to delete its copy | A guide deleted in the app is gone from the server | deployed 2026-11-10 (taba-server:q9) |
 | Q10 | Arrival and leaving times (`arrives`/`leaves`, plan.md v5), stages of different trips run in parallel (`TABA_WORKERS`, default 3; per-trip locks, Overpass one at a time, one shared ChatGPT refresh), guides record `buildTime`; the copy check no longer fails a guide over closing times, spelled numbers or a rewrite that is still slightly long | A trip arriving at 12:29 gets no breakfast that day; three builds at once finish in about the time of the slowest | deployed 2026-11-10 (taba-server:q10) |
 | Q11 | From the Edinburgh model comparison: a place is used once per trip (`placeRepeated` warning, plan.md v6); stop bodies stop repeating the walk, the length and the opening hours the card already shows, and stop talking about the plan (write.md v5); photo spots reach the candidates (a `views` interest search, research.md v3 names streets as streets, 12 suggestions looked up instead of 8, a photography stop each full day); a trip may name a luggage store (`luggage`) | A rebuilt Edinburgh has no repeated cafe or pub, no body opening "Walk N minutes", and a photo stop from the suggested spots on each full day | deployed 2026-11-10 (taba-server:q11); owner to rebuild Edinburgh |
+| Q12 | From the Q11 rebuild review: a one-day trip skips the check-in and check-out checks (it has no night; Sonnet `f164403e…` failed on that); "only hand luggage" (`handLuggageOnly`, `Stay.handLuggageOnly`, plan.md v7, write.md v6: no bag stops or bag talk); research suggestions name the interests they serve (`SuggestedPlace.interests`, research.md v4, `interest:` search labels) and keep a suggested street, neighbourhood or viewpoint kind and outdoors; names that share only a place-type word ("The Vennel Steps", "Waverley Steps") are not a match | A rebuilt Edinburgh (22–24 Nov, hand luggage only) has no bag talk, and Dean Village, Circus Lane or Calton Hill reaches the candidates with Photography; a one-day trip builds | deployed 2026-11-10 (taba-server:q12); owner to rebuild Edinburgh |
 
 Learned in Q1: overpass-api.de often answers 502 when full, and the public mirrors are slow or broken at times,
 so retries with waits matter more than more mirrors. A batch can now take about 8.5 minutes at worst.
@@ -243,6 +244,9 @@ the deploy, through `/models`, so the Mac never refreshes the shared ChatGPT sig
 Q11: research had been suggesting Victoria Street as a `viewpoint`, and the lookup drops road hits for every kind but
 `street` and `neighbourhood`, so it never became a candidate. DeepSeek answers research with a sentence and a fenced
 `json` block, which fails to decode: not fixed yet.
+Q12: Foursquare files streets and hills as `other` or `landmark`, and indoor follows the kind, so suggested photo spots
+lost Photography; research now tags interests. Replay gap: when every suggestion is already a candidate, no
+`suggestionPreparation` event is recorded, so a replay of that research stage fails (older than Q12).
 
 Later, if the AI turns out to be the weak link: a second AI provider with its own key, switchable from the app's
 settings. A paid key needs the owner's yes.

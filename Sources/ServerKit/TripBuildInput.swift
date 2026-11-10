@@ -26,6 +26,8 @@ public struct TripBuildInput: Codable, Sendable {
     public let leaves: LocalTime?
     /// The place where bags can wait, such as a station's left luggage or a hotel that keeps bags. Nil when none.
     public let luggage: String?
+    /// True when the travellers carry only hand luggage, so the plan has no bag drops. Nil when not said or false.
+    public let handLuggageOnly: Bool?
 
     public enum ValidationError: Error, Equatable, Sendable {
         case invalidDestination, invalidStay, invalidDates, factsMismatch, tooManyFacts, unknownField
@@ -37,10 +39,14 @@ public struct TripBuildInput: Codable, Sendable {
                 facts: Guide? = nil, pace: Pace? = nil, interests: [String]? = nil,
                 dailySpend: DailySpend? = nil, adults: Int? = nil, children: Int? = nil,
                 mobilityNotes: [String]? = nil, model: String? = nil,
-                arrives: LocalTime? = nil, leaves: LocalTime? = nil, luggage: String? = nil) throws {
+                arrives: LocalTime? = nil, leaves: LocalTime? = nil, luggage: String? = nil,
+                handLuggageOnly: Bool? = nil) throws {
         guard Self.validName(destination) else { throw ValidationError.invalidDestination }
         guard model.map({ ModelChoice.isWellFormed($0) }) ?? true else { throw ValidationError.invalidModel }
         try Self.validatePlaces(stay: stay, luggage: luggage)
+        // Hand luggage only means there are no bags, so a place where bags can wait cannot also be named.
+        let onlyHandLuggage = handLuggageOnly == true
+        guard !(onlyHandLuggage && luggage != nil) else { throw ValidationError.invalidLuggage }
         // Inclusive maximum of 14 calendar days, even around DST and month/year boundaries.
         guard from <= to, let limit = from.adding(days: 13), to <= limit else {
             throw ValidationError.invalidDates
@@ -50,7 +56,7 @@ public struct TripBuildInput: Codable, Sendable {
         // Stated times are preferences too: a facts seed already says when the traveller is in the city.
         let hasPreferences = pace != nil || interests != nil || dailySpend != nil
             || adults != nil || children != nil || mobilityNotes != nil || arrives != nil || leaves != nil
-            || luggage != nil
+            || luggage != nil || onlyHandLuggage
         // On a one-day trip, the traveller must have at least two hours there between arriving and leaving.
         if let arrives, let leaves, from == to {
             guard leaves.minutesSinceMidnight - arrives.minutesSinceMidnight >= 120 else {
@@ -84,6 +90,7 @@ public struct TripBuildInput: Codable, Sendable {
         self.arrives = arrives
         self.leaves = leaves
         self.luggage = luggage
+        self.handLuggageOnly = onlyHandLuggage ? true : nil
     }
 
     /// The same input with the model resolved, so the stored trip records the model its build will use even if the
@@ -93,7 +100,8 @@ public struct TripBuildInput: Codable, Sendable {
         return (try? TripBuildInput(destination: destination, from: from, to: to, stay: stay, facts: facts,
                                     pace: pace, interests: interests, dailySpend: dailySpend, adults: adults,
                                     children: children, mobilityNotes: mobilityNotes, model: resolved,
-                                    arrives: arrives, leaves: leaves, luggage: luggage)) ?? self
+                                    arrives: arrives, leaves: leaves, luggage: luggage,
+                                    handLuggageOnly: handLuggageOnly)) ?? self
     }
 
     /// The places a trip may name: where it stays, and where bags can wait.
@@ -131,6 +139,7 @@ public struct TripBuildInput: Codable, Sendable {
     private enum Keys: String, CodingKey, CaseIterable {
         case destination, from, to, stay, facts
         case pace, interests, dailySpend, adults, children, mobilityNotes, model, arrives, leaves, luggage
+        case handLuggageOnly
     }
     private struct AnyKey: CodingKey {
         let stringValue: String
@@ -158,6 +167,7 @@ public struct TripBuildInput: Codable, Sendable {
                       model: values.decodeIfPresent(String.self, forKey: .model),
                       arrives: values.decodeIfPresent(LocalTime.self, forKey: .arrives),
                       leaves: values.decodeIfPresent(LocalTime.self, forKey: .leaves),
-                      luggage: values.decodeIfPresent(String.self, forKey: .luggage))
+                      luggage: values.decodeIfPresent(String.self, forKey: .luggage),
+                      handLuggageOnly: values.decodeIfPresent(Bool.self, forKey: .handLuggageOnly))
     }
 }

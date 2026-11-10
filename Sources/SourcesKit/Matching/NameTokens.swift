@@ -10,6 +10,15 @@ public enum NameTokens {
         "ltd", "limited", "co"
     ]
 
+    /// Words that name a kind of place, such as a hill, a park or a station. Two names that share only these words are
+    /// not the same place (see `nameSimilarity`). They are not in `generic`, so a shared place-type word still counts
+    /// when other words match too.
+    public static let placeTypeWords: Set<String> = [
+        "steps", "hill", "garden", "gardens", "park", "square", "bridge", "close", "wynd", "village", "market",
+        "gallery", "museum", "church", "cathedral", "castle", "monument", "tower", "gate", "station", "hall", "house",
+        "centre", "center"
+    ]
+
     /// The lowest name similarity that counts as the same place.
     public static let acceptableSimilarity = 0.5
 
@@ -28,7 +37,19 @@ public enum NameTokens {
     /// The similarity of two names as an F1 score from 0 to 1. It is 1 when the significant tokens match exactly,
     /// and 0 when they share none.
     public static func nameSimilarity(_ wantedName: String, _ foundName: String, cityName: String? = nil) -> Double {
-        similarity(significant(wantedName, cityName: cityName), significant(foundName, cityName: cityName))
+        let wanted = significant(wantedName, cityName: cityName)
+        let found = significant(foundName, cityName: cityName)
+        if sharesOnlyPlaceTypeWords(wanted, found) { return 0 }
+        return similarity(wanted, found)
+    }
+
+    /// True when the two token lists share some words, all of them place-type words, and the wanted name has a word
+    /// that is not a place-type word. "The Vennel Steps" and "Waverley Steps" share only "steps", so they are not the
+    /// same place. A wanted name that is only place-type words, such as "Steps", still matches as before.
+    static func sharesOnlyPlaceTypeWords(_ wanted: [String], _ found: [String]) -> Bool {
+        let shared = Set(wanted).intersection(found)
+        guard !shared.isEmpty, shared.isSubset(of: placeTypeWords) else { return false }
+        return wanted.contains { !placeTypeWords.contains($0) }
     }
 
     /// F1 overlap of two token lists: the share of wanted tokens found, balanced against the share of found tokens

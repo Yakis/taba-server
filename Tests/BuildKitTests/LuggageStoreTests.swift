@@ -29,10 +29,11 @@ private let assumedHours = "Luggage store hours 08:00 to 20:00 are an assumption
 private let notFound = "The luggage store could not be found on the map, so the plan carries the bags. "
     + "Check where bags can be left."
 
-private func basics(luggage: String?, fetcher: NominatimFake) async throws -> TripFacts {
+private func basics(luggage: String?, handLuggageOnly: Bool = false, fetcher: NominatimFake) async throws -> TripFacts {
     let start = try #require(LocalDate("2025-11-23"))
     let end = try #require(LocalDate("2025-11-25"))
-    let options = SourceInput(destination: "Edinburgh", from: start, to: end, luggage: luggage)
+    let options = SourceInput(destination: "Edinburgh", from: start, to: end, luggage: luggage,
+                              handLuggageOnly: handLuggageOnly)
     let centre = try #require(Coordinate(latitude: 55.95, longitude: -3.19))
     return try await SourcePreparation.baseFacts(options, seed: nil, centre: centre, country: "GB",
         timeZone: "Europe/London", geocoder: NominatimGeocoder(fetcher: fetcher, interval: .zero))
@@ -99,6 +100,29 @@ private func basics(luggage: String?, fetcher: NominatimFake) async throws -> Tr
     #expect(facts.contains { $0.text == notFound })
     #expect(!facts.contains { $0.text == assumedHours })
     #expect(!facts.contains { $0.text.contains("Station Left Luggage") })
+}
+
+@Test func handLuggageOnlyLooksUpNoStoreAndPlansNoBags() async throws {
+    let fetcher = NominatimFake(answers: ["Station": luggageHit])
+    let facts = try await basics(luggage: "Station Left Luggage", handLuggageOnly: true, fetcher: fetcher)
+    #expect(facts.places["manual:luggage"] == nil)
+    #expect(facts.places.count == 1)
+    #expect(facts.stay.luggage == nil)
+    #expect(facts.stay.handLuggageOnly == true)
+    #expect(await fetcher.queries.isEmpty)
+}
+
+@Test func handLuggageOnlyAddsNoLuggageFact() throws {
+    let start = try #require(LocalDate("2025-11-23"))
+    let end = try #require(LocalDate("2025-11-25"))
+    let options = SourceInput(destination: "Edinburgh", from: start, to: end, luggage: "Station Left Luggage",
+                              handLuggageOnly: true)
+    var sources: [Source] = []
+    let facts = SourcePreparation.assumptions(options, seed: nil, country: "GB", today: start,
+                                              luggageFound: false, sources: &sources)
+    #expect(facts.count == 2)
+    #expect(!facts.contains { $0.text.localizedCaseInsensitiveContains("luggage") })
+    #expect(!facts.contains { $0.text == notFound })
 }
 
 @Test func noLuggageNameAddsNoLuggageFact() throws {

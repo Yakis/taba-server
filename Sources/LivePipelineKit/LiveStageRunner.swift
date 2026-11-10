@@ -68,7 +68,8 @@ public struct LiveStageRunner: Sendable {
         let input = SourceInput(destination: work.input.destination, from: work.input.from, to: work.input.to,
                                 stay: work.input.stay, facts: work.input.facts, preferences: preferences,
                                 arrives: work.input.arrives, leaves: work.input.leaves,
-                                luggage: work.input.luggage)
+                                luggage: work.input.luggage,
+                                handLuggageOnly: work.input.handLuggageOnly ?? false)
         let record = SourceRecord { await evidence(.source($0)) }
         let pipeline = GuidePipeline()
         let emit: GuidePipeline.EvidenceSink = { await evidence(.pipeline($0)) }

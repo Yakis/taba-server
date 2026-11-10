@@ -6,6 +6,10 @@ import GuideKit
 /// Interest words are split on non-letters and lowercased, and match a row's word whole: "art" does not match
 /// "architecture". A place serves an interest when its kind is in that row, or when Foursquare found it in one of the
 /// row's interest searches (`searchLabels`, from `InterestSearches`). Photography's kinds count only outdoors.
+///
+/// Research can also say which interest a suggested place serves, with the label made by `interestLabel(for:)`.
+/// Such a label serves the traveller's interest with the same words, whatever the kind or indoor, so a place
+/// research suggests for "Photography" serves Photography even when its kind is in no row.
 public enum InterestMatch {
     private struct Row {
         let words: Set<String>
@@ -37,25 +41,41 @@ public enum InterestMatch {
         Row(words: ["shopping", "shops"], kinds: [.shop, .market], searchLabels: [], outdoorOnly: false)
     ]
 
+    /// The search label that research gives a suggested place for the traveller's interest, as written in the trip.
+    public static func interestLabel(for interest: String) -> String {
+        interestLabelPrefix + interest
+    }
+
     /// The traveller's own interest strings, as written and in their order, that this place serves. Each interest
-    /// appears once, even when it is repeated. Anything that matches no row serves nothing.
+    /// appears once, even when it is repeated. Anything that matches no row and no "interest:" label serves nothing.
     public static func interests(for interests: [String], kind: PlaceKind, indoor: Bool,
                                  searchLabels: [String]) -> [String] {
         let labels = Set(searchLabels)
+        let researched = Set(searchLabels.compactMap { label -> String? in
+            guard label.hasPrefix(interestLabelPrefix) else { return nil }
+            return wordKey(words(in: String(label.dropFirst(interestLabelPrefix.count))))
+        })
         var seen = Set<String>()
         return interests.filter { interest in
             let words = words(in: interest)
             guard !words.isEmpty else { return false }
-            let served = rows.contains { row in
+            let served = researched.contains(wordKey(words)) || rows.contains { row in
                 guard !row.words.isDisjoint(with: words) else { return false }
                 let byKind = row.kinds.contains(kind) && (!row.outdoorOnly || !indoor)
                 return byKind || !row.searchLabels.isDisjoint(with: labels)
             }
-            return served && seen.insert(words.sorted().joined(separator: " ")).inserted
+            return served && seen.insert(wordKey(words)).inserted
         }
     }
 
+    private static let interestLabelPrefix = "interest:"
+
     private static func words(in interest: String) -> Set<String> {
         Set(interest.lowercased().components(separatedBy: CharacterSet.letters.inverted).filter { !$0.isEmpty })
+    }
+
+    /// The words of an interest, sorted and joined, so two interests with the same words give the same key.
+    private static func wordKey(_ words: Set<String>) -> String {
+        words.sorted().joined(separator: " ")
     }
 }

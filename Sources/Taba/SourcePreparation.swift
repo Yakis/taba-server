@@ -10,7 +10,8 @@ typealias Prepared = BuildKit.Prepared
 enum SourcePreparation {
     static func input(_ options: Options, seed: Guide?) -> SourceInput {
         SourceInput(destination: options.destination, from: options.from, to: options.to,
-                    stay: options.stay, facts: seed, luggage: options.luggage)
+                    stay: options.stay, facts: seed, luggage: options.luggage,
+                    handLuggageOnly: options.handLuggageOnly)
     }
 
     static func prepare(_ options: Options, fetcher: CappedFetcher, key: String,

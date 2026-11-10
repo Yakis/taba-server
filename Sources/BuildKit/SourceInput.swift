@@ -15,10 +15,12 @@ public struct SourceInput: Sendable {
     public let leaves: LocalTime?
     /// The place where bags can wait, when the traveller named one. Nil when none.
     public let luggage: String?
+    /// True when the travellers carry only hand luggage. Then no luggage store is looked up or planned.
+    public let handLuggageOnly: Bool
 
     public init(destination: String, from: LocalDate, to: LocalDate, stay: String? = nil, facts: Guide? = nil,
                 preferences: TripPreferences = .standard, arrives: LocalTime? = nil, leaves: LocalTime? = nil,
-                luggage: String? = nil) {
+                luggage: String? = nil, handLuggageOnly: Bool = false) {
         self.destination = destination
         self.from = from
         self.to = to
@@ -28,6 +30,7 @@ public struct SourceInput: Sendable {
         self.arrives = arrives
         self.leaves = leaves
         self.luggage = luggage
+        self.handLuggageOnly = handLuggageOnly
     }
 }
 

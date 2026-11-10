@@ -40,4 +40,21 @@ struct NameTokensTests {
         let score = NameTokens.nameSimilarity("Oink Victoria Street", "Victoria Street")
         #expect(abs(score - 2.0 / 3.0) < 0.0001)
     }
+
+    @Test func aSharedPlaceTypeWordAloneIsNotTheSamePlace() {
+        // "Steps" is shared, but the wanted name has "Vennel" too, and that is a different flight of steps.
+        #expect(NameTokens.nameSimilarity("The Vennel Steps", "Waverley Steps") == 0)
+    }
+
+    @Test func aNameThatAddsWordsToTheSamePlaceStillMatches() {
+        #expect(NameTokens.nameSimilarity("Calton Hill", "Calton Hill Observatory") >= NameTokens.acceptableSimilarity)
+        #expect(NameTokens.nameSimilarity("Stockbridge Market", "Stockbridge Sunday Market")
+            >= NameTokens.acceptableSimilarity)
+    }
+
+    @Test func aWantedNameOfPlaceTypeWordsKeepsItsScore() {
+        // "Steps" against "Waverley Steps": recall 1, precision one half, F1 two thirds, as before.
+        let score = NameTokens.nameSimilarity("Steps", "Waverley Steps")
+        #expect(abs(score - 2.0 / 3.0) < 0.0001)
+    }
 }

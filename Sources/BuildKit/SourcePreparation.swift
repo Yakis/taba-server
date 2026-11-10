@@ -96,7 +96,8 @@ public enum SourcePreparation {
         var facts = [Fact(text: accommodation, sourceId: source.id, checkedAt: today),
                      Fact(text: "Budget currency \(currency(for: country)) is assumed; confirm it.",
                           sourceId: source.id, checkedAt: today)]
-        if options.luggage != nil {
+        // Hand luggage only means there are no bags to store, so there is no luggage store to report on.
+        if options.luggage != nil && !options.handLuggageOnly {
             let luggage = luggageFound
                 ? "Luggage store hours 08:00 to 20:00 are an assumption, not confirmed. "
                     + "Check them before relying on it."
@@ -225,10 +226,17 @@ public enum SourcePreparation {
                           hours: OpeningHours(hoursKnown: false, weekly: [], exceptions: []), priceLevel: nil,
                           booking: PlaceBooking(needed: false, url: nil), indoor: true,
                           images: [], facts: [], copy: nil)
-        let store = try await luggageStore(options, geocoder: geocoder)
+        // With hand luggage only, no luggage store is looked up at all.
+        let store: (place: Place, slot: LuggageSlot)?
+        if options.handLuggageOnly {
+            store = nil
+        } else {
+            store = try await luggageStore(options, geocoder: geocoder)
+        }
         var places = [place.id: place]
         if let store { places[store.place.id] = store.place }
-        let stay = Stay(placeId: place.id, checkIn: checkIn, checkOut: checkOut, luggage: store?.slot)
+        let stay = Stay(placeId: place.id, checkIn: checkIn, checkOut: checkOut, luggage: store?.slot,
+                        handLuggageOnly: options.handLuggageOnly ? true : nil)
         let trip = Trip(destination: Destination(name: options.destination, countryCode: country,
                                                  timeZoneId: timeZone, centre: centre),
                         dates: TripDates(start: options.from, end: options.to, arrives: options.arrives,

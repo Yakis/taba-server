@@ -59,6 +59,7 @@ public actor SuggestionPreparation {
             let decision = matcher.choose(for: wanted, among: hits)
             let hit = hits.first { $0.fsqPlaceId == decision.best?.fsqPlaceId }
             let place = hit.flatMap { PlaceDraftMapper.draft(from: $0) }
+                .map { Self.keepingSuggestedKind($0, suggested: suggestion.kind) }
             await record.append(["event": .string("suggestion"),
                                  "result": .string(place == nil ? "unmatched" : "matched"),
                                  "hits": .integer(hits.count), "seconds": .number(seconds(start.duration(to: .now)))])
@@ -68,6 +69,40 @@ public actor SuggestionPreparation {
             await record.append(["event": .string("suggestion"), "result": .string("failed")])
             return nil
         }
+    }
+
+    /// Research says what a suggested place is. Foursquare often files a street or a hill under another kind ("other",
+    /// "landmark"), and indoor follows the kind, so the place could be taken for indoors. A suggested street,
+    /// neighbourhood or viewpoint keeps its own kind and is outdoors when Foursquare gave it "other" or "landmark".
+    /// Every other place comes back as it is.
+    static func keepingSuggestedKind(_ place: Place, suggested: PlaceKind) -> Place {
+        let outdoorKinds: Set<PlaceKind> = [.street, .neighbourhood, .viewpoint]
+        guard outdoorKinds.contains(suggested), [PlaceKind.other, .landmark].contains(place.kind) else { return place }
+        return Place(id: place.id, name: place.name, kind: suggested, location: place.location, hours: place.hours,
+                     priceLevel: place.priceLevel, booking: place.booking, indoor: false, images: place.images,
+                     facts: place.facts, copy: place.copy, website: place.website, phone: place.phone)
+    }
+
+    /// The measured search labels with each suggested place's interests added to its place, as "interest:<interest>"
+    /// (see `InterestMatch.interestLabel`). Labels the place already has are kept, with no duplicates, and sorted like
+    /// the interest searches. Only the places research suggested for an interest get a label.
+    static func withInterestLabels(_ measurements: PipelineInputMeasurements, _ verified: VerifiedResearch)
+        -> PipelineInputMeasurements {
+        var labels = measurements.searchLabels
+        for (suggestion, place) in zip(verified.result.suggestedPlaces, verified.places) {
+            let added = (suggestion.interests ?? [])
+                .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
+                .map { InterestMatch.interestLabel(for: $0) }
+            guard !added.isEmpty else { continue }
+            labels[place.id] = Array(Set((labels[place.id] ?? []) + added)).sorted()
+        }
+        guard labels != measurements.searchLabels else { return measurements }
+        return PipelineInputMeasurements(areas: measurements.areas, areaLabels: measurements.areaLabels,
+            walkFromStay: measurements.walkFromStay, areaWalkMinutes: measurements.areaWalkMinutes,
+            alwaysOpenPlaceIDs: measurements.alwaysOpenPlaceIDs, arrivalWalkMinutes: measurements.arrivalWalkMinutes,
+            departureWalkMinutes: measurements.departureWalkMinutes,
+            arrivalMarginMinutes: measurements.arrivalMarginMinutes,
+            departureMarginMinutes: measurements.departureMarginMinutes, searchLabels: labels)
     }
 
     /// PlaceMatcher rejects road hits for food/retail; apply the same safeguard to sights here.
@@ -86,8 +121,9 @@ public actor SuggestionPreparation {
     public func prepare(_ verified: VerifiedResearch, facts: TripFacts,
                         measurements: PipelineInputMeasurements) async throws
         -> (TripFacts, PipelineInputMeasurements) {
+        let labelled = Self.withInterestLabels(measurements, verified)
         let additions = verified.places.filter { facts.places[$0.id] == nil }
-        guard !additions.isEmpty else { return (facts, measurements) }
+        guard !additions.isEmpty else { return (facts, labelled) }
         let start = ContinuousClock.now
         var places = facts.places
         var sources = facts.sources
@@ -114,7 +150,7 @@ public actor SuggestionPreparation {
         let newFacts = TripFacts(trip: facts.trip, bookings: facts.bookings, stay: facts.stay, places: places,
                                  practical: facts.practical, sources: sources)
         let (updated, walks) = try await SourcePreparation.measure(newFacts, geocoder: geocoder,
-                                                                   searchLabels: measurements.searchLabels)
+                                                                   searchLabels: labelled.searchLabels)
         await record.append(["event": .string("suggestionPreparation"), "added": value(additions.map(\.id)),
                              "overpassUnavailable": .bool(lookup.error != nil),
                              "seconds": .number(seconds(start.duration(to: .now))), "places": value(places),
