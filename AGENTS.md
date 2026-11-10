@@ -125,9 +125,10 @@ continue without asking the owner what happened.
 
 ## Current state
 
-M1 steps 1–6 are done: the server runs on the VPS (static Linux image, tailnet-only HTTPS) and built the
-Edinburgh guide live through its API. GuideKit is now a nested
-package in `GuideKit/` (the iOS app's M2 step 1), and the iOS app in `../taba-ios` depends on it by path. GuideKit also has `GuideHTMLRenderer`, which turns a guide into one self-contained HTML page
-(the app exports it; the server can serve the same file later).
-Next: the iOS app's M3 (making guides from the phone); server step 7 (model comparison) when the owner
-wants it. Deploying an update: `docs/SERVER.md`, "Deployment", and `private/HANDOFF.md`.
+M1 is done and the server is deployed (static Linux image, tailnet-only HTTPS). The guide-quality fixes Q1–Q11 in
+`docs/PLAN.md` are done and deployed, the last being Q11 (2026-11-10): one visit per place (`placeRepeated`), plan.md
+v6, write.md v5, research.md v3, a `views` interest search, and an optional `luggage` place on a trip. The default
+model is Sol; Claude and DeepSeek models are offered behind their own keys.
+Next: the owner rebuilds the Edinburgh trip to judge Q11; DeepSeek's research answer (a sentence plus a fenced `json`
+block) still fails to decode; then the iOS app's live progress view (`../taba-ios`, M3 step 3). Deploying an update:
+`docs/SERVER.md`, "Deployment", and `private/HANDOFF.md`.
