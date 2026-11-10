@@ -77,7 +77,7 @@ struct TripHTTPTests {
                                                             models: FakeCatalog()).buildResponder())
         let preferred = #"{"destination":"Edinburgh","from":"2025-11-23","to":"2025-11-25","pace":"relaxed","#
             + #""interests":["Food","Museums"],"dailySpend":"low","adults":2,"children":1,"#
-            + #""mobilityNotes":["Step-free access"]}"#
+            + #""mobilityNotes":["Step-free access"],"luggage":"Station Left Luggage"}"#
         let interests = (1...11).map { "\"Interest \($0)\"" }.joined(separator: ",")
         let tooMany = #"{"destination":"Edinburgh","from":"2025-11-23","to":"2025-11-25","interests":["#
             + interests + "]}"

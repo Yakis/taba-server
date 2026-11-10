@@ -11,6 +11,8 @@ public actor SuggestionPreparation {
     private let initial: TripFacts
     private let record: SourceRecord
     private let geocoder: NominatimGeocoder
+    /// How many research suggestions are looked up for one trip. Each is one Foursquare search.
+    public static let maximumSuggestions = 12
     private var count = 0
 
     public init(fetcher: CappedFetcher, key: String, facts: TripFacts, record: SourceRecord,
@@ -23,7 +25,7 @@ public actor SuggestionPreparation {
     }
 
     public func resolve(_ suggestion: SuggestedPlace) async throws -> Place? {
-        guard count < 8 else { return nil }
+        guard count < Self.maximumSuggestions else { return nil }
         count += 1
         let centre = initial.trip.destination.centre
         let matcher = PlaceMatcher(maxDistanceMetres: 10_000, cityName: initial.trip.destination.name)

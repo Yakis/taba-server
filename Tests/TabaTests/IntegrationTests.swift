@@ -47,8 +47,8 @@ private func fixture() throws -> Guide {
     let suggestion = SuggestedPlace(name: "Unique Museum", area: "", kind: .museum, why: "Interesting")
     let result = try await service.resolve(suggestion)
     #expect(result?.name == "Unique Museum")
-    for _ in 0..<10 { _ = try await service.resolve(suggestion) }
-    #expect(await source.count == 8)
+    for _ in 0..<20 { _ = try await service.resolve(suggestion) }
+    #expect(await source.count == 12)
 }
 
 @Test func existingCandidateAvoidsProvider() async throws {
@@ -82,7 +82,7 @@ private func fixture() throws -> Guide {
     #expect(await fetcher.count < 1)
     var sources: [Source] = []
     let assumptions = SourcePreparation.assumptions(options, seed: nil, country: "US", today: options.from,
-                                                    sources: &sources)
+                                                    luggageFound: false, sources: &sources)
     #expect(assumptions.contains { $0.text.contains("not booked") && $0.text.contains("not confirmed") })
     let result = Taba.addingAssumptionQuestions(to: try fixture(), options: options)
     #expect(result.openQuestions?.contains { $0.contains("Choose accommodation") } == true)

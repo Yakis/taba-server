@@ -13,9 +13,12 @@ public struct SourceInput: Sendable {
     /// The local time the traveller reaches the city on `from`, and leaves it on `to`. Nil when unknown.
     public let arrives: LocalTime?
     public let leaves: LocalTime?
+    /// The place where bags can wait, when the traveller named one. Nil when none.
+    public let luggage: String?
 
     public init(destination: String, from: LocalDate, to: LocalDate, stay: String? = nil, facts: Guide? = nil,
-                preferences: TripPreferences = .standard, arrives: LocalTime? = nil, leaves: LocalTime? = nil) {
+                preferences: TripPreferences = .standard, arrives: LocalTime? = nil, leaves: LocalTime? = nil,
+                luggage: String? = nil) {
         self.destination = destination
         self.from = from
         self.to = to
@@ -24,6 +27,7 @@ public struct SourceInput: Sendable {
         self.preferences = preferences
         self.arrives = arrives
         self.leaves = leaves
+        self.luggage = luggage
     }
 }
 

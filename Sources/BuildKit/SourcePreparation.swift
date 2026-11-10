@@ -53,7 +53,8 @@ public enum SourcePreparation {
         let base = try await baseFacts(options, seed: seed, centre: centre, country: country,
                                        timeZone: outlook.timeZoneId, geocoder: geocoder)
         var sources = base.sources
-        let practical = assumptions(options, seed: seed, country: country, today: today, sources: &sources)
+        let practical = assumptions(options, seed: seed, country: country, today: today,
+                                    luggageFound: base.stay.luggage != nil, sources: &sources)
         let facts = TripFacts(trip: base.trip, bookings: base.bookings, stay: base.stay, places: base.places,
                               practical: practical, sources: sources)
         return BasicsCheckpoint(facts: facts, weather: outlook.days, today: today)
@@ -80,8 +81,10 @@ public enum SourcePreparation {
                         stayArea: measurements.areaLabels[base.stay.placeId] ?? options.destination)
     }
 
+    // swiftlint:disable function_parameter_count
+    /// `luggageFound` says whether the plan's stay has a luggage store. It matters only when the traveller named one.
     public static func assumptions(_ options: SourceInput, seed: Guide?, country: String, today: LocalDate,
-                                   sources: inout [Source]) -> [Fact] {
+                                   luggageFound: Bool, sources: inout [Source]) -> [Fact] {
         if let seed { return seed.practical }
         let source = Source(id: "taba-assumptions", url: "https://example.com/assumptions",
                             title: "Planning assumptions", checkedAt: today)
@@ -90,10 +93,20 @@ public enum SourcePreparation {
             ? "Accommodation is not booked; the base is an approximate destination centre. "
                 + "Choose accommodation. Check-in 15:00 and check-out 11:00 are placeholders, not confirmed."
             : "Stay check-in 15:00 and check-out 11:00 are assumptions, not confirmed. Confirm both times."
-        return [Fact(text: accommodation, sourceId: source.id, checkedAt: today),
-                Fact(text: "Budget currency \(currency(for: country)) is assumed; confirm it.",
-                     sourceId: source.id, checkedAt: today)]
+        var facts = [Fact(text: accommodation, sourceId: source.id, checkedAt: today),
+                     Fact(text: "Budget currency \(currency(for: country)) is assumed; confirm it.",
+                          sourceId: source.id, checkedAt: today)]
+        if options.luggage != nil {
+            let luggage = luggageFound
+                ? "Luggage store hours 08:00 to 20:00 are an assumption, not confirmed. "
+                    + "Check them before relying on it."
+                : "The luggage store could not be found on the map, so the plan carries the bags. "
+                    + "Check where bags can be left."
+            facts.append(Fact(text: luggage, sourceId: source.id, checkedAt: today))
+        }
+        return facts
     }
+    // swiftlint:enable function_parameter_count
 
     // swiftlint:disable:next function_parameter_count
     static func recordSources(_ facts: TripFacts, measurements: PipelineInputMeasurements, walks: [String: Int],
@@ -212,7 +225,10 @@ public enum SourcePreparation {
                           hours: OpeningHours(hoursKnown: false, weekly: [], exceptions: []), priceLevel: nil,
                           booking: PlaceBooking(needed: false, url: nil), indoor: true,
                           images: [], facts: [], copy: nil)
-        let stay = Stay(placeId: place.id, checkIn: checkIn, checkOut: checkOut, luggage: nil)
+        let store = try await luggageStore(options, geocoder: geocoder)
+        var places = [place.id: place]
+        if let store { places[store.place.id] = store.place }
+        let stay = Stay(placeId: place.id, checkIn: checkIn, checkOut: checkOut, luggage: store?.slot)
         let trip = Trip(destination: Destination(name: options.destination, countryCode: country,
                                                  timeZoneId: timeZone, centre: centre),
                         dates: TripDates(start: options.from, end: options.to, arrives: options.arrives,
@@ -222,7 +238,7 @@ public enum SourcePreparation {
                                        dailySpend: options.preferences.dailySpend),
                         interests: options.preferences.interests, pace: options.preferences.pace,
                         voice: "Warm, practical and concise")
-        return TripFacts(trip: trip, bookings: [], stay: stay, places: [place.id: place], practical: [], sources: [])
+        return TripFacts(trip: trip, bookings: [], stay: stay, places: places, practical: [], sources: [])
     }
 
     public static func measure(_ facts: TripFacts, geocoder: NominatimGeocoder,

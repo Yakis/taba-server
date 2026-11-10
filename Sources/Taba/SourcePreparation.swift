@@ -10,7 +10,7 @@ typealias Prepared = BuildKit.Prepared
 enum SourcePreparation {
     static func input(_ options: Options, seed: Guide?) -> SourceInput {
         SourceInput(destination: options.destination, from: options.from, to: options.to,
-                    stay: options.stay, facts: seed)
+                    stay: options.stay, facts: seed, luggage: options.luggage)
     }
 
     static func prepare(_ options: Options, fetcher: CappedFetcher, key: String,
@@ -25,10 +25,11 @@ enum SourcePreparation {
         return result
     }
 
+    // swiftlint:disable:next function_parameter_count
     static func assumptions(_ options: Options, seed: Guide?, country: String, today: LocalDate,
-                            sources: inout [Source]) -> [Fact] {
+                            luggageFound: Bool, sources: inout [Source]) -> [Fact] {
         BuildKit.SourcePreparation.assumptions(input(options, seed: seed), seed: seed, country: country,
-                                                today: today, sources: &sources)
+                                                today: today, luggageFound: luggageFound, sources: &sources)
     }
 
     // swiftlint:disable:next function_parameter_count

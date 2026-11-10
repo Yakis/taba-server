@@ -21,7 +21,7 @@ struct Taba {
             switch error {
             case CLIError.usage:
                 message = "Usage: taba build --destination NAME --from YYYY-MM-DD --to YYYY-MM-DD "
-                    + "[--stay NAME] [--model MODEL] [--out DIRECTORY] [--facts GUIDE.json]"
+                    + "[--stay NAME] [--luggage NAME] [--model MODEL] [--out DIRECTORY] [--facts GUIDE.json]"
             case CLIError.factsMismatch, SourcePreparationError.factsMismatch:
                 message = "Facts do not match the requested trip or are missing the stay."
             case CLIError.missingStay: message = "Supply --stay when building without --facts."
