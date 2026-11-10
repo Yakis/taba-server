@@ -53,10 +53,16 @@ struct StayCheckTests {
         Plan.stop(id, start: start, minutes: minutes, place: place, kind: .logistics)
     }
 
+    private func oneDayTrip() -> Trip {
+        SampleGuide.trip(start: "2026-11-22", end: "2026-11-22")
+    }
+
     @Test func checkInBeforeTimeFires() {
-        // Check-in is 15:00, so a logistics stop at the stay at 14:00 is too early.
-        let day = SampleGuide.day(on: "2026-11-22", stops: [logistics("early", start: 840, place: SampleGuide.hotelId)])
-        let issues = Plan.issues(Plan.guide(days: [day], places: [hotel, cafe]))
+        // Check-in is 15:00, so a logistics stop at the stay at 14:00 on the first of two days is too early.
+        let early = logistics("early", start: 840, place: SampleGuide.hotelId)
+        let first = SampleGuide.day(on: "2026-11-22", stops: [early])
+        let days = [first, SampleGuide.day(on: "2026-11-24", stops: [])]
+        let issues = Plan.issues(Plan.guide(days: days, places: [hotel, cafe]))
         #expect(issues.contains(where: { $0.kind == .checkInEarly && $0.stopId == "early" }))
     }
 
@@ -67,8 +73,32 @@ struct StayCheckTests {
 
     @Test func leavingAfterCheckOutWithoutBagsFires() {
         // Check-out is 10:00. The first stop away from the stay starts at 11:30 with no logistics at the stay.
-        let day = SampleGuide.day(on: "2026-11-24", stops: [Plan.stop("away", start: 690, minutes: 60, place: "cafe")])
-        #expect(Plan.has(Plan.issues(Plan.guide(days: [day], places: [hotel, cafe])), .checkOutLate))
+        let last = SampleGuide.day(on: "2026-11-24", stops: [Plan.stop("away", start: 690, minutes: 60, place: "cafe")])
+        let days = [SampleGuide.day(on: "2026-11-22", stops: []), last]
+        #expect(Plan.has(Plan.issues(Plan.guide(days: days, places: [hotel, cafe])), .checkOutLate))
+    }
+
+    @Test func twoDayTripReportsCheckInAndCheckOut() {
+        let early = logistics("early", start: 840, place: SampleGuide.hotelId)
+        let first = SampleGuide.day(on: "2026-11-22", stops: [early])
+        let last = SampleGuide.day(on: "2026-11-24", stops: [Plan.stop("away", start: 690, minutes: 60, place: "cafe")])
+        let issues = Plan.issues(Plan.guide(days: [first, last], places: [hotel, cafe]))
+        #expect(issues.contains(where: { $0.kind == .checkInEarly }))
+        #expect(issues.contains(where: { $0.kind == .checkOutLate }))
+    }
+
+    @Test func oneDayTripWithStopAfterCheckOutDoesNotFire() {
+        // A one-day trip has no night, so a first stop after check-out is not a problem.
+        let day = SampleGuide.day(on: "2026-11-22", stops: [Plan.stop("away", start: 690, minutes: 60, place: "cafe")])
+        let guide = Plan.guide(days: [day], places: [hotel, cafe], trip: oneDayTrip())
+        #expect(!Plan.has(Plan.issues(guide), .checkOutLate))
+    }
+
+    @Test func oneDayTripWithLogisticsBeforeCheckInDoesNotFire() {
+        // Check-in is 15:00, but a one-day trip has no check-in to be early for.
+        let day = SampleGuide.day(on: "2026-11-22", stops: [logistics("early", start: 840, place: SampleGuide.hotelId)])
+        let guide = Plan.guide(days: [day], places: [hotel, cafe], trip: oneDayTrip())
+        #expect(!Plan.has(Plan.issues(guide), .checkInEarly))
     }
 
     @Test func checkOutWithLogisticsAtStayDoesNotFire() {
@@ -76,7 +106,8 @@ struct StayCheckTests {
             logistics("checkout", start: 540, place: SampleGuide.hotelId),
             Plan.stop("away", start: 690, minutes: 60, place: "cafe")
         ])
-        #expect(!Plan.has(Plan.issues(Plan.guide(days: [day], places: [hotel, cafe])), .checkOutLate))
+        let days = [SampleGuide.day(on: "2026-11-22", stops: []), day]
+        #expect(!Plan.has(Plan.issues(Plan.guide(days: days, places: [hotel, cafe])), .checkOutLate))
     }
 
     @Test func luggageStopOutsideHoursFires() {

@@ -4,7 +4,9 @@ extension PlanChecker {
         let stay = context.guide.stay
         let days = context.guide.days.sorted { $0.date < $1.date }
         var findings: [Finding] = []
-        if let first = days.first {
+        // A one-day trip has no night, so there is no check-in or check-out to check.
+        let hasNight = days.first?.date != days.last?.date
+        if hasNight, let first = days.first {
             for stop in first.stops where stop.kind == .logistics && stop.placeId == stay.placeId {
                 if stop.start < stay.checkIn {
                     let message = "\(context.label(stop)) starts at \(stop.start), before check-in at \(stay.checkIn)."
@@ -12,7 +14,7 @@ extension PlanChecker {
                 }
             }
         }
-        if let last = days.last {
+        if hasNight, let last = days.last {
             findings += checkOutFindings(last, context)
         }
         findings += luggageFindings(days, context)

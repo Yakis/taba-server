@@ -90,6 +90,21 @@ struct AIRoundTripTests {
         #expect(try roundTrip(place) == place)
     }
 
+    @Test func suggestedPlaceWithoutInterestsDecodesAsNil() throws {
+        let json = #"{"name":"Calton Hill","area":"Calton","kind":"viewpoint","why":"Wide views."}"#
+        let place = try GuideKit.jsonDecoder().decode(SuggestedPlace.self, from: Data(json.utf8))
+        #expect(place.interests == nil)
+        #expect(place.kind == .viewpoint)
+    }
+
+    @Test func suggestedPlaceWithInterestsDecodesThem() throws {
+        let json = #"{"name":"Circus Lane","area":"New Town","kind":"street","why":"Colourful doors.","#
+            + #""interests":["Photography"]}"#
+        let place = try GuideKit.jsonDecoder().decode(SuggestedPlace.self, from: Data(json.utf8))
+        #expect(place.interests == ["Photography"])
+        #expect(try roundTrip(place) == place)
+    }
+
     @Test(arguments: FindingKind.allCases)
     func findingKindsRoundTripByRawValue(kind: FindingKind) throws {
         #expect(try roundTrip(kind) == kind)

@@ -21,7 +21,8 @@ extension ResearchResult {
             "name": .string,
             "area": .string,
             "kind": .enumOf(PlaceKind.self),
-            "why": .string
+            "why": .string,
+            "interests": .array(.string)
         ])
         return .object([
             "findings": .array(finding),
