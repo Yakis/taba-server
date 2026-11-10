@@ -40,6 +40,8 @@ public enum IssueKind: String, CaseIterable, Hashable, Sendable, Codable {
     case walkingOverPace
     /// A transit booking does not name its station, so the journey from or to it is not checked.
     case stationUnknown
+    /// A place is used by more than one stop on the trip.
+    case placeRepeated
     /// A trip interest that no stop serves, though at least one candidate does. Info only: it never triggers a repair.
     case interestMissed
 }
