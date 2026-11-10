@@ -32,7 +32,8 @@ private struct FakeCatalog: TripModelCatalog {
     let defaultModel = "gpt-6.1-sol"
 
     func options() async -> [ModelOption] {
-        [ModelOption(id: "gpt-6.1-sol", name: "Sol"), ModelOption(id: "gpt-6.1-terra", name: "Terra")]
+        [ModelOption(id: "gpt-6.1-sol", name: "Sol", provider: "ChatGPT"),
+         ModelOption(id: "gpt-6.1-terra", name: "Terra", provider: "ChatGPT")]
     }
 }
 
@@ -92,6 +93,7 @@ struct TripHTTPTests {
                 #expect(list.defaultModel == "gpt-6.1-sol")
                 #expect(list.models.map(\.name) == ["Sol", "Terra"])
                 #expect(list.models.map(\.id) == ["gpt-6.1-sol", "gpt-6.1-terra"])
+                #expect(list.models.map(\.provider) == ["ChatGPT", "ChatGPT"])
             }
             try await client.execute(uri: "/trips", method: .post, headers: headers,
                                      body: terraBody) { #expect($0.status == .accepted) }

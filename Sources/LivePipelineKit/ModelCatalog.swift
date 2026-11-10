@@ -2,30 +2,35 @@ import Foundation
 import ResponsesKit
 import ServerKit
 
-/// The models the signed-in plan offers, kept for an hour. If the list cannot be fetched, the last good list is
-/// served, or just the default model when there has never been one. Nothing here logs the access token.
+/// The models the server offers, kept for an hour: the ChatGPT models the signed-in plan lists, plus the fixed Claude
+/// and DeepSeek models whose keys are set. If the plan's list cannot be fetched, the last good list is served, or just
+/// the ChatGPT default when there has never been one. Nothing here logs the access token.
 public actor ModelCatalog: TripModelCatalog {
     public nonisolated let defaultModel: String
     static let lifetime: TimeInterval = 3600
 
+    private let extraOptions: [ModelOption]
     private let fetchSlugs: @Sendable () async throws -> [String]
     private let clock: @Sendable () -> Date
     private var cached: [ModelOption]?
     private var fetchedAt: Date?
 
-    public init(defaultModel: String, clock: @escaping @Sendable () -> Date = { Date() },
+    public init(defaultModel: String, extraOptions: [ModelOption] = [],
+                clock: @escaping @Sendable () -> Date = { Date() },
                 fetchSlugs: @escaping @Sendable () async throws -> [String]) {
         self.defaultModel = defaultModel
+        self.extraOptions = extraOptions
         self.clock = clock
         self.fetchSlugs = fetchSlugs
     }
 
-    /// The production catalog: lists the models with the plan's access token.
-    public static func live(defaultModel: String, session: CredentialSession, client: ModelsClient) -> ModelCatalog {
+    /// The production catalog: lists the ChatGPT models with the plan's access token.
+    public static func live(defaultModel: String, session: CredentialSession, client: ModelsClient,
+                            extraOptions: [ModelOption] = []) -> ModelCatalog {
         let fetch = ModelsFetch(client: client) { forceRefresh in
             try await session.credentials(forceRefresh: forceRefresh).accessToken
         }
-        return ModelCatalog(defaultModel: defaultModel) { try await fetch.slugs() }
+        return ModelCatalog(defaultModel: defaultModel, extraOptions: extraOptions) { try await fetch.slugs() }
     }
 
     public func options() async -> [ModelOption] {
@@ -33,12 +38,12 @@ public actor ModelCatalog: TripModelCatalog {
             return cached
         }
         do {
-            let options = withDefault(ModelChoice.options(fromSlugs: try await fetchSlugs()))
+            let options = withDefault(ModelChoice.options(fromSlugs: try await fetchSlugs()) + extraOptions)
             cached = options
             fetchedAt = clock()
             return options
         } catch {
-            return cached ?? [ModelChoice.option(for: defaultModel)]
+            return cached ?? withDefault(extraOptions)
         }
     }
 

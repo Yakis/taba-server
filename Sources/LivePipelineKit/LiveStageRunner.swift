@@ -14,6 +14,8 @@ import SourcesKit
 public enum LiveStageError: Error, Sendable {
     case missingCheckpoint(BuildStage)
     case transport
+    /// No provider runs the model id.
+    case unsupportedModel
 }
 
 /// The same process-wide pacer is shared by all jobs and runner instances.
@@ -38,9 +40,11 @@ public struct LiveStageRunner: Sendable {
     private let key: String
     private let model: String
     private let session: CredentialSession
+    private let providers: ProviderKeys
 
-    public init(client: HTTPClient, key: String, model: String, session: CredentialSession) {
-        self.client = client; self.key = key; self.model = model; self.session = session
+    public init(client: HTTPClient, key: String, model: String, session: CredentialSession,
+                providers: ProviderKeys = ProviderKeys(anthropic: nil, deepSeek: nil)) {
+        self.client = client; self.key = key; self.model = model; self.session = session; self.providers = providers
     }
 
     // swiftlint:disable:next function_body_length
@@ -124,7 +128,45 @@ public struct LiveStageRunner: Sendable {
         CappedFetcher(inner: PoliteFetcher(inner: AHCFetching(client: client)), limit: limit)
     }
 
+    /// Sends one request to the provider that runs its model. Every answer is checked for the secrets of the provider
+    /// that gave it (the ChatGPT tokens, or the API key), and a secret in the answer fails the stage.
     private func sendResponse(_ request: ResponsesRequest) async throws -> ResponsesResult {
+        guard let destination = ProviderRouting.destination(model: request.model, webSearch: request.webSearch) else {
+            throw LiveStageError.unsupportedModel
+        }
+        let routed = request.replacingModel(destination.model)
+        let result: ResponsesResult
+        let secrets: [String]
+        switch destination.provider {
+        case .chatGPT:
+            (result, secrets) = try await sendChatGPT(routed)
+        case .claude:
+            guard let anthropicKey = providers.anthropic else {
+                throw ProviderError.missingKey(provider: ModelProvider.claude.rawValue)
+            }
+            let anthropic = AnthropicClient(transport: AHCStreamTransport(client: client), apiKey: anthropicKey)
+            result = try await anthropic.send(routed)
+            secrets = [anthropicKey]
+        case .deepSeek:
+            guard let deepSeekKey = providers.deepSeek else {
+                throw ProviderError.missingKey(provider: ModelProvider.deepSeek.rawValue)
+            }
+            let deepSeek = ResponsesClient(transport: AHCStreamTransport(client: client), endpoint: .deepSeek)
+            let outcome = await deepSeek.send(body: try routed.body(), accessToken: deepSeekKey)
+            try Task.checkCancellation()
+            guard let answer = outcome.result else {
+                throw ProviderError.from(outcome, provider: ModelProvider.deepSeek.rawValue)
+            }
+            result = answer
+            secrets = [deepSeekKey]
+        }
+        guard !Self.leaksSecret(result, secrets: secrets) else { throw LiveStageError.transport }
+        return result
+    }
+
+    /// The ChatGPT route, with one retry after a refreshed token when the plan refuses the first one. Returns the
+    /// tokens used, so the answer can be checked for them.
+    private func sendChatGPT(_ request: ResponsesRequest) async throws -> (ResponsesResult, [String]) {
         let body = try request.body()
         let transport = ResponsesClient(transport: AHCStreamTransport(client: client))
         var credentials = try await session.credentials()
@@ -137,14 +179,20 @@ public struct LiveStageRunner: Sendable {
             outcome = await transport.send(body: body, accessToken: credentials.accessToken)
             try Task.checkCancellation()
         }
-        guard let result = outcome.result, tokens.allSatisfy({ token in
-            !token.isEmpty && !result.text.contains(token)
-                && !result.sourceURLs.contains(where: { $0.contains(token) })
-                && !result.citationURLs.contains(where: { $0.contains(token) })
-        }) else {
+        guard let result = outcome.result else {
             throw LiveStageError.transport
         }
-        return result
+        return (result, tokens)
+    }
+
+    /// True when a secret is empty or appears in the answer or its source and citation URLs.
+    private static func leaksSecret(_ result: ResponsesResult, secrets: [String]) -> Bool {
+        secrets.contains { secret in
+            secret.isEmpty
+                || result.text.contains(secret)
+                || result.sourceURLs.contains(where: { $0.contains(secret) })
+                || result.citationURLs.contains(where: { $0.contains(secret) })
+        }
     }
 }
 

@@ -18,7 +18,7 @@ public struct TripBuildInput: Codable, Sendable {
     public let adults: Int?
     public let children: Int?
     public let mobilityNotes: [String]?
-    /// The AI model slug to build with, such as gpt-6.1-terra. Nil means the server default.
+    /// The AI model slug to build with, such as gpt-6.1-terra or claude-opus-5-5. Nil means the server default.
     public let model: String?
 
     public enum ValidationError: Error, Equatable, Sendable {

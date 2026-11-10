@@ -68,6 +68,9 @@ struct TabaServer {
             let defaultModel = environment["TABA_MODEL"] ?? "gpt-6.1-sol"
             let runner: StageRunner
             let models: any TripModelCatalog
+            // The provider keys are optional. A missing or empty key means that provider is not offered.
+            let providers = ProviderKeys(anthropic: environment["ANTHROPIC_API_KEY"],
+                                         deepSeek: environment["DEEPSEEK_API_KEY"])
             switch try ServerMode.parse(environment) {
             case .replay(let directory):
                 let replay = try ReplayStageRunner(directory: directory)
@@ -78,12 +81,16 @@ struct TabaServer {
                 guard let key = environment["FOURSQUARE_API_KEY"], !key.isEmpty else {
                     throw ConfigurationError.missingKey
                 }
+                // A default model whose provider has no key would fail every trip that uses it, so the server stops.
+                guard providers.canServe(defaultModel) else { throw ConfigurationError.missingKey }
                 let session = CredentialSession(store: .defaultStore,
                     tokenClient: TokenClient(transport: AHCOAuthTransport(client: client)))
-                let live = LiveStageRunner(client: client, key: key, model: defaultModel, session: session)
+                let live = LiveStageRunner(client: client, key: key, model: defaultModel, session: session,
+                                           providers: providers)
                 runner = { try await live.run($0, evidence: $1) }
                 models = ModelCatalog.live(defaultModel: defaultModel, session: session,
-                    client: ModelsClient(transport: AHCOAuthTransport(client: client)))
+                    client: ModelsClient(transport: AHCOAuthTransport(client: client)),
+                    extraOptions: providers.fixedOptions)
             }
             queue.registerJob(JobDefinition(parameters: StageJob.self, retryStrategy: .dontRetry) { job, _ in
                 try await store.process(job, runner: runner)

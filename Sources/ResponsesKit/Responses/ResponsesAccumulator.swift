@@ -52,6 +52,8 @@ public struct ResponsesAccumulator: Sendable {
     private var searchIds: [String] = []
     private var sources: [String] = []
     private var citations: [String] = []
+    /// Every web URL found inside a web_search_call item, whatever its field. Used only when sources are recovered.
+    private var searchItemURLs: [String] = []
 
     public init() {}
 
@@ -71,6 +73,12 @@ public struct ResponsesAccumulator: Sendable {
 
     /// The answer. Throws when the stream never reached response.completed.
     public func result() throws(ResponsesError) -> ResponsesResult {
+        try result(recoveringSourceURLs: false)
+    }
+
+    /// The answer. With `recoveringSourceURLs`, a search that returned no sources falls back to the citation URLs and
+    /// the URLs in the search items (see `SourceRecovery`).
+    public func result(recoveringSourceURLs: Bool) throws(ResponsesError) -> ResponsesResult {
         guard let completed else { throw .streamEndedWithoutCompletion }
         let usage = completed["usage"]?.objectValue.map { object in
             ResponsesUsage(
@@ -79,13 +87,14 @@ public struct ResponsesAccumulator: Sendable {
                 totalTokens: object["total_tokens"].flatMap { intValue($0) }
             )
         }
+        let recover = recoveringSourceURLs && sources.isEmpty && !searchIds.isEmpty
         return ResponsesResult(
             text: text,
             status: completed["status"]?.stringValue,
             responseId: completed["id"]?.stringValue,
             usage: usage,
             webSearchCount: searchIds.count,
-            sourceURLs: sources,
+            sourceURLs: recover ? SourceRecovery.urls(citations: citations, searchItemURLs: searchItemURLs) : sources,
             citationURLs: citations
         )
     }
@@ -155,6 +164,9 @@ public struct ResponsesAccumulator: Sendable {
                 sources.append(url)
             }
         }
+        for url in SourceRecovery.webURLs(in: .object(item)) where !searchItemURLs.contains(url) {
+            searchItemURLs.append(url)
+        }
     }
 
     private mutating func addCitation(_ annotation: [String: JSONValue]) {
@@ -181,5 +193,34 @@ public struct ResponsesAccumulator: Sendable {
         case .number(let number): Int(number)
         default: nil
         }
+    }
+}
+
+/// Source URLs for a provider that leaves `web_search_call.action.sources` out (DeepSeek).
+enum SourceRecovery {
+    /// The citation URLs first, then the search-item URLs, without repeats, keeping only web addresses.
+    static func urls(citations: [String], searchItemURLs: [String]) -> [String] {
+        var seen = Set<String>()
+        return (citations + searchItemURLs).filter { url in
+            isWebURL(url) && seen.insert(url).inserted
+        }
+    }
+
+    /// Every string value in the JSON that is an http or https address, in document order.
+    static func webURLs(in value: JSONValue) -> [String] {
+        switch value {
+        case .string(let text):
+            isWebURL(text) ? [text] : []
+        case .array(let items):
+            items.flatMap(webURLs(in:))
+        case .object(let object):
+            object.keys.sorted().flatMap { webURLs(in: object[$0] ?? .null) }
+        default:
+            []
+        }
+    }
+
+    private static func isWebURL(_ text: String) -> Bool {
+        (text.hasPrefix("https://") || text.hasPrefix("http://")) && !text.contains(where: \.isWhitespace)
     }
 }

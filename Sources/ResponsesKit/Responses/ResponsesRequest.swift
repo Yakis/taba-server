@@ -77,6 +77,13 @@ public struct ResponsesRequest: Sendable {
         self.reasoningEffort = reasoningEffort
     }
 
+    /// The same request for another model id. Used when a provider serves a model under a different id.
+    public func replacingModel(_ model: String) -> ResponsesRequest {
+        ResponsesRequest(model: model, instructions: instructions, messages: messages,
+                         structuredOutput: structuredOutput, webSearch: webSearch,
+                         includeSearchSources: includeSearchSources, reasoningEffort: reasoningEffort)
+    }
+
     /// The JSON body for `POST /v1/responses`.
     public func body() throws -> Data {
         try Self.encode(object())

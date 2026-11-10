@@ -93,10 +93,10 @@ struct ModelCatalogTests {
         let fetch = ScriptedFetch([])
         let catalog = ModelCatalog(defaultModel: "gpt-6.1-terra", clock: { self.start },
                                    fetchSlugs: { try await fetch.next() })
-        #expect(await catalog.options() == [ModelOption(id: "gpt-6.1-terra", name: "Terra")])
+        #expect(await catalog.options() == [ModelOption(id: "gpt-6.1-terra", name: "Terra", provider: "ChatGPT")])
         let unnamed = ModelCatalog(defaultModel: "gpt-4o", clock: { self.start },
                                    fetchSlugs: { try await fetch.next() })
-        #expect(await unnamed.options() == [ModelOption(id: "gpt-4o", name: "gpt-4o")])
+        #expect(await unnamed.options() == [ModelOption(id: "gpt-4o", name: "gpt-4o", provider: "ChatGPT")])
     }
 
     @Test func theDefaultIsAlwaysOfferedFirstWhenTheAccountListLacksIt() async {
@@ -142,5 +142,50 @@ struct ModelCatalogTests {
             try await fetch.slugs()
         }
         #expect(transport.requests.count == 1)
+    }
+}
+
+struct ProviderCatalogTests {
+    private let start = Date(timeIntervalSince1970: 1_000_000)
+    private let claude = ModelChoice.claudeOptions
+    private let deepSeek = ModelChoice.deepSeekOptions
+
+    @Test func withBothKeysTheListIsChatGPTThenClaudeThenDeepSeek() async {
+        let fetch = ScriptedFetch([.success(["gpt-6.1-sol", "gpt-6.1-terra"])])
+        let catalog = ModelCatalog(defaultModel: "gpt-6.1-sol", extraOptions: claude + deepSeek,
+                                   clock: { self.start }, fetchSlugs: { try await fetch.next() })
+        #expect(await catalog.options().map(\.id) == [
+            "gpt-6.1-sol", "gpt-6.1-terra", "claude-opus-5-5", "claude-sonnet-5-5", "deepseek-v4-pro", "deepseek-flash"
+        ])
+    }
+
+    @Test func withNoKeysOnlyTheChatGPTModelsAreOffered() async {
+        let fetch = ScriptedFetch([.success(["gpt-6.1-sol", "gpt-6.1-terra"])])
+        let catalog = ModelCatalog(defaultModel: "gpt-6.1-sol", extraOptions: [],
+                                   clock: { self.start }, fetchSlugs: { try await fetch.next() })
+        #expect(await catalog.options().map(\.id) == ["gpt-6.1-sol", "gpt-6.1-terra"])
+    }
+
+    @Test func theFixedModelsAreOfferedEvenWhenThePlanListFails() async {
+        let fetch = ScriptedFetch([])
+        let catalog = ModelCatalog(defaultModel: "gpt-6.1-sol", extraOptions: deepSeek,
+                                   clock: { self.start }, fetchSlugs: { try await fetch.next() })
+        #expect(await catalog.options().map(\.id) == ["gpt-6.1-sol", "deepseek-v4-pro", "deepseek-flash"])
+    }
+
+    @Test func aDefaultThatIsAlreadyListedKeepsItsPlaceWithoutRepeating() async {
+        let fetch = ScriptedFetch([.success(["gpt-6.1-sol"])])
+        let catalog = ModelCatalog(defaultModel: "claude-sonnet-5-5", extraOptions: claude,
+                                   clock: { self.start }, fetchSlugs: { try await fetch.next() })
+        #expect(await catalog.options().map(\.id) == ["gpt-6.1-sol", "claude-opus-5-5", "claude-sonnet-5-5"])
+    }
+
+    @Test func aDefaultWithNoKeyIsStillOfferedFirstAsTheDefaultAlways() async {
+        let fetch = ScriptedFetch([.success(["gpt-6.1-sol"])])
+        let catalog = ModelCatalog(defaultModel: "claude-sonnet-5-5", extraOptions: [],
+                                   clock: { self.start }, fetchSlugs: { try await fetch.next() })
+        let options = await catalog.options()
+        #expect(options.map(\.id) == ["claude-sonnet-5-5", "gpt-6.1-sol"])
+        #expect(options.first == ModelOption(id: "claude-sonnet-5-5", name: "Claude Sonnet 5.5", provider: "Claude"))
     }
 }
