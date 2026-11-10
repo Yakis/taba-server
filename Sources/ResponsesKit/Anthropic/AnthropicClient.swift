@@ -1,4 +1,7 @@
 import Foundation
+#if canImport(FoundationNetworking)
+import FoundationNetworking
+#endif
 
 /// Sends a `ResponsesRequest` to the Anthropic Messages API and returns the answer in the same shape the pipeline
 /// reads from ChatGPT. Retries rate limits and overloads, follows `pause_turn`, and retries once without the schema
