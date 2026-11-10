@@ -40,6 +40,8 @@ in the process environment. Do not put real tokens in this repository or command
 | `DB_PASSWORD` | `taba-local-only` — local development only |
 | `FOURSQUARE_API_KEY` | Required for live mode; obtain securely from Keychain. Only free fields are used. |
 | `TABA_MODEL` | The default model for new trips; `gpt-6.1-sol` when unset (deployed: `gpt-6.1-terra`) |
+| `ANTHROPIC_API_KEY` | Optional, paid per use. When set, Claude Opus 5.5 and Claude Sonnet 5.5 are offered. Never logged. |
+| `DEEPSEEK_API_KEY` | Optional, paid per use. When set, DeepSeek V4 Pro and DeepSeek Flash are offered. Never logged. |
 | `TABA_CHATGPT_CREDENTIALS` | Existing writable sign-in credentials file; otherwise the normal default path |
 | `TABA_REPLAY_DIRECTORY` | Absent means live mode. Present means offline replay; empty or invalid paths fail startup. |
 
@@ -90,7 +92,7 @@ Optional preferences, each falling back to the old default when absent:
 | `dailySpend` | `low`, `moderate`, `high` | `moderate` |
 | `adults`, `children` | 1–10, 0–10 | 1, 0 |
 | `mobilityNotes` | at most 5 strings, each 1–120 bytes | none |
-| `model` | a slug from `/models`, shaped `gpt-<version>-sol`, `-terra` or `-luna` | the server default (`TABA_MODEL`) |
+| `model` | an id from `/models`: `gpt-<version>-sol`, `-terra` or `-luna`, or a `claude-` or `deepseek-` id | the server default (`TABA_MODEL`) |
 
 They fill the trip scaffold the pipeline plans and writes from (`Trip.pace`, `interests`, `budget.dailySpend`,
 `party`). They are not accepted together with `facts`.
@@ -101,9 +103,16 @@ provider configuration are not accepted, apart from picking one of the offered `
 can embed `GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json` as `facts`.
 
 Models: `GET /models` answers
-`{"default":"gpt-6.1-sol","models":[{"id":"gpt-6.1-sol","name":"Sol"},{"id":"gpt-6.1-terra","name":"Terra"},{"id":"gpt-6-luna","name":"Luna"}]}`.
+`{"default":"gpt-6.1-sol","models":[{"id":"gpt-6.1-sol","name":"Sol","provider":"ChatGPT"},...]}`. Each option has a
+`provider`: `ChatGPT`, `Claude` or `DeepSeek`.
 The list is the newest Sol, Terra and Luna on the ChatGPT plan (from `GET https://api.openai.com/v1/models`), kept
 for an hour; if the plan cannot be asked, the last good list, or only the default. The default is always first.
+After the ChatGPT models come `claude-opus-5-5` and `claude-sonnet-5-5` when `ANTHROPIC_API_KEY` is set, then
+`deepseek-v4-pro` and `deepseek-flash` when `DEEPSEEK_API_KEY` is set; these are fixed in code. A missing key means
+that provider is not offered, and a `TABA_MODEL` whose provider has no key stops the server at startup. DeepSeek
+Flash cannot search, so a Flash trip's research stage runs on DeepSeek V4 Pro; its other stages use Flash. Claude
+requests use web search (`web_search_20260209`, up to 10 searches) and server-side fallbacks, and are retried
+once without the JSON schema format if Anthropic refuses it together with search citations.
 Offline replay offers only the default. A `model` the server does not currently offer gets `400`. The trip stores
 the model it will use (the default is filled in at admission), `GET /trips/:id` and the progress events report it,
 and the finished guide records it as `aiModel`. Trips from before this change have no model.
