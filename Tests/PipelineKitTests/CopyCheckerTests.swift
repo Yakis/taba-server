@@ -153,7 +153,7 @@ struct CopyCheckerTests {
         (#"{"text":"twenty-one"}"#, "Walk twenty-one minutes.", false),
         (#"{"a":20,"b":1}"#, "Visit the twenty-first stop.", true),
         (#"{"text":"twenty-first"}"#, "Visit the twenty-first stop.", false),
-        (#"{"n":21}"#, "Walk twenty-one minutes.", true),
+        (#"{"n":21}"#, "Walk twenty-one minutes.", false),
         (#"{"n":10}"#, "It’s 10 minutes.", false),
         (#"{"n":10}"#, "It’s 11 minutes.", true),
         (#"{"arrives":"2025-11-25T18:52"}"#, "Arriving at 18:52.", false),
@@ -210,5 +210,24 @@ struct CopyCheckerTests {
         let otherInput = #"{"walk":100,"time":"16:01","date":"2025-11-24","price":"£12.00"}"#
         let absent = checker.check(value, expected: expected, input: otherInput)
         #expect(absent.filter { if case .ungroundedNumber = $0.kind { true } else { false } }.count == 5)
+    }
+
+    @Test func closingTimesSpelledNumbersAndOrdinalsAreGrounded() throws {
+        let value = try copy {
+            let text = "Open 10:00–21:00, twenty-one minutes away. Stay forty five minutes, then a second round."
+            replacing(&$0, group: "stops", field: "body", value: text)
+        }
+        let input = #"{"hours":"10:00-21:00","walk":21,"minutes":45}"#
+        let claims = checker.check(value, expected: expected, input: input).compactMap { issue -> String? in
+            if case .ungroundedNumber(let claim) = issue.kind { return claim }
+            return nil
+        }
+        #expect(claims.isEmpty)
+        let wrong = checker.check(value, expected: expected, input: #"{"hours":"10:00-22:00","walk":20,"minutes":40}"#)
+        let wrongClaims = wrong.compactMap { issue -> String? in
+            if case .ungroundedNumber(let claim) = issue.kind { return claim.lowercased() }
+            return nil
+        }
+        #expect(wrongClaims == ["21:00", "twenty-one", "forty five"])
     }
 }

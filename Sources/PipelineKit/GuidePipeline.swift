@@ -229,7 +229,7 @@ public struct GuidePipeline: Sendable {
                 current, prompt: writePrompt, step: "write", send: send, evidence: evidence)
             let issues = CopyChecker().check(copy, expected: targets, input: inputText)
             await evidence(.copy(issues: issues))
-            let blocking = issues.filter { if case .ungroundedNumber = $0.kind { false } else { true } }
+            let blocking = issues.filter { Self.blocksCopy($0.kind, retried: attempt > 0) }
             if blocking.isEmpty { return copy }
             guard attempt == 0 else { throw GuidePipelineError.copyErrors(issues) }
             let feedback = blocking.map { "\($0.path): \(String(describing: $0.kind))" }.joined(separator: "\n")
@@ -239,6 +239,17 @@ public struct GuidePipeline: Sendable {
             ], structuredOutput: schema, reasoningEffort: writePrompt.effort)
         }
         throw GuidePipelineError.invalidPlan("No accepted copy")
+    }
+
+    /// Whether a copy issue stops the copy being used. Numbers are never blocking: they are flagged for review. Length
+    /// limits block the first answer, so the writer is asked to fix them, but not the corrected one: one sentence a
+    /// word too long should not throw away a whole guide. They are flagged for review instead.
+    static func blocksCopy(_ kind: CopyCheckIssue.Kind, retried: Bool) -> Bool {
+        switch kind {
+        case .ungroundedNumber: false
+        case .wordLimit, .sentenceLimit: !retried
+        default: true
+        }
     }
 
     /// Assembles and validates the finished guide; completion is emitted only on success. Each day gets the weather

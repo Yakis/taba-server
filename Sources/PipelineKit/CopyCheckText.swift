@@ -28,7 +28,7 @@ enum CopyTextChecks {
     // swiftlint:disable:next cyclomatic_complexity
     static func check(_ fields: [CopyField], input: String) -> [CopyCheckIssue] {
         var issues: [CopyCheckIssue] = []
-        let inputNumbers = Set(groundingValues(input).map(splitDateTimes)
+        let inputNumbers = Set(groundingValues(input).map { splitTimeRanges(splitDateTimes($0)) }
             .flatMap { matches(numberPattern, $0) }.map(normalNumber))
         let iconicAllowed = containsIconicFact(input)
         var exclamations = 0
@@ -70,7 +70,8 @@ enum CopyTextChecks {
                 if exclamations > 1 { issues.append(.init(kind: .exclamationLimit, path: field.path, text: text)) }
             }
             for sentence in sentences {
-                for claim in matches(numberPattern, sentence) where !inputNumbers.contains(normalNumber(claim)) {
+                for claim in matches(numberPattern, splitTimeRanges(sentence))
+                where !inputNumbers.contains(normalNumber(claim)) && !ordinals.contains(claim.lowercased()) {
                     issues.append(.init(kind: .ungroundedNumber(claim), path: field.path, text: sentence))
                 }
             }
@@ -85,9 +86,30 @@ enum CopyTextChecks {
                                    options: .regularExpression)
     }
 
+    /// Opening hours arrive as ranges (`10:00-21:00`). The hyphen would make the range one token that grounds
+    /// neither time, so the closing time could never be mentioned. Ranges become two times, in the input and in the
+    /// copy.
+    private static func splitTimeRanges(_ value: String) -> String {
+        value.replacingOccurrences(of: #"(?<!\d)(\d{1,2}:\d{2})\s*[-\p{Pd}]\s*(\d{1,2}:\d{2})(?!\d)"#, with: "$1 $2",
+                                   options: .regularExpression)
+    }
+
+    /// Ordinals that order things in the copy ("a second stop", "the first day") rather than state a fact.
+    private static let ordinals: Set<String> = [
+        "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "ninth", "tenth"
+    ]
+
+    /// A number as digits when it can be: "ten" is 10, and "twenty-one" or "forty five" is 21 or 45.
     private static func normalNumber(_ value: String) -> String {
         let lower = value.lowercased()
-        return numbers[lower] ?? lower.replacingOccurrences(of: " ", with: "")
+        if let digits = numbers[lower] { return digits }
+        let parts = lower.split { !$0.isLetter }.map(String.init)
+        if parts.count == 2, let tens = numbers[parts[0]].flatMap(Int.init),
+           let units = numbers[parts[1]].flatMap(Int.init),
+           (20...90).contains(tens), tens % 10 == 0, (1...9).contains(units) {
+            return String(tens + units)
+        }
+        return lower.replacingOccurrences(of: " ", with: "")
     }
 
     private static func isEmoji(_ character: Character) -> Bool {
