@@ -2,11 +2,14 @@ import Foundation
 
 /// Name tokens for comparing a wanted place name with a name from another source.
 public enum NameTokens {
-    /// Words too common to tell two places apart: articles, street types and generic kinds of place.
+    /// Words too common to tell two places apart: articles, street types, and generic kinds of place. The food and
+    /// drink words (ale, inn, tavern, kitchen and so on) name a kind of place, not which one, so "Smithies Ale House"
+    /// and "The Ale House" are not the same pub.
     public static let generic: Set<String> = [
         "the", "and", "of", "at", "in", "on", "a", "an",
         "st", "street", "road", "rd", "avenue", "ave", "lane", "ln", "place", "pl",
         "bar", "cafe", "restaurant", "pub", "food", "coffee", "shop", "store",
+        "ale", "inn", "tavern", "kitchen", "bistro", "brasserie", "grill", "eatery", "diner",
         "ltd", "limited", "co"
     ]
 

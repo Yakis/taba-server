@@ -57,4 +57,31 @@ struct NameTokensTests {
         let score = NameTokens.nameSimilarity("Steps", "Waverley Steps")
         #expect(abs(score - 2.0 / 3.0) < 0.0001)
     }
+
+    @Test func foodAndDrinkWordsAloneDoNotMakeTwoPlacesTheSame() {
+        // "Ale" and "House" are shared, but "Ale" names a kind of pub, not which one, so only "House" is left.
+        #expect(NameTokens.significant("The Ale House") == ["house"])
+        #expect(NameTokens.nameSimilarity("Smithies Ale House", "The Ale House") == 0)
+    }
+
+    @Test func aNameOfOnlyFoodWordsKeepsAllItsWords() {
+        #expect(NameTokens.significant("The Ale") == ["the", "ale"])
+    }
+
+    @Test func theCorrectMatchesStillReachTheAcceptableSimilarity() {
+        let pairs: [(wanted: String, found: String)] = [
+            ("The Vennel", "The Vennel Viewpoint Edinburgh Castle"),
+            ("Calton Hill", "Calton Hill Observatory"),
+            ("Stockbridge Market", "Stockbridge Sunday Market"),
+            ("The Café Royal Circle Bar", "Cafe Royal"),
+            ("Edinburgh's Christmas Market, East Princes Street Gardens", "East Princes Street Gardens"),
+            ("The Stockbridge Tap", "The Stockbridge Tap"),
+            ("Sandy Bell's", "Sandy Bell's"),
+            ("Clark's Bar", "Clark's Bar")
+        ]
+        for pair in pairs {
+            let score = NameTokens.nameSimilarity(pair.wanted, pair.found, cityName: "Edinburgh")
+            #expect(score >= NameTokens.acceptableSimilarity, "\(pair.wanted) against \(pair.found) scored \(score)")
+        }
+    }
 }

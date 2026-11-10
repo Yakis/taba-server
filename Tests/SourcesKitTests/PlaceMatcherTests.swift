@@ -141,4 +141,75 @@ struct PlaceMatcherTests {
         let decision = matcher.choose(for: wanted, among: try hits([street]))
         #expect(decision.best?.fsqPlaceId == "street")
     }
+
+    /// Chooses among one hit at the wanted coordinate, so only the name and category decide.
+    private func choose(
+        wanted name: String, kind: PlaceKind, hit hitName: String, category: String
+    ) throws -> MatchDecision {
+        let place = HitJSON.place(id: "hit", name: hitName, latitude: 55.9510, longitude: -3.2010, category: category)
+        let wanted = WantedPlace(name: name, kind: kind, coordinate: Samples.coordinate(55.9510, -3.2010))
+        return matcher.choose(for: wanted, among: try hits([place]))
+    }
+
+    @Test func aPubWithTheSameFoodWordIsNotAnotherPub() throws {
+        // "Smithies Ale House" shares only "House" with "The Ale House", so the name check rejects it.
+        let decision = try choose(wanted: "Smithies Ale House", kind: .pub, hit: "The Ale House", category: "Pub")
+        #expect(decision.best == nil)
+        #expect(decision.rejected.first?.reason.contains("name") == true)
+    }
+
+    @Test func aShopIsNotAChristmasMarket() throws {
+        let decision = try choose(
+            wanted: "Edinburgh Christmas Market", kind: .market,
+            hit: "The Nutcracker Christmas shop", category: "Gift Shop"
+        )
+        #expect(decision.best == nil)
+        #expect(decision.rejected.first?.reason == "a shop, not a market")
+    }
+
+    @Test func aShopIsNotAFoodHall() throws {
+        let decision = try choose(
+            wanted: "Edinburgh Food Hall", kind: .foodHall,
+            hit: "Edinburgh Food Hall Gift Shop", category: "Gift Shop"
+        )
+        #expect(decision.best == nil)
+        #expect(decision.rejected.first?.reason == "a shop, not a food hall")
+    }
+
+    @Test func aMarketHitIsNotRejectedAsAShop() throws {
+        let decision = try choose(
+            wanted: "Stockbridge Market", kind: .market,
+            hit: "Stockbridge Sunday Market", category: "Farmers Market"
+        )
+        #expect(decision.best?.fsqPlaceId == "hit")
+    }
+
+    private struct ChoiceCase {
+        let wanted: String
+        let kind: PlaceKind
+        let hit: String
+        let category: String
+    }
+
+    @Test func theCorrectMatchesStillWinThroughChoose() throws {
+        let cases: [ChoiceCase] = [
+            .init(wanted: "The Vennel", kind: .viewpoint, hit: "The Vennel Viewpoint Edinburgh Castle",
+                  category: "Scenic Lookout"),
+            .init(wanted: "Calton Hill", kind: .landmark, hit: "Calton Hill Observatory", category: "Historic Site"),
+            .init(wanted: "Stockbridge Market", kind: .market, hit: "Stockbridge Sunday Market",
+                  category: "Farmers Market"),
+            .init(wanted: "The Café Royal Circle Bar", kind: .pub, hit: "Cafe Royal", category: "Pub"),
+            .init(wanted: "Edinburgh's Christmas Market, East Princes Street Gardens", kind: .market,
+                  hit: "East Princes Street Gardens", category: "Park"),
+            .init(wanted: "The Stockbridge Tap", kind: .pub, hit: "The Stockbridge Tap", category: "Pub"),
+            .init(wanted: "Sandy Bell's", kind: .pub, hit: "Sandy Bell's", category: "Pub"),
+            .init(wanted: "Clark's Bar", kind: .pub, hit: "Clark's Bar", category: "Bar")
+        ]
+        for testCase in cases {
+            let decision = try choose(
+                wanted: testCase.wanted, kind: testCase.kind, hit: testCase.hit, category: testCase.category
+            )
+            #expect(decision.best?.fsqPlaceId == "hit", "\(testCase.wanted) should match \(testCase.hit)")
+        }
+    }
 }

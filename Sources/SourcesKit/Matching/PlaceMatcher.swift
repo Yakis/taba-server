@@ -40,8 +40,8 @@ public struct MatchDecision: Sendable, Equatable {
 /// Chooses which of several Foursquare search hits is the wanted place.
 ///
 /// A hit is thrown out when it is too far away, when its categories are a road, street or neighbourhood for a place
-/// that is a restaurant, pub, cafe or shop, or when its name shares too few significant words. The rest are ranked
-/// by name similarity and distance.
+/// that is a restaurant, pub, cafe or shop, when its categories are all shops for a market or food hall, or when its
+/// name shares too few significant words. The rest are ranked by name similarity and distance.
 public struct PlaceMatcher: Sendable {
     public let maxDistanceMetres: Double
     public let cityName: String?
@@ -53,6 +53,9 @@ public struct PlaceMatcher: Sendable {
         "road", "roads", "street", "streets", "neighborhood", "neighborhoods",
         "neighbourhood", "neighbourhoods", "intersection", "intersections"
     ]
+    /// Kinds of place that a shop is never. A hit whose categories are all shops is rejected for these kinds. The
+    /// value is the words used in the rejection reason.
+    static let marketKinds: [PlaceKind: String] = [.market: "market", .foodHall: "food hall"]
 
     public init(maxDistanceMetres: Double = 200, cityName: String? = nil) {
         self.maxDistanceMetres = maxDistanceMetres
@@ -102,6 +105,9 @@ public struct PlaceMatcher: Sendable {
         if Self.shopLikeKinds.contains(wanted.kind), isAreaOnly(hit, for: wanted.kind) {
             return .rejected("category is a road or area, not a \(wanted.kind.rawValue)")
         }
+        if let kindName = Self.marketKinds[wanted.kind], isShopOnly(hit) {
+            return .rejected("a shop, not a \(kindName)")
+        }
         let similarity = NameTokens.nameSimilarity(wanted.name, hit.name, cityName: cityName)
         guard similarity >= NameTokens.acceptableSimilarity else {
             return .rejected("name similarity \(String(format: "%.2f", similarity)) is too low")
@@ -124,6 +130,13 @@ public struct PlaceMatcher: Sendable {
         }
         guard hasAreaCategory else { return false }
         return !hit.categories.contains { PlaceKindMapper.kind(for: [$0]) == kind }
+    }
+
+    /// True when the hit has categories and every one of them maps to a shop. A hit with no categories is not
+    /// judged a shop, because nothing says what it is.
+    private func isShopOnly(_ hit: FoursquarePlace) -> Bool {
+        guard !hit.categories.isEmpty else { return false }
+        return hit.categories.allSatisfy { PlaceKindMapper.kind(for: [$0]) == .shop }
     }
 
     private func isBetter(_ candidate: PlaceMatch, than current: PlaceMatch) -> Bool {
