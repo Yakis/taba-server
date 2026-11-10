@@ -221,6 +221,7 @@ The first guide built through the app had sound picks but serious gaps. Each fix
 | Q6 | Rebuild the same trip and compare | The owner judges it good | run: Sol and Terra good, Luna failed; Terra is the default |
 | Q7 | Every interest gets a stop: candidates say which interests they serve (by kind and by the interest search that found them); plan.md v4 asks for each interest at least once, music in the evening, photography near sunset; an `interestMissed` info issue records misses | A rebuilt Sheffield trip has a music stop and a photography stop, or says why not | deployed 2026-11-10 (taba-server:q8); owner to test |
 | Q8 | Other AI providers: Claude (Opus 5.5, Sonnet 5.5) and DeepSeek (V4 Pro, Flash) next to ChatGPT, each behind its own paid API key; `/models` gives each a `provider`; the app groups the picker by provider | The owner builds the same trip with each and compares | deployed 2026-11-10 (taba-server:q8); owner to test |
+| Q9 | Delete a guide: `DELETE /trips/:id` removes a finished trip and all its rows (409 while building); the app's Library deletes a guide on the phone and asks the server to delete its copy | A guide deleted in the app is gone from the server | built, not deployed |
 
 Learned in Q1: overpass-api.de often answers 502 when full, and the public mirrors are slow or broken at times,
 so retries with waits matter more than more mirrors. A batch can now take about 8.5 minutes at worst.

@@ -71,6 +71,7 @@ check. JSON responses and progress streams use `Cache-Control: no-store`; do not
 | GET | `/trips/:id/guide` | The Guide after completion; `409` while unavailable |
 | GET | `/trips/:id/review` | Preserved copy-review flags, including affected text and paths |
 | GET | `/trips/:id/events` | SSE progress, resumable using `Last-Event-ID` |
+| DELETE | `/trips/:id` | `204`, empty body: removes the trip and everything stored for it (input, guide, checkpoints, progress, evidence, copy reviews). `409` while queued or building; `404` if unknown |
 
 Create body (14 calendar days maximum; names at most 120 UTF-8 bytes):
 
@@ -116,6 +117,9 @@ once without the JSON schema format if Anthropic refuses it together with search
 Offline replay offers only the default. A `model` the server does not currently offer gets `400`. The trip stores
 the model it will use (the default is filled in at admission), `GET /trips/:id` and the progress events report it,
 and the finished guide records it as `aiModel`. Trips from before this change have no model.
+
+Deleting is permanent and only for a finished (completed or failed) trip; a queued or running trip answers `409`
+and nothing is removed. A stage job still queued for a deleted trip finds no trip and does nothing.
 
 SSE sends durable increasing event IDs and safe status only—not the destination, bookings, provider output
 or raw errors. It emits heartbeats, disables proxy buffering, observes disconnect/cancellation, and closes
