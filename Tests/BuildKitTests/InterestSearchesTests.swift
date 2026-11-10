@@ -13,12 +13,17 @@ struct InterestSearchesTests {
     private let heritage = FoursquarePlacesSource.CategorySearch(
         label: "heritage", categoryIds: ["4deefb944765f83613cdba6e", "4bf58dd8d48988d12d941735"]
     )
+    private let views = FoursquarePlacesSource.CategorySearch(
+        label: "views", categoryIds: ["4bf58dd8d48988d165941735", "4bf58dd8d48988d1df941735",
+                                      "4bf58dd8d48988d164941735", "4deefb944765f83613cdba6e"]
+    )
 
     @Test(arguments: [
         ("music", "music"), ("gigs", "music"), ("concerts", "music"),
         ("art", "galleries"), ("galleries", "galleries"),
         ("nature", "parks"), ("parks", "parks"), ("gardens", "parks"),
-        ("history", "heritage"), ("architecture", "heritage"), ("heritage", "heritage")
+        ("history", "heritage"), ("architecture", "heritage"), ("heritage", "heritage"),
+        ("photography", "views"), ("photos", "views"), ("Views", "views"), ("viewpoints", "views")
     ])
     func eachRowMapsItsWordsToItsSearch(interest: String, label: String) {
         let searches = InterestSearches.searches(for: [interest])
@@ -30,6 +35,7 @@ struct InterestSearchesTests {
         #expect(InterestSearches.searches(for: ["art"]) == [galleries])
         #expect(InterestSearches.searches(for: ["parks"]) == [parks])
         #expect(InterestSearches.searches(for: ["history"]) == [heritage])
+        #expect(InterestSearches.searches(for: ["Photography"]) == [views])
     }
 
     @Test func matchingIsOnWholeWords() {
@@ -48,11 +54,11 @@ struct InterestSearchesTests {
 
     @Test func inputIsTrimmedAndCaseInsensitive() {
         #expect(InterestSearches.searches(for: ["  MUSIC  "]) == [music])
-        #expect(InterestSearches.searches(for: ["Photography", " Markets "]).isEmpty)
+        #expect(InterestSearches.searches(for: ["Photography", " Markets "]) == [views])
     }
 
     @Test func otherInterestsAddNothing() {
-        #expect(InterestSearches.searches(for: ["Food", "Pubs", "Photography", "Markets"]).isEmpty)
+        #expect(InterestSearches.searches(for: ["Food", "Pubs", "Coffee", "Markets"]).isEmpty)
     }
 
     @Test func emptyInputAddsNothing() {

@@ -64,6 +64,9 @@ struct InterestMatchTests {
         #expect(serves("photography", .shop, indoor: false, labels: ["heritage"]))
         #expect(serves("photos", .cafe, indoor: true, labels: ["parks"]))
         #expect(!serves("photography", .shop, indoor: false, labels: ["music"]))
+        #expect(serves("Photography", .other, indoor: false, labels: ["views"]))
+        #expect(serves("Views", .viewpoint, indoor: false))
+        #expect(serves("views", .other, indoor: true, labels: ["views"]))
     }
 
     @Test func shoppingAndFoodKindsServeTheirWords() {

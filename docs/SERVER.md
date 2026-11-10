@@ -95,6 +95,7 @@ Optional preferences, each falling back to the old default when absent:
 | `adults`, `children` | 1–10, 0–10 | 1, 0 |
 | `mobilityNotes` | at most 5 strings, each 1–120 bytes | none |
 | `arrives`, `leaves` | `"HH:MM"`, local time: when the traveller reaches the city on the first day and leaves it on the last. Used where no transport booking applies; on a one-day trip `leaves` must be at least 120 minutes after `arrives` | none (the day is open from morning to evening) |
+| `luggage` | where bags can wait: a station's left luggage, or the stay if it keeps bags; 1–120 bytes. Looked up like the stay and given to the planner as the luggage store, open 08:00–20:00 as an assumption the guide tells the traveller to check. A name that can't be found is not an error: the guide says bags are carried | none (bags are carried) |
 | `model` | an id from `/models`: `gpt-<version>-sol`, `-terra` or `-luna`, or a `claude-` or `deepseek-` id | the server default (`TABA_MODEL`) |
 
 They fill the trip scaffold the pipeline plans and writes from (`Trip.pace`, `interests`, `budget.dailySpend`,

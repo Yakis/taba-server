@@ -31,8 +31,8 @@ public enum InterestMatch {
             outdoorOnly: false),
         Row(words: ["history", "architecture", "heritage"], kinds: [.landmark, .museum],
             searchLabels: ["heritage"], outdoorOnly: false),
-        Row(words: ["photography", "photos", "photo"],
-            kinds: [.viewpoint, .landmark, .street, .neighbourhood], searchLabels: ["heritage", "parks"],
+        Row(words: ["photography", "photos", "photo", "views", "view", "viewpoint", "viewpoints"],
+            kinds: [.viewpoint, .landmark, .street, .neighbourhood], searchLabels: ["heritage", "parks", "views"],
             outdoorOnly: true),
         Row(words: ["shopping", "shops"], kinds: [.shop, .market], searchLabels: [], outdoorOnly: false)
     ]

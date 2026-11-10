@@ -1,6 +1,6 @@
 ---
 id: research
-version: 2
+version: 3
 role: instructions
 output: ResearchResult
 effort: medium
@@ -23,6 +23,8 @@ accuracy matters more than volume.
 3. Public holidays, and opening patterns that change on those dates.
 4. Places a places database may miss that match the interests: well-known viewpoints, photo spots, historic
    pubs, food markets. Return them as `suggestedPlaces`. Code looks each one up and decides whether to use it.
+   When the interests include photography or views, suggest three to five of the city's best-known photo spots
+   by their exact names, within reach of the stay area.
 
 Code already has opening hours for ordinary venues, walking times, sunrise and sunset, and the weather. Don't
 research those.
@@ -50,6 +52,9 @@ Return only the JSON object matching the schema.
   `holiday` or `other`), `title`, `summary`, `startDate` and `endDate` (`YYYY-MM-DD` or `null`), `times`
   (the source's wording, or `null`), `placeName`, `address`, `url`, `sourceTitle`, `confidence` (`high`,
   `medium` or `low`) and `onTripDates` (`true` when it happens during the trip).
-- `suggestedPlaces`: each with `name`, `area`, `kind` (one of the place kinds in the schema) and `why`
-  (at most 15 words).
+- `suggestedPlaces`: at most 12, the most useful first, each with `name`, `area`, `kind` (one of the place kinds
+  in the schema) and `why` (at most 15 words). `kind` says what the place is, not why to go: a street is
+  `street`, a district or village is `neighbourhood`, a hill or lookout is `viewpoint`, a monument, a bridge or a
+  flight of steps is `landmark`. Code uses the kind to find the right place, so a street called a viewpoint is
+  lost.
 - `searchNotes`: one or two sentences on what you could not confirm.

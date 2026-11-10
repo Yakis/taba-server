@@ -223,6 +223,7 @@ The first guide built through the app had sound picks but serious gaps. Each fix
 | Q8 | Other AI providers: Claude (Opus 5.5, Sonnet 5.5) and DeepSeek (V4 Pro, Flash) next to ChatGPT, each behind its own paid API key; `/models` gives each a `provider`; the app groups the picker by provider | The owner builds the same trip with each and compares | deployed 2026-11-10 (taba-server:q8); owner comparing models |
 | Q9 | Delete a guide: `DELETE /trips/:id` removes a finished trip and all its rows (409 while building); the app's Library deletes a guide on the phone and asks the server to delete its copy | A guide deleted in the app is gone from the server | deployed 2026-11-10 (taba-server:q9) |
 | Q10 | Arrival and leaving times (`arrives`/`leaves`, plan.md v5), stages of different trips run in parallel (`TABA_WORKERS`, default 3; per-trip locks, Overpass one at a time, one shared ChatGPT refresh), guides record `buildTime`; the copy check no longer fails a guide over closing times, spelled numbers or a rewrite that is still slightly long | A trip arriving at 12:29 gets no breakfast that day; three builds at once finish in about the time of the slowest | deployed 2026-11-10 (taba-server:q10) |
+| Q11 | From the Edinburgh model comparison: a place is used once per trip (`placeRepeated` warning, plan.md v6); stop bodies stop repeating the walk, the length and the opening hours the card already shows, and stop talking about the plan (write.md v5); photo spots reach the candidates (a `views` interest search, research.md v3 names streets as streets, 12 suggestions looked up instead of 8, a photography stop each full day); a trip may name a luggage store (`luggage`) | A rebuilt Edinburgh has no repeated cafe or pub, no body opening "Walk N minutes", and a photo stop from the suggested spots on each full day | done |
 
 Learned in Q1: overpass-api.de often answers 502 when full, and the public mirrors are slow or broken at times,
 so retries with waits matter more than more mirrors. A batch can now take about 8.5 minutes at worst.
@@ -239,6 +240,9 @@ that would make the visit fail.
 Q5b: `GET /models` lists the newest Sol, Terra and Luna on the plan (cached an hour, last good list on failure, the
 default always first); `taba_trips.model` column (migration); `Guide.aiModel`. The real slugs are checked only after
 the deploy, through `/models`, so the Mac never refreshes the shared ChatGPT sign-in.
+Q11: research had been suggesting Victoria Street as a `viewpoint`, and the lookup drops road hits for every kind but
+`street` and `neighbourhood`, so it never became a candidate. DeepSeek answers research with a sentence and a fenced
+`json` block, which fails to decode: not fixed yet.
 
 Later, if the AI turns out to be the weak link: a second AI provider with its own key, switchable from the app's
 settings. A paid key needs the owner's yes.

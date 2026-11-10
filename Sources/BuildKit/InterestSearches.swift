@@ -19,7 +19,11 @@ public enum InterestSearches {
         (["nature", "park", "parks", "garden", "gardens"],
          .init(label: "parks", categoryIds: ["4bf58dd8d48988d163941735", "4bf58dd8d48988d15a941735"])),
         (["history", "architecture", "heritage"],
-         .init(label: "heritage", categoryIds: ["4deefb944765f83613cdba6e", "4bf58dd8d48988d12d941735"]))
+         .init(label: "heritage", categoryIds: ["4deefb944765f83613cdba6e", "4bf58dd8d48988d12d941735"])),
+        // Photo spots: scenic lookouts, bridges, plazas and historic sites.
+        (["photography", "photo", "photos", "views", "view", "viewpoint", "viewpoints"],
+         .init(label: "views", categoryIds: ["4bf58dd8d48988d165941735", "4bf58dd8d48988d1df941735",
+                                             "4bf58dd8d48988d164941735", "4deefb944765f83613cdba6e"]))
     ]
 
     /// The extra searches for `interests`, in interest order, de-duplicated by label and capped.

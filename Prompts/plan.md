@@ -1,6 +1,6 @@
 ---
 id: plan
-version: 5
+version: 6
 role: instructions
 output: PlanDraft
 effort: high
@@ -63,6 +63,9 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
    - Check in at or after check-in time. Check out at or before check-out time.
    - If the departure comes after check-out and the luggage store is open, drop bags after check-out. On that
      day, the last stop collects them and ends by `window.end`.
+   - With no luggage store, keep the time spent carrying bags short. On the arrival day, stay near the stay
+     until check-in. On the departure day, plan the check-out stop as late as check-out time and the morning
+     allow, and keep what follows close together.
 7. Ticketed bookings in `anchors` appear exactly at their booked time.
 
 ## B. Quality. Break only to satisfy section A.
@@ -97,20 +100,27 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
 14. Ride from the stay: when the stay is a ride away (`fromStay.mode` is `transit` for most candidates), the day
     starts and ends with a bus or taxi ride: plan the first stop after the ride from the stay and the return after
     the last stop, and don't go back to the stay in the middle of the day unless check-in or bags need it.
+15. One visit each: use a place for one stop in the whole trip. Two breakfasts mean two cafes, and a pub used
+    for an evening drink is not also a lunch. The stay, the luggage store and stations are the exceptions, and
+    so is a second stop that directly follows the first at the same place, such as lunch at a market and then
+    browsing it. If there are too few candidates to avoid a repeat, keep the repeat and say so in
+    `openQuestions`.
 
 ## C. Taste.
 
-15. Give each day one clear highlight and a theme you can say in a few words. Give every interest at least one
+16. Give each day one clear highlight and a theme you can say in a few words. Give every interest at least one
     stop over the trip, using a candidate whose `interests` include it or a finding about it, and the top-ranked
     interests more than one. Time them to suit: music in the evening (a gig, a session or a venue's bar),
-    photography at an outdoor place near `sunset` or before `blueHourEnds`. If no candidate or finding serves an
-    interest, say so in `openQuestions`. Don't put two stops of the same kind back to back, unless that kind is
+    photography at an outdoor place near `sunset` or before `blueHourEnds`. When photography or views is an
+    interest, give it an outdoor stop on every full day, at a different place each day, choosing viewpoints,
+    streets and neighbourhoods whose `interests` include it. If no candidate or finding serves an interest, say
+    so in `openQuestions`. Don't put two stops of the same kind back to back, unless that kind is
     the top interest.
-16. Keep to `dailySpend`: mostly `priceLevel` 1–2 for `low`, up to 3 for `moderate`, any for `high`. Free
+17. Keep to `dailySpend`: mostly `priceLevel` 1–2 for `low`, up to 3 for `moderate`, any for `high`. Free
     sights suit every level.
-17. Respect mobility notes. For anyone who mentions stairs or hills, avoid long climbs late in the day.
-18. Leave slack. A plan with 15 minutes to spare beats one that only just fits.
-19. Mark stops that depend on weather or mood as `flexible: true`.
+18. Respect mobility notes. For anyone who mentions stairs or hills, avoid long climbs late in the day.
+19. Leave slack. A plan with 15 minutes to spare beats one that only just fits.
+20. Mark stops that depend on weather or mood as `flexible: true`.
 
 # Lists
 
@@ -139,5 +149,6 @@ Return only the JSON object matching the schema.
 - `theme`: a working theme of at most 8 words. The writer turns it into the day's title.
 - `skippedMeals`: each meal left out on purpose, with its `date`, `slot` and a short `reason`. Empty when
   every meal is planned.
-- `openQuestions`: things the traveller should check or decide, in plain words, one per item.
+- `openQuestions`: things the traveller should check or decide, in plain words, one per item, each thing asked
+  once. Write them to the traveller: never mention candidates, findings, lists or what the data lacks.
 - `changes`: leave empty. It is only used when fixing a plan.
