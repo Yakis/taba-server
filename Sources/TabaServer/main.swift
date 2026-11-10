@@ -60,7 +60,7 @@ struct TabaServer {
             configuration: .init(queueName: "taba"), logger: privateLogger), logger: privateLogger)
         let store = PostgresTripStore(client: postgres, logger: privateLogger)
         // A request's own timeout only covers the response head. The read timeout bounds idle gaps in a
-        // streamed body, so a stalled provider stream cannot hold the single worker forever.
+        // streamed body, so a stalled provider stream cannot hold a worker forever.
         let client = HTTPClient(configuration: .init(redirectConfiguration: .disallow,
             timeout: .init(connect: .seconds(15), read: .minutes(10))))
         do {
@@ -95,10 +95,11 @@ struct TabaServer {
             queue.registerJob(JobDefinition(parameters: StageJob.self, retryStrategy: .dontRetry) { job, _ in
                 try await store.process(job, runner: runner)
             })
+            let workers = BuildWorkers.count(from: environment["TABA_WORKERS"])
             let router = try TripHTTP.router(store: store, token: token, models: models)
             var application = Application(router: router,
                 configuration: .init(address: .hostname(environment["HOST"] ?? "127.0.0.1", port: port)),
-                services: [postgres, queue.processor(options: .init(numWorkers: 1)),
+                services: [postgres, queue.processor(options: .init(numWorkers: workers)),
                            BuildDispatcher(store: store, queue: queue, migrations: migrations)], logger: logger)
             application.beforeServerStarts {
                 try await migrations.apply(client: postgres, logger: privateLogger, dryRun: false)

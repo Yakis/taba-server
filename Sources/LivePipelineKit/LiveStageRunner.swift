@@ -23,6 +23,12 @@ private enum SharedPacer {
     static let nominatim = RequestPacer(interval: .seconds(1))
 }
 
+/// Overpass takes one query at a time from us, so every job shares one gate for its hosts.
+private enum SharedOverpassGate {
+    static let gate = SerialGate()
+    static let hosts = Set(OverpassHoursSource.defaultEndpoints.compactMap { $0.host?.lowercased() })
+}
+
 private struct PoliteFetcher: HTTPFetching {
     let inner: any HTTPFetching
     func send(_ request: URLRequest) async throws -> SourcesKit.HTTPResponse {
@@ -30,6 +36,9 @@ private struct PoliteFetcher: HTTPFetching {
             try await SharedPacer.nominatim.wait()
         }
         try Task.checkCancellation()
+        if let host = request.url?.host?.lowercased(), SharedOverpassGate.hosts.contains(host) {
+            return try await SharedOverpassGate.gate.run { try await inner.send(request) }
+        }
         return try await inner.send(request)
     }
 }
@@ -57,7 +66,8 @@ public struct LiveStageRunner: Sendable {
                                           children: work.input.children ?? standard.children,
                                           mobilityNotes: work.input.mobilityNotes ?? standard.mobilityNotes)
         let input = SourceInput(destination: work.input.destination, from: work.input.from, to: work.input.to,
-                                stay: work.input.stay, facts: work.input.facts, preferences: preferences)
+                                stay: work.input.stay, facts: work.input.facts, preferences: preferences,
+                                arrives: work.input.arrives, leaves: work.input.leaves)
         let record = SourceRecord { await evidence(.source($0)) }
         let pipeline = GuidePipeline()
         let emit: GuidePipeline.EvidenceSink = { await evidence(.pipeline($0)) }

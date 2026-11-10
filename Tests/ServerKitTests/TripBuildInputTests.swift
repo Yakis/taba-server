@@ -7,6 +7,10 @@ struct TripBuildInputTests {
     private let start = LocalDate("2025-11-23")!
     private let end = LocalDate("2025-11-25")!
 
+    private func time(_ text: String) throws -> LocalTime {
+        try #require(LocalTime(text))
+    }
+
     @Test func acceptsTypedInputAndRoundTrips() throws {
         let input = try TripBuildInput(destination: "Edinburgh", from: start, to: end, stay: "A hotel")
         let decoded = try JSONDecoder().decode(TripBuildInput.self, from: JSONEncoder().encode(input))
@@ -166,5 +170,55 @@ struct TripBuildInputTests {
         let named = try TripBuildInput(destination: "Edinburgh", from: start, to: end, model: "gpt-6.1-terra")
         #expect(named.resolvingModel("gpt-6.1-sol").model == "gpt-6.1-terra")
         #expect(plain.resolvingModel("gpt-6-astra").model == nil)
+    }
+
+    @Test func decodesStatedArrivalAndLeavingTimes() throws {
+        let json = #"""
+        {"destination":"Edinburgh","from":"2025-11-23","to":"2025-11-25","arrives":"10:15","leaves":"17:30"}
+        """#
+        let input = try JSONDecoder().decode(TripBuildInput.self, from: Data(json.utf8))
+        #expect(input.arrives == LocalTime("10:15"))
+        #expect(input.leaves == LocalTime("17:30"))
+        let plain = try JSONDecoder().decode(TripBuildInput.self, from: Data(
+            #"{"destination":"Edinburgh","from":"2025-11-23","to":"2025-11-25"}"#.utf8))
+        #expect(plain.arrives == nil)
+        #expect(plain.leaves == nil)
+        let resolved = input.resolvingModel("gpt-6.1-sol")
+        #expect(resolved.arrives == LocalTime("10:15") && resolved.leaves == LocalTime("17:30"))
+    }
+
+    @Test func rejectsMalformedStatedTimes() throws {
+        let json = #"{"destination":"Edinburgh","from":"2025-11-23","to":"2025-11-25","arrives":"25:00"}"#
+        #expect(throws: DecodingError.self) {
+            try JSONDecoder().decode(TripBuildInput.self, from: Data(json.utf8))
+        }
+    }
+
+    @Test func oneDayTripNeedsTwoHoursBetweenArrivalAndLeaving() throws {
+        let day = start
+        let arrives = try time("09:00")
+        _ = try TripBuildInput(destination: "Edinburgh", from: day, to: day, arrives: arrives,
+                               leaves: try time("11:00"))
+        #expect(throws: TripBuildInput.ValidationError.invalidTimes) {
+            try TripBuildInput(destination: "Edinburgh", from: day, to: day, arrives: arrives,
+                               leaves: try time("10:59"))
+        }
+        // Only one time set: nothing to compare.
+        _ = try TripBuildInput(destination: "Edinburgh", from: day, to: day, arrives: arrives)
+        // Several days: no such rule.
+        _ = try TripBuildInput(destination: "Edinburgh", from: start, to: end, arrives: arrives,
+                               leaves: try time("08:00"))
+    }
+
+    @Test func statedTimesCountAsPreferencesWithFacts() throws {
+        let fixtureURL = URL(fileURLWithPath: #filePath).deletingLastPathComponent()
+            .deletingLastPathComponent().deletingLastPathComponent()
+            .appendingPathComponent("GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json")
+        let fixture = try JSONDecoder().decode(Guide.self, from: Data(contentsOf: fixtureURL))
+        #expect(throws: TripBuildInput.ValidationError.preferencesWithFacts) {
+            try TripBuildInput(destination: fixture.trip.destination.name, from: fixture.trip.dates.start,
+                               to: fixture.trip.dates.end, facts: fixture,
+                               arrives: try time("10:00"))
+        }
     }
 }

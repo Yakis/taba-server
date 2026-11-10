@@ -10,15 +10,20 @@ public struct SourceInput: Sendable {
     public let stay: String?
     public let facts: Guide?
     public let preferences: TripPreferences
+    /// The local time the traveller reaches the city on `from`, and leaves it on `to`. Nil when unknown.
+    public let arrives: LocalTime?
+    public let leaves: LocalTime?
 
     public init(destination: String, from: LocalDate, to: LocalDate, stay: String? = nil, facts: Guide? = nil,
-                preferences: TripPreferences = .standard) {
+                preferences: TripPreferences = .standard, arrives: LocalTime? = nil, leaves: LocalTime? = nil) {
         self.destination = destination
         self.from = from
         self.to = to
         self.stay = stay
         self.facts = facts
         self.preferences = preferences
+        self.arrives = arrives
+        self.leaves = leaves
     }
 }
 

@@ -42,6 +42,7 @@ in the process environment. Do not put real tokens in this repository or command
 | `TABA_MODEL` | The default model for new trips; `gpt-6.1-sol` when unset (deployed: `gpt-6.1-terra`) |
 | `ANTHROPIC_API_KEY` | Optional, paid per use. When set, Claude Opus 5.5 and Claude Sonnet 5.5 are offered. Never logged. |
 | `DEEPSEEK_API_KEY` | Optional, paid per use. When set, DeepSeek V4 Pro and DeepSeek Flash are offered. Never logged. |
+| `TABA_WORKERS` | How many stages run at once, across trips: 1–4, default 3 (other values use 3). Each trip still runs one stage at a time. |
 | `TABA_CHATGPT_CREDENTIALS` | Existing writable sign-in credentials file; otherwise the normal default path |
 | `TABA_REPLAY_DIRECTORY` | Absent means live mode. Present means offline replay; empty or invalid paths fail startup. |
 
@@ -93,6 +94,7 @@ Optional preferences, each falling back to the old default when absent:
 | `dailySpend` | `low`, `moderate`, `high` | `moderate` |
 | `adults`, `children` | 1–10, 0–10 | 1, 0 |
 | `mobilityNotes` | at most 5 strings, each 1–120 bytes | none |
+| `arrives`, `leaves` | `"HH:MM"`, local time: when the traveller reaches the city on the first day and leaves it on the last. Used where no transport booking applies; on a one-day trip `leaves` must be at least 120 minutes after `arrives` | none (the day is open from morning to evening) |
 | `model` | an id from `/models`: `gpt-<version>-sol`, `-terra` or `-luna`, or a `claude-` or `deepseek-` id | the server default (`TABA_MODEL`) |
 
 They fill the trip scaffold the pipeline plans and writes from (`Trip.pace`, `interests`, `budget.dailySpend`,
@@ -117,6 +119,8 @@ once without the JSON schema format if Anthropic refuses it together with search
 Offline replay offers only the default. A `model` the server does not currently offer gets `400`. The trip stores
 the model it will use (the default is filled in at admission), `GET /trips/:id` and the progress events report it,
 and the finished guide records it as `aiModel`. Trips from before this change have no model.
+The finished guide also records `buildTime`: `totalSeconds` from the trip being sent until the guide is ready, and
+`workSeconds` spent running its stages (never more than the total). Guides from before this change have none.
 
 Deleting is permanent and only for a finished (completed or failed) trip; a queued or running trip answers `409`
 and nothing is removed. A stage job still queued for a deleted trip finds no trip and does nothing.

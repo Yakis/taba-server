@@ -9,7 +9,7 @@ import PostgresNIO
 @testable import ServerKit
 import Testing
 
-private actor StageCalls {
+actor StageCalls {
     private(set) var stages: [BuildStage] = []
     func record(_ stage: BuildStage) { stages.append(stage) }
 }
@@ -109,6 +109,8 @@ struct PostgresTripStoreTests {
         #expect(finished.state == .completed)
         #expect(finished.copyReviewRequired)
         #expect(try await store.guide(id)?.id == guide.id)
+        let time = try #require(try await store.guide(id)?.buildTime)
+        #expect(time.workSeconds <= time.totalSeconds)
         let flags = try await store.reviews(id)
         #expect(flags.count == 1)
         #expect(flags.first?.path == "hero.title")
@@ -179,7 +181,8 @@ struct PostgresTripStoreTests {
             let locks = try await postgres.query("""
                 SELECT pid FROM pg_locks WHERE locktype = 'advisory' AND granted
                 AND database = (SELECT oid FROM pg_database WHERE datname = current_database())
-                AND classid = 0 AND objid = 8417301 AND objsubid = 1
+                AND classid = \(PostgresTripStore.stageLockClass)::oid
+                AND objid = hashtext(\(trip.id)::uuid::text)::oid AND objsubid = 2
                 """, logger: logger)
             var pids: [Int32] = []
             for try await pid in locks.decode(Int32.self) { pids.append(pid) }

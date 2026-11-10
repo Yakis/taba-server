@@ -111,6 +111,26 @@ struct RefreshTimingTests {
     }
 }
 
+/// Answers every request after a short wait, so concurrent callers overlap, and counts the requests.
+private actor SlowRefreshTransport: HTTPTransport {
+    private let body: Data
+    private(set) var requestCount = 0
+
+    init(body: Data) {
+        self.body = body
+    }
+
+    func data(for request: URLRequest) async throws -> (Data, HTTPURLResponse) {
+        requestCount += 1
+        try await Task.sleep(for: .milliseconds(200))
+        guard let url = request.url,
+              let response = HTTPURLResponse(url: url, statusCode: 200, httpVersion: nil, headerFields: nil) else {
+            throw URLError(.badURL)
+        }
+        return (body, response)
+    }
+}
+
 struct CredentialSessionTests {
     private let refreshedTokens = #"{"access_token":"access-token-new","# // privacy-scan:allow
         + #""refresh_token":"refresh-token-new","# // privacy-scan:allow
@@ -209,6 +229,38 @@ struct CredentialSessionTests {
         await #expect(throws: CredentialSessionError.refreshFailed(code: "invalid_grant")) {
             _ = try await session.credentials()
         }
+    }
+
+    @Test func concurrentCallersShareOneRefresh() async throws {
+        let folder = try TemporaryFolder()
+        defer { folder.remove() }
+        let store = CredentialStore(url: folder.url.appendingPathComponent("chatgpt.json"))
+        let now = Date(timeIntervalSince1970: 1_767_300_000)
+        let old = ChatGPTCredentials(
+            email: nil,
+            issuer: "https://auth.openai.com",
+            subject: "test-subject-0001",
+            clientId: "oaiapp_test_0001", // privacy-scan:allow
+            idToken: "id-token-old",
+            accessToken: "access-token-old",
+            refreshToken: "refresh-token-old",
+            tokenType: "Bearer",
+            scopes: [],
+            accessTokenExpiresAt: now,
+            savedAt: now
+        )
+        try store.save(CredentialFile(extAgentHostId: "urn:uuid:0001", credentials: old))
+        let transport = SlowRefreshTransport(body: Data(refreshedTokens.utf8))
+        let session = CredentialSession(store: store, tokenClient: TokenClient(transport: transport), clock: { now })
+        let tokens = try await withThrowingTaskGroup(of: String.self) { group in
+            for _ in 0..<4 {
+                group.addTask { try await session.credentials().accessToken }
+            }
+            return try await group.reduce(into: [String]()) { $0.append($1) }
+        }
+        // A rotating refresh token may be used only once, so the other callers wait for the refresh in flight.
+        #expect(tokens == Array(repeating: "access-token-new", count: 4))
+        #expect(await transport.requestCount == 1)
     }
 
     @Test func noFileMeansNotSignedIn() async throws {

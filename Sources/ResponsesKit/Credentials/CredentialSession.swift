@@ -12,12 +12,14 @@ public enum CredentialSessionError: Error, Sendable, Equatable {
     case saveFailed
 }
 
-/// Gives callers credentials that are valid now, refreshing and saving them when needed. An actor, so two refreshes
-/// never race a rotating refresh token.
+/// Gives callers credentials that are valid now, refreshing and saving them when needed. An actor, and one refresh
+/// at a time: concurrent callers share the refresh in flight, so a rotating refresh token is never sent twice.
 public actor CredentialSession {
     private let store: CredentialStore
     private let tokenClient: TokenClient
     private let clock: @Sendable () -> Date
+    /// The refresh in progress, if any, so that concurrent callers wait for it instead of refreshing again.
+    private var refreshing: Task<Result<ChatGPTCredentials, CredentialSessionError>, Never>?
 
     public init(store: CredentialStore, tokenClient: TokenClient, clock: @escaping @Sendable () -> Date = { Date() }) {
         self.store = store
@@ -40,8 +42,31 @@ public actor CredentialSession {
         guard forceRefresh || current.needsRefresh(now: now) else {
             return current
         }
-        let refreshed = try await refresh(current, hostId: hostId, now: now)
-        return refreshed
+        // The refresh suspends, so another caller could reach this point meanwhile. Callers share one refresh in
+        // flight: a rotating refresh token may be used only once.
+        if let refreshing {
+            return try unwrap(await refreshing.value)
+        }
+        let task = Task<Result<ChatGPTCredentials, CredentialSessionError>, Never> {
+            do throws(CredentialSessionError) {
+                return .success(try await self.refresh(current, hostId: hostId, now: now))
+            } catch {
+                return .failure(error)
+            }
+        }
+        refreshing = task
+        let result = await task.value
+        if refreshing == task { refreshing = nil }
+        return try unwrap(result)
+    }
+
+    private func unwrap(
+        _ result: Result<ChatGPTCredentials, CredentialSessionError>
+    ) throws(CredentialSessionError) -> ChatGPTCredentials {
+        switch result {
+        case .success(let credentials): return credentials
+        case .failure(let error): throw error
+        }
     }
 
     private func refresh(

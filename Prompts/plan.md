@@ -1,6 +1,6 @@
 ---
 id: plan
-version: 4
+version: 5
 role: instructions
 output: PlanDraft
 effort: high
@@ -13,7 +13,9 @@ the words. Your job is choosing and timing.
 # What you receive
 
 - `trip`: destination, time zone, dates, party (adults, children, mobility notes), `pace`, ranked `interests`
-  and `dailySpend`.
+  and `dailySpend`. `trip.dates` may have `arrives` (when the traveller reaches the city on the first day) and
+  `leaves` (when they leave it on the last day). When there is no transport booking, these are the arrival and
+  departure, and the windows already allow for them.
 - `anchors`: fixed times. Arrivals and departures, the stay's check-in and check-out times, luggage storage
   hours, and ticketed bookings. Code adds the arrival and departure travel stops itself. Don't plan them.
 - `days`: for each date: weekday, `window` (the earliest start and latest end for anything you plan that day),
@@ -54,6 +56,8 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
 5. A place with `"unknown"` hours may be used only if it is an outdoor public space, or as a `flexible: true`
    stop whose `reason` says the hours need checking. Add the latter to `openQuestions`.
 6. Logistics, with `kind: "logistics"`:
+   - The arrival is the arrival booking or, without one, `trip.dates.arrives`. The departure is the departure
+     booking or, without one, `trip.dates.leaves`.
    - If the arrival comes before check-in and the luggage store is open, start the day by dropping bags there,
      and later collect them or check in.
    - Check in at or after check-in time. Check out at or before check-out time.

@@ -8,13 +8,18 @@ import PostgresNIO
 
 public enum BuildStoreError: Error { case corruptCheckpoint, evidenceFailed, invalidResult, interrupted }
 
-/// A single global advisory lock serializes stage execution across processes. It is held on a
-/// dedicated pooled connection throughout the stage, so a process crash releases it automatically.
-/// The trips row is also a durable outbox: advancing a checkpoint makes its successor dispatchable.
+/// Stages run in parallel across trips, one at a time per trip. Each stage holds a session advisory lock keyed by
+/// its trip, `pg_try_advisory_lock(stageLockClass, hashtext(trip id))`, on a dedicated pooled connection for the
+/// whole stage, so a process crash releases it automatically. Two jobs for the same trip never run together, so a
+/// duplicate delivery is harmless. Dispatch takes its own transactional lock (`dispatchLock`), so one dispatcher
+/// pushes at a time without waiting for running stages. The trips row is also a durable outbox: advancing a
+/// checkpoint makes its successor dispatchable.
 public struct PostgresTripStore: TripHTTPStore, Sendable {
     public let client: PostgresClient
     public let logger: Logger
-    static let executionLock: Int64 = 8_417_301
+    /// The class key of the per-trip stage locks (the two-key form of `pg_advisory_lock`).
+    static let stageLockClass: Int32 = 8_417
+    static let dispatchLock: Int64 = 8_417_303
     static let admissionLock: Int64 = 8_417_302
 
     public init(client: PostgresClient, logger: Logger) {
@@ -76,10 +81,12 @@ public struct PostgresTripStore: TripHTTPStore, Sendable {
     }
 
     /// Dispatch is at least once: a crash between push and dispatched_at may duplicate the job.
-    /// Processing checks the current stage under executionLock, so duplicate delivery is harmless.
+    /// Processing checks the current stage under the trip's stage lock, so duplicate delivery is harmless.
+    /// A trip whose stage has run for more than 30 seconds is pushed again each time; that duplicate waits for the
+    /// trip's lock, finds it held, and does nothing.
     public func dispatch(queue: JobQueue<PostgresJobQueue>) async throws {
         try await client.withTransaction(logger: logger) { connection in
-            guard try await lock(connection, transactional: true) else { return }
+            guard try await tryDispatchLock(connection) else { return }
             let rows = try await connection.query("""
                 SELECT id, stage FROM taba_trips WHERE state IN ('queued', 'running')
                 AND (dispatched_at IS NULL OR dispatched_at < now() - INTERVAL '30 seconds')
@@ -99,16 +106,16 @@ public struct PostgresTripStore: TripHTTPStore, Sendable {
     /// its in-flight stage, never an already committed stage. Three interrupted attempts is the cap.
     public func process(_ job: StageJob, runner: @escaping StageRunner) async throws {
         try await client.withConnection { connection in
-            guard try await waitForLock(connection) else { return }
+            guard try await waitForLock(connection, tripID: job.tripID) else { return }
             do {
                 try await processLocked(job, connection: connection, runner: runner)
                 guard !connection.isClosed else { throw BuildStoreError.interrupted }
-                try await connection.query("SELECT pg_advisory_unlock(\(Self.executionLock))", logger: logger)
+                try await unlock(connection, tripID: job.tripID)
             } catch {
                 // Never query an already closed connection or return a held session lock to the pool.
                 if !connection.isClosed {
                     do {
-                        try await connection.query("SELECT pg_advisory_unlock(\(Self.executionLock))", logger: logger)
+                        try await unlock(connection, tripID: job.tripID)
                     } catch { try? await connection.close() }
                 }
                 throw BuildStoreError.interrupted
@@ -165,7 +172,12 @@ public struct PostgresTripStore: TripHTTPStore, Sendable {
                 INSERT INTO taba_checkpoints (trip_id, stage, payload)
                 VALUES (\(job.tripID), \(job.stage.rawValue), \(result.checkpoint))
                 """, logger: logger)
-            let guide = try result.guide.map { try JSONEncoder().encode($0) }
+            var guide: Data?
+            if let finished = result.guide {
+                // Read before this transaction writes its own progress row: the build ends with this row.
+                let time = try await buildTime(tripID: job.tripID, connection: connection)
+                guide = try JSONEncoder().encode(finished.recordingBuildTime(time))
+            }
             let stage = job.stage.next ?? job.stage
             let state: TripState = job.stage.next == nil ? .completed : .queued
             try await connection.query("""
@@ -257,23 +269,15 @@ public struct PostgresTripStore: TripHTTPStore, Sendable {
         return false
     }
 
-    /// The dispatcher holds the lock briefly while it pushes a job, so a freshly pushed job can
-    /// arrive before the dispatcher commits. Wait up to two seconds instead of dropping the job and
-    /// stalling the trip until redelivery. A stage running elsewhere still makes this return false.
-    private func waitForLock(_ connection: PostgresConnection) async throws -> Bool {
+    /// The same trip's previous stage still holds its lock for a moment after it commits, because the unlock comes
+    /// after the commit, and a successor job can arrive in that moment. So wait up to two seconds instead of dropping
+    /// the job and stalling the trip until redelivery. A stage of this trip running elsewhere still makes this
+    /// return false, and then the job does nothing.
+    private func waitForLock(_ connection: PostgresConnection, tripID: UUID) async throws -> Bool {
         for attempt in 0..<20 {
-            if try await lock(connection, transactional: false) { return true }
+            if try await tryStageLock(connection, tripID: tripID) { return true }
             if attempt < 19 { try await Task.sleep(for: .milliseconds(100)) }
         }
-        return false
-    }
-
-    private func lock(_ connection: PostgresConnection, transactional: Bool) async throws -> Bool {
-        let query: PostgresQuery = transactional
-            ? "SELECT pg_try_advisory_xact_lock(\(Self.executionLock))"
-            : "SELECT pg_try_advisory_lock(\(Self.executionLock))"
-        let rows = try await connection.query(query, logger: logger)
-        for try await acquired in rows.decode(Bool.self) { return acquired }
         return false
     }
 

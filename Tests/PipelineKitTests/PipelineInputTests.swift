@@ -180,8 +180,8 @@ extension PipelineInputTests {
     @Test func hoursCarryOverAndExceptions() throws {
         let friday = try #require(LocalDate("2025-11-21"))
         let saturday = try #require(friday.adding(days: 1))
-        let open = try #require(LocalTime("22:00"))
-        let close = try #require(LocalTime("02:00"))
+        let open = try time("22:00")
+        let close = try time("02:00")
         let period = WeeklyPeriod(weekday: .friday, open: open, close: close)
         let hours = OpeningHours(hoursKnown: true, weekly: [period], exceptions: [])
         #expect(PipelineInputBuilder.hours(hours, on: friday) == .array([.string("22:00-02:00")]))
@@ -201,7 +201,7 @@ extension PipelineInputTests {
             DateException(date: saturday, closed: false, periods: [TimePeriod(open: open, close: close)])
         ])
         #expect(PipelineInputBuilder.hours(saturdayOverride, on: saturday) == .array([.string("22:00-02:00")]))
-        let midnight = try #require(LocalTime("00:00"))
+        let midnight = try time("00:00")
         let full = OpeningHours(hoursKnown: true,
                                 weekly: [WeeklyPeriod(weekday: .friday, open: midnight, close: midnight)],
                                 exceptions: [])
@@ -264,6 +264,80 @@ extension PipelineInputTests {
                                                    findings: [], requests: .null)
         let day = try #require(input.objectValue?["days"]?.arrayValue?.first?.objectValue)
         #expect(day["window"] == .object(["start": .string("10:10"), "end": .string("17:18")]))
+    }
+
+    /// The fixture with its trip dates replaced by the given times, and optionally its bookings.
+    private func withTimes(_ source: Guide, dates: TripDates? = nil, bookings: [Booking]? = nil,
+                           arrives: LocalTime? = nil, leaves: LocalTime? = nil) -> Guide {
+        let trip = Trip(destination: source.trip.destination,
+                        dates: dates ?? TripDates(start: source.trip.dates.start, end: source.trip.dates.end,
+                                                  arrives: arrives, leaves: leaves),
+                        party: source.trip.party, budget: source.trip.budget, interests: source.trip.interests,
+                        pace: source.trip.pace, voice: source.trip.voice)
+        return Guide(id: source.id, version: source.version, status: source.status, trip: trip,
+                     bookings: bookings ?? source.bookings, stay: source.stay, places: source.places,
+                     days: source.days, lists: source.lists, tasting: source.tasting, practical: source.practical,
+                     sources: source.sources)
+    }
+
+    private func time(_ text: String) throws -> LocalTime {
+        try #require(LocalTime(text))
+    }
+
+    private func windows(_ guide: Guide) throws -> [JSONValue] {
+        let input = try PipelineInputBuilder.plan(guide: guide, measurements: try measurements(guide),
+                                                  weather: [], findings: [], requests: .null)
+        return try #require(input.objectValue?["days"]?.arrayValue).compactMap { $0.objectValue?["window"] }
+    }
+
+    @Test func statedArrivalStartsTheFirstDayThirtyMinutesLater() throws {
+        let source = try guide()
+        let guide = withTimes(source, bookings: [], arrives: try time("10:00"))
+        let days = try windows(guide)
+        #expect(days.first == .object(["start": .string("10:30"), "end": .string("23:59")]))
+        #expect(days.last == .object(["start": .string("00:00"), "end": .string("23:59")]))
+    }
+
+    @Test func statedLeavingEndsTheLastDayFortyFiveMinutesEarlier() throws {
+        let source = try guide()
+        let guide = withTimes(source, bookings: [], leaves: try time("17:00"))
+        let days = try windows(guide)
+        #expect(days.first == .object(["start": .string("00:00"), "end": .string("23:59")]))
+        #expect(days.last == .object(["start": .string("00:00"), "end": .string("16:15")]))
+    }
+
+    @Test func statedTimesOnOneDayBoundTheSameDay() throws {
+        let source = try guide()
+        let day = source.trip.dates.start
+        let guide = withTimes(source, dates: TripDates(start: day, end: day,
+                                                       arrives: try time("09:00"),
+                                                       leaves: try time("17:00")),
+                              bookings: [])
+        let window = try #require(try windows(guide).first)
+        #expect(window == .object(["start": .string("09:30"), "end": .string("16:15")]))
+    }
+
+    @Test func aBookingWinsOverStatedTimes() throws {
+        let source = try guide()
+        let guide = withTimes(source, arrives: try time("05:00"),
+                              leaves: try time("23:00"))
+        let days = try windows(guide)
+        #expect(days.first == .object(["start": .string("12:39"), "end": .string("23:59")]))
+        #expect(days.last == .object(["start": .string("00:00"), "end": .string("13:48")]))
+    }
+
+    @Test func statedArrivalIsClampedToTheDay() throws {
+        let source = try guide()
+        let guide = withTimes(source, bookings: [], arrives: try time("23:50"))
+        let days = try windows(guide)
+        #expect(days.first == .object(["start": .string("23:59"), "end": .string("23:59")]))
+    }
+
+    @Test func statedLeavingIsClampedToTheDay() throws {
+        let source = try guide()
+        let guide = withTimes(source, bookings: [], leaves: try time("00:20"))
+        let days = try windows(guide)
+        #expect(days.last == .object(["start": .string("00:00"), "end": .string("00:00")]))
     }
 
     @Test func sameNamedClustersStayDistinctInMatrix() throws {

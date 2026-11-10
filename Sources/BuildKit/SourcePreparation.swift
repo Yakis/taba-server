@@ -215,7 +215,8 @@ public enum SourcePreparation {
         let stay = Stay(placeId: place.id, checkIn: checkIn, checkOut: checkOut, luggage: nil)
         let trip = Trip(destination: Destination(name: options.destination, countryCode: country,
                                                  timeZoneId: timeZone, centre: centre),
-                        dates: TripDates(start: options.from, end: options.to),
+                        dates: TripDates(start: options.from, end: options.to, arrives: options.arrives,
+                                         leaves: options.leaves),
                         party: options.preferences.party,
                         budget: Budget(currencyCode: currency(for: country), stayMaxPerNight: 0,
                                        dailySpend: options.preferences.dailySpend),

@@ -234,37 +234,6 @@ public enum PipelineInputBuilder {
                 "sunset": try optional(sun.sunset), "blueHourEnds": try optional(sun.blueHourEnds),
                 "weather": self.weather(weather.first { $0.date == date })]
     }
-    private static func window(
-        _ date: LocalDate, guide: Guide, measurements: PipelineInputMeasurements
-    ) throws -> JSONValue {
-        let nums = [measurements.arrivalWalkMinutes, measurements.departureWalkMinutes,
-                    measurements.arrivalMarginMinutes, measurements.departureMarginMinutes]
-        guard nums.allSatisfy({ (0...1439).contains($0) }) else { throw PipelineInputError.invalidMeasurement }
-        var start = 0
-        var end = 1439
-        let transit = guide.bookings.filter { [.train, .flight, .bus].contains($0.kind) }
-        func local(_ id: String?, _ name: String) -> Bool {
-            if let id, guide.places[id] != nil { return true }
-            return name.localizedCaseInsensitiveContains(guide.trip.destination.name)
-        }
-        let arrivals = transit.filter { local($0.toPlaceId, $0.to) && !local($0.fromPlaceId, $0.from) }
-        let departures = transit.filter { local($0.fromPlaceId, $0.from) && !local($0.toPlaceId, $0.to) }
-        if date == guide.trip.dates.start,
-           let arrival = arrivals.filter({ $0.arrives.date == date }).min(by: { $0.arrives < $1.arrives }) {
-            start = arrival.arrives.time.minutesSinceMidnight
-                + measurements.arrivalWalkMinutes + measurements.arrivalMarginMinutes
-        }
-        if date == guide.trip.dates.end,
-           let departure = departures.filter({ $0.departs.date == date }).min(by: { $0.departs < $1.departs }) {
-            end = departure.departs.time.minutesSinceMidnight
-                - measurements.departureWalkMinutes - measurements.departureMarginMinutes
-        }
-        guard let first = LocalTime(minutesSinceMidnight: start),
-              let last = LocalTime(minutesSinceMidnight: end), first <= last else {
-            throw PipelineInputError.invalidWindow(date)
-        }
-        return .object(["start": try value(first), "end": try value(last)])
-    }
     /// A walk or bus or taxi ride, as `{"mode": ..., "minutes": ...}`.
     private static func travelValue(mode: LegMode, minutes: Int) -> JSONValue {
         .object(["mode": .string(mode.rawValue), "minutes": .integer(minutes)])
@@ -376,5 +345,51 @@ public enum PipelineInputBuilder {
                      "message": .string(issue.message)])
         }
         return try json(.object(["issues": .array(entries), "legs": legs]))
+    }
+}
+
+/// The trip window of a day, in minutes since midnight. Kept apart from the enum so its body stays short.
+private extension PipelineInputBuilder {
+    /// Minutes between a stated arrival and the start of the day's plan, when no transport booking gives one.
+    static let arrivalBufferMinutes = 30
+    /// Minutes between the end of the day's plan and a stated leaving time, when no transport booking gives one.
+    static let departureBufferMinutes = 45
+
+    static func window(
+        _ date: LocalDate, guide: Guide, measurements: PipelineInputMeasurements
+    ) throws -> JSONValue {
+        let nums = [measurements.arrivalWalkMinutes, measurements.departureWalkMinutes,
+                    measurements.arrivalMarginMinutes, measurements.departureMarginMinutes]
+        guard nums.allSatisfy({ (0...1439).contains($0) }) else { throw PipelineInputError.invalidMeasurement }
+        var start = 0
+        var end = 1439
+        let transit = guide.bookings.filter { [.train, .flight, .bus].contains($0.kind) }
+        func local(_ id: String?, _ name: String) -> Bool {
+            if let id, guide.places[id] != nil { return true }
+            return name.localizedCaseInsensitiveContains(guide.trip.destination.name)
+        }
+        let arrivals = transit.filter { local($0.toPlaceId, $0.to) && !local($0.fromPlaceId, $0.from) }
+        let departures = transit.filter { local($0.fromPlaceId, $0.from) && !local($0.toPlaceId, $0.to) }
+        if date == guide.trip.dates.start,
+           let arrival = arrivals.filter({ $0.arrives.date == date }).min(by: { $0.arrives < $1.arrives }) {
+            start = arrival.arrives.time.minutesSinceMidnight
+                + measurements.arrivalWalkMinutes + measurements.arrivalMarginMinutes
+        } else if date == guide.trip.dates.start, let arrives = guide.trip.dates.arrives {
+            // No arrival booking: the traveller is in the city from the stated arrival time plus a buffer.
+            start = min(max(arrives.minutesSinceMidnight + arrivalBufferMinutes, 0), 1439)
+        }
+        if date == guide.trip.dates.end,
+           let departure = departures.filter({ $0.departs.date == date }).min(by: { $0.departs < $1.departs }) {
+            end = departure.departs.time.minutesSinceMidnight
+                - measurements.departureWalkMinutes - measurements.departureMarginMinutes
+        } else if date == guide.trip.dates.end, let leaves = guide.trip.dates.leaves {
+            // No departure booking: the traveller leaves the city the stated buffer before the stated leaving time.
+            end = min(max(leaves.minutesSinceMidnight - departureBufferMinutes, 0), 1439)
+        }
+        guard let first = LocalTime(minutesSinceMidnight: start),
+              let last = LocalTime(minutesSinceMidnight: end), first <= last else {
+            throw PipelineInputError.invalidWindow(date)
+        }
+        return .object(["start": try value(first), "end": try value(last)])
     }
 }
