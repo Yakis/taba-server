@@ -7,6 +7,9 @@ public struct CopyCheckIssue: Hashable, Sendable {
         case missingID(CopyTarget), duplicateID(CopyTarget), extraID(CopyTarget)
         case bannedPhrase(String), emoji, exclamationLimit, wordLimit(min: Int, max: Int)
         case sentenceLimit(min: Int, max: Int), tastingCount, ungroundedNumber(String)
+        /// Facts the guide's cards already show, plan talk, and transport the trip does not have. The payload is the
+        /// matching words.
+        case hoursInBody(String), walkInBody(String), planTalk(String), inventedTransport(String)
     }
     public let kind: Kind
     public let path: String
@@ -17,6 +20,23 @@ public struct CopyCheckIssue: Hashable, Sendable {
         self.kind = kind
         self.path = path
         self.text = text
+    }
+
+    /// What the writer is told to do about this issue. Kinds without a plain instruction keep their case name.
+    public var message: String {
+        let sentence = text ?? ""
+        switch kind {
+        case .hoursInBody:
+            return "Remove the opening time from this sentence, since the card shows it: '\(sentence)'"
+        case .walkInBody:
+            return "Remove the walking time from this sentence, since the card shows it: '\(sentence)'"
+        case .planTalk(let phrase):
+            return "Remove the plan talk ('\(phrase)') from this sentence, and write about the place: '\(sentence)'"
+        case .inventedTransport(let word):
+            return "Remove '\(word)' from this sentence, since the trip has no matching booking: '\(sentence)'"
+        default:
+            return String(describing: kind)
+        }
     }
 }
 

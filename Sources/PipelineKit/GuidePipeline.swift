@@ -232,7 +232,7 @@ public struct GuidePipeline: Sendable {
             let blocking = issues.filter { Self.blocksCopy($0.kind, retried: attempt > 0) }
             if blocking.isEmpty { return copy }
             guard attempt == 0 else { throw GuidePipelineError.copyErrors(issues) }
-            let feedback = blocking.map { "\($0.path): \(String(describing: $0.kind))" }.joined(separator: "\n")
+            let feedback = blocking.map { "\($0.path): \($0.message)" }.joined(separator: "\n")
             current = ResponsesRequest(model: model, instructions: writePrompt.body, messages: request.messages + [
                 .init(role: .assistant, content: response.text),
                 .init(role: .user, content: "Correct these copy issues and return the complete JSON:\n" + feedback)
@@ -242,12 +242,13 @@ public struct GuidePipeline: Sendable {
     }
 
     /// Whether a copy issue stops the copy being used. Numbers are never blocking: they are flagged for review. Length
-    /// limits block the first answer, so the writer is asked to fix them, but not the corrected one: one sentence a
-    /// word too long should not throw away a whole guide. They are flagged for review instead.
+    /// limits and the card and plan checks (opening hours, walks, plan talk, transport) block the first answer, so the
+    /// writer is asked to fix them, but not the corrected one: one sentence a word too long, or one stray closing time,
+    /// should not throw away a whole guide. They are flagged for review instead.
     static func blocksCopy(_ kind: CopyCheckIssue.Kind, retried: Bool) -> Bool {
         switch kind {
         case .ungroundedNumber: false
-        case .wordLimit, .sentenceLimit: !retried
+        case .wordLimit, .sentenceLimit, .hoursInBody, .walkInBody, .planTalk, .inventedTransport: !retried
         default: true
         }
     }

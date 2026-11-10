@@ -25,12 +25,38 @@ enum CopyTextChecks {
         + #"(?![\p{L}\p{N}_])|(?<![\p{L}\p{N}_])"# + numberWord
         + #"(?:(?:[\s\p{Pd}]+|\s+and\s+)"# + numberWord + #")*(?![\p{L}\p{N}_])"#
 
-    // swiftlint:disable:next cyclomatic_complexity
+    // Clock times such as 18:00, 9am or 11 pm.
+    private static let clockTime = #"(?<![\p{L}\p{N}:.])"#
+        + #"(?:\d{1,2}:\d{2}|\d{1,2}(?::\d{2})?\s?(?:am|pm))(?![\p{L}\p{N}])"#
+    /// A closing or opening word, then at most three words, then a clock time: "opens at 10:00", "until 23:00".
+    private static let hoursPattern = #"(?<!\p{L})(?:open|opens|opening|close|closes|closing|shuts|until)(?!\p{L})"#
+        + #"\s+(?:[\p{L}'’\-]+\s+){0,3}"# + clockTime
+    private static let hoursPhrase = #"(?<!\p{L})(?:opening hours|open late|check[-\s]in opens)(?!\p{L})"#
+    /// Sunrise, sunset and blue hour are light, not opening hours. Check-out and "out by" are deadlines.
+    private static let hoursExemption = #"(?<!\p{L})(?:sunsets?|sunrise|blue hour|check[-\s]?out|out by)(?!\p{L})"#
+    /// A number of minutes, then within three words "walk", "walking", "away" or "from".
+    private static let walkPattern = #"(?<![\p{L}\p{N}_])(?:\d+|"# + numberWord
+        + #"(?:[\s\p{Pd}]+"# + numberWord + #")*)[\s\p{Pd}]+(?:minutes?|mins?)(?![\p{L}\p{N}_])"#
+        + #"(?:[\s'’]+[\p{L}\-]+){0,2}?[\s'’]+(?:walk|walking|away|from)(?!\p{L})"#
+    /// The walk first, then the minutes: "Walk 5 minutes to the castle", "walking for about ten minutes".
+    private static let walkFirstPattern = #"(?<!\p{L})(?:walk|walking)\s+(?:(?:for|about|around)\s+){0,2}"#
+        + #"(?:\d+|"# + numberWord + #"(?:[\s\p{Pd}]+"# + numberWord + #")*)[\s\p{Pd}]+(?:minutes?|mins?)(?!\p{L})"#
+    /// Plan vocabulary. The guide talks about the place, never the plan the traveller follows.
+    private static let planTalkPattern = #"(?<!\p{L})(?:times are suggestions|suggestions,\s+not|provisional|"#
+        + #"the plan|planner|assumed|assumptions?|not a stopwatch)(?!\p{L})"#
+    /// Transport words, each with the booking kinds that back it. "A flight of steps" is not a flight.
+    private static let transportRules: [(pattern: String, kinds: Set<String>)] = [
+        (#"(?<!\p{L})(?:airports?|flights?(?!\s+of\s+(?:stairs|steps)(?!\p{L})))(?!\p{L})"#, ["flight"]),
+        (#"(?<!\p{L})(?:stations?|platforms?|trains?)(?!\p{L})"#, ["train", "bus"])
+    ]
+
+    // swiftlint:disable:next cyclomatic_complexity function_body_length
     static func check(_ fields: [CopyField], input: String) -> [CopyCheckIssue] {
         var issues: [CopyCheckIssue] = []
         let inputNumbers = Set(groundingValues(input).map { splitTimeRanges(splitDateTimes($0)) }
             .flatMap { matches(numberPattern, $0) }.map(normalNumber))
         let iconicAllowed = containsIconicFact(input)
+        let bookedKinds = bookingKinds(input)
         var exclamations = 0
         var hearts = 0
         for field in fields {
@@ -75,8 +101,53 @@ enum CopyTextChecks {
                     issues.append(.init(kind: .ungroundedNumber(claim), path: field.path, text: sentence))
                 }
             }
+            let cardCopy = isCardCopy(field.path)
+            for sentence in sentences {
+                issues += planningIssues(sentence, path: field.path, cardCopy: cardCopy, bookedKinds: bookedKinds)
+            }
         }
         return issues
+    }
+
+    /// Stop bodies, day summaries and place blurbs sit under cards that already show opening hours and walks. Notes
+    /// and the hero may still mention opening hours ("some opening hours could not be confirmed").
+    private static func isCardCopy(_ path: String) -> Bool {
+        path.hasSuffix(".body") || path.hasSuffix(".summary") || path.hasSuffix(".blurb")
+    }
+
+    /// Sentence checks for copy the cards already explain (opening hours, walks), for plan talk anywhere, and for
+    /// transport words the trip has no booking for. Each issue quotes the matching words and the sentence.
+    private static func planningIssues(_ sentence: String, path: String, cardCopy: Bool,
+                                       bookedKinds: Set<String>) -> [CopyCheckIssue] {
+        var found: [CopyCheckIssue] = []
+        func flag(_ kind: CopyCheckIssue.Kind) { found.append(.init(kind: kind, path: path, text: sentence)) }
+        if cardCopy, let hours = hoursClaim(sentence) { flag(.hoursInBody(hours)) }
+        if cardCopy, let walk = (matches(walkPattern, sentence) + matches(walkFirstPattern, sentence)).first {
+            flag(.walkInBody(walk))
+        }
+        if let talk = matches(planTalkPattern, sentence).first { flag(.planTalk(talk)) }
+        for rule in transportRules where bookedKinds.isDisjoint(with: rule.kinds) {
+            if let word = matches(rule.pattern, sentence).first {
+                flag(.inventedTransport(word))
+                break
+            }
+        }
+        return found
+    }
+
+    /// The opening-hours words in a sentence, or nil. Sentences about light or check-out are not opening hours.
+    private static func hoursClaim(_ sentence: String) -> String? {
+        guard matches(hoursExemption, sentence).isEmpty else { return nil }
+        return matches(hoursPhrase, sentence).first ?? matches(hoursPattern, sentence).first
+    }
+
+    /// The booking kinds in the write input's `anchors.bookings`, such as "train". Empty when there are none.
+    private static func bookingKinds(_ input: String) -> Set<String> {
+        guard let data = input.data(using: .utf8),
+              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let anchors = json["anchors"] as? [String: Any],
+              let bookings = anchors["bookings"] as? [[String: Any]] else { return [] }
+        return Set(bookings.compactMap { $0["kind"] as? String })
     }
 
     /// Booking times arrive as ISO local date-times (`2025-11-25T18:52`). The `T` would make the whole value

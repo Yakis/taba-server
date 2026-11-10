@@ -190,6 +190,32 @@ struct GuidePipelineTests {
         #expect(events.contains { if case .completed = $0 { true } else { false } })
     }
 
+    /// A closing time in a stop body is blocking on the first answer, so the writer is asked once to remove it. If the
+    /// rewrite still has it, the copy is used and the sentence is only flagged for review.
+    @Test func cardCopyIssueIsRewrittenOnceThenFlagged() async throws {
+        let fixture = try data()
+        let stopID = try #require(fixture.copy.stops.first?.id)
+        let stops = [GuideCopyStop(id: stopID, title: "Rest", body: "It opens at 10:00. Take a break.",
+                                   actionLabel: nil)]
+        let body = GuideCopy(hero: fixture.copy.hero, days: fixture.copy.days, stops: stops,
+                             places: fixture.copy.places, lists: fixture.copy.lists, tasting: fixture.copy.tasting,
+                             notes: fixture.copy.notes)
+        let script = try PipelineScript([research, json(body), json(body)])
+        let send: GuidePipeline.Send = { try await script.send($0) }
+        let evidence: GuidePipeline.EvidenceSink = { await script.record($0) }
+        let pipeline = GuidePipeline()
+        let researched = try await pipeline.researchStage(model: "fake", facts: fixture.facts,
+            measurements: fixture.measurements, stayArea: "Centre", send: send, evidence: evidence)
+        // A rewrite that still blocks would throw here, so reaching the next line means the copy was accepted.
+        _ = try await pipeline.copyStage(id: "test", model: "fake", researched: researched,
+            draft: fixture.draft, weather: [], send: send, evidence: evidence)
+        #expect(await script.requests.count == 3)
+        #expect(await script.requests.last?.messages.last?.content.contains("Remove the opening time") == true)
+        let copyIssues = await script.events.compactMap { if case .copy(let issues) = $0 { issues } else { nil } }
+        #expect(copyIssues.count == 2)
+        #expect(copyIssues.allSatisfy { issues in issues.contains { $0.path == "stops[0].body" } })
+    }
+
     @Test func repairCanProduceUsableGuide() async throws {
         let fixture = try data()
         let invalid = PlanDraft(days: [], lists: fixture.draft.lists, skippedMeals: [],

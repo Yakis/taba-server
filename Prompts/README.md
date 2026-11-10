@@ -71,6 +71,7 @@ The prompts ask for good behaviour. Code makes sure of it:
 | Copy | Every day, stop, place and list id is present, and no others | Retry once |
 | Copy | Every time, date, price and number in the text appears in the input | Flag the sentence for review |
 | Copy | Banned phrases, emoji, exclamation marks, word limits | Retry the affected items once |
+| Copy | Opening hours and walk minutes in stop bodies, day summaries and blurbs; plan talk; station, train, flight or airport words without a matching booking | Retry the affected sentences once, then flag them for review |
 
 ## Versions
 
