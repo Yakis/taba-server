@@ -60,17 +60,6 @@ public struct PostgresTripStore: TripHTTPStore, Sendable {
         return nil
     }
 
-    public func reviews(_ id: UUID) async throws -> [CopyReviewFlag] {
-        let rows = try await client.query("""
-            SELECT payload FROM taba_copy_reviews WHERE trip_id = \(id) ORDER BY id
-            """, logger: logger)
-        var flags: [CopyReviewFlag] = []
-        for try await data in rows.decode(Data.self) {
-            flags += try JSONDecoder().decode([CopyReviewFlag].self, from: data)
-        }
-        return flags
-    }
-
     public func events(_ id: UUID, after: Int64) async throws -> [ProgressEvent] {
         let rows = try await client.query("""
             SELECT p.id, p.state, p.stage, p.review, t.model FROM taba_progress p
@@ -127,7 +116,7 @@ public struct PostgresTripStore: TripHTTPStore, Sendable {
         }
     }
 
-    // swiftlint:disable:next function_body_length
+    // swiftlint:disable:next function_body_length cyclomatic_complexity
     private func processLocked(_ job: StageJob, connection: PostgresConnection,
                                runner: @escaping StageRunner) async throws {
         let rows = try await connection.query("""
@@ -154,13 +143,8 @@ public struct PostgresTripStore: TripHTTPStore, Sendable {
             checkpoints[stage] = data
         }
         let attemptID = UUID()
-        try await connection.withTransaction(logger: logger) { connection in
-            try await connection.query("""
-                UPDATE taba_trips SET state = 'running', attempts = attempts + 1, attempt_id = \(attemptID)
-                WHERE id = \(job.tripID)
-                """, logger: logger)
-            try await progress(TripStatus(id: job.tripID, state: .running, stage: job.stage), connection: connection)
-        }
+        // A trip deleted (or moved on) since the check above makes this job a quiet no-op.
+        guard try await claim(job, attemptID: attemptID, connection: connection) else { return }
         let recorder = DurableEvidence(store: self, tripID: job.tripID, stage: job.stage, attemptID: attemptID)
         let work = BuildWork(tripID: job.tripID, input: input, stage: job.stage, checkpoints: checkpoints)
         let result: StageResult
@@ -192,6 +176,23 @@ public struct PostgresTripStore: TripHTTPStore, Sendable {
             let review = try await hasReview(job.tripID, connection: connection)
             try await progress(TripStatus(id: job.tripID, state: state, stage: stage,
                                           copyReviewRequired: review), connection: connection)
+        }
+    }
+
+    /// Marks the trip running for this attempt. The conditional update locks the trip row, so a delete cannot
+    /// commit between the caller's check and this claim. False means the trip is gone or has already moved on.
+    private func claim(_ job: StageJob, attemptID: UUID, connection: PostgresConnection) async throws -> Bool {
+        try await connection.withTransaction(logger: logger) { connection -> Bool in
+            let rows = try await connection.query("""
+                UPDATE taba_trips SET state = 'running', attempts = attempts + 1, attempt_id = \(attemptID)
+                WHERE id = \(job.tripID) AND state IN ('queued', 'running') AND stage = \(job.stage.rawValue)
+                RETURNING id
+                """, logger: logger)
+            var claimed = false
+            for try await _ in rows.decode(UUID.self) { claimed = true }
+            guard claimed else { return false }
+            try await progress(TripStatus(id: job.tripID, state: .running, stage: job.stage), connection: connection)
+            return true
         }
     }
 

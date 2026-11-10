@@ -10,6 +10,9 @@ private actor FakeHTTPStore: TripHTTPStore {
     var full = false
     var state: TripState = .queued
     private(set) var createdModels: [String] = []
+    private(set) var deleteCalls = 0
+    private var deletion = TripDeletion.deleted
+    private var deleteFails = false
 
     func create(_ input: TripBuildInput, model: String) async throws -> TripStatus {
         if full { throw AdmissionError.full }
@@ -23,10 +26,19 @@ private actor FakeHTTPStore: TripHTTPStore {
         guard id == self.id else { return [] }
         return [ProgressEvent(id: 1, status: statusValue())].filter { $0.id > after }
     }
+    func delete(_ id: UUID) async throws -> TripDeletion {
+        deleteCalls += 1
+        if deleteFails { throw FakeFailure.storeDown }
+        return deletion
+    }
     func complete() { state = .completed }
     func setFull() { full = true }
+    func setDeletion(_ value: TripDeletion) { deletion = value }
+    func failDeletes() { deleteFails = true }
     private func statusValue() -> TripStatus { .init(id: id, state: state, stage: .basics) }
 }
+
+private enum FakeFailure: Error { case storeDown }
 
 private struct FakeCatalog: TripModelCatalog {
     let defaultModel = "gpt-6.1-sol"
@@ -124,5 +136,37 @@ struct TripHTTPTests {
                 #expect(response.body.readableBytes == 0)
             }
         }
+    }
+
+    @Test func deleteRouteReportsEachOutcome() async throws {
+        let store = FakeHTTPStore()
+        let id = store.id
+        let app = Application(responder: try TripHTTP.router(store: store, token: token,
+                                                            models: FakeCatalog()).buildResponder())
+        try await app.test(.router) { client in
+            let headers: HTTPFields = [.authorization: "Bearer \(token)"]
+            try await client.execute(uri: "/trips/\(id)", method: .delete) { #expect($0.status == .unauthorized) }
+            try await client.execute(uri: "/trips/not-a-uuid", method: .delete, headers: headers) {
+                #expect($0.status == .badRequest)
+            }
+            try await client.execute(uri: "/trips/\(id)", method: .delete, headers: headers) { response in
+                #expect(response.status == .noContent)
+                #expect(response.body.readableBytes == 0)
+            }
+            await store.setDeletion(.notFound)
+            try await client.execute(uri: "/trips/\(id)", method: .delete, headers: headers) {
+                #expect($0.status == .notFound)
+            }
+            await store.setDeletion(.stillBuilding)
+            try await client.execute(uri: "/trips/\(id)", method: .delete, headers: headers) {
+                #expect($0.status == .conflict)
+            }
+            await store.failDeletes()
+            try await client.execute(uri: "/trips/\(id)", method: .delete, headers: headers) {
+                #expect($0.status == .internalServerError)
+            }
+        }
+        // Unauthenticated and malformed requests never reach the store.
+        #expect(await store.deleteCalls == 4)
     }
 }

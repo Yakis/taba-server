@@ -57,6 +57,9 @@ public struct ProgressEvent: Codable, Sendable {
 
 public enum AdmissionError: Error { case full }
 
+/// The outcome of `DELETE /trips/:id`. A trip that is still queued or running is never deleted.
+public enum TripDeletion: Sendable, Equatable { case deleted, notFound, stillBuilding }
+
 /// The implementation must provide durable, monotonically ordered events per trip.
 public protocol TripHTTPStore: Sendable {
     /// `model` is the resolved model: the input's model, or the server default when the input names none.
@@ -65,6 +68,8 @@ public protocol TripHTTPStore: Sendable {
     func guide(_ id: UUID) async throws -> Guide?
     func events(_ id: UUID, after: Int64) async throws -> [ProgressEvent]
     func reviews(_ id: UUID) async throws -> [CopyReviewFlag]
+    /// Removes the trip and everything stored for it, but only once it has finished (completed or failed).
+    func delete(_ id: UUID) async throws -> TripDeletion
 }
 
 public extension TripHTTPStore {
@@ -131,6 +136,17 @@ public enum TripHTTP {
             do {
                 guard try await store.status(id) != nil else { throw HTTPError(.notFound) }
                 return try json(await store.reviews(id))
+            } catch let error as HTTPError { throw error } catch { throw HTTPError(.internalServerError) }
+        }
+        router.delete("/trips/:id") { request, context -> Response in
+            try authorize(request, digest: digest)
+            let id = try context.parameters.require("id", as: UUID.self)
+            do {
+                switch try await store.delete(id) {
+                case .deleted: return Response(status: .noContent)
+                case .notFound: throw HTTPError(.notFound)
+                case .stillBuilding: throw HTTPError(.conflict)
+                }
             } catch let error as HTTPError { throw error } catch { throw HTTPError(.internalServerError) }
         }
         router.get("/trips/:id/events") { request, context -> Response in
