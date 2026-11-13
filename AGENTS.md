@@ -125,10 +125,8 @@ continue without asking the owner what happened.
 
 ## Current state
 
-M1 is done and the server is deployed (static Linux image, tailnet-only HTTPS). The guide-quality fixes Q1–Q11 in
-`docs/PLAN.md` are done and deployed, the last being Q11 (2026-11-10): one visit per place (`placeRepeated`), plan.md
-v6, write.md v5, research.md v3, a `views` interest search, and an optional `luggage` place on a trip. The default
-model is Sol; Claude and DeepSeek models are offered behind their own keys.
-Next: the owner rebuilds the Edinburgh trip to judge Q11; DeepSeek's research answer (a sentence plus a fenced `json`
-block) still fails to decode; then the iOS app's live progress view (`../taba-ios`, M3 step 3). Deploying an update:
-`docs/SERVER.md`, "Deployment", and `private/HANDOFF.md`.
+M1 is done and the server is deployed (static Linux image, tailnet-only HTTPS). Guide-quality fixes Q1–Q13 in
+`docs/PLAN.md` are deployed (`taba-server:q13`). Q14 (2026-11-13, committed, not deployed): the trip's typed facts
+outrank the prose: stay arrangement, trip travel and the guide's base; no invented stay; a contradiction check on
+all copy; pick lists keep fitting kinds; plan.md v8, write.md v8, repair.md v3. Default model: Sol.
+Next: deploy Q14 with the owner's yes and rebuild the Leeds trip. Deploying: `docs/SERVER.md`, "Deployment".
