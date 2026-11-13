@@ -5,11 +5,11 @@ extension PlanChecker {
         let days = context.guide.days.sorted { $0.date < $1.date }
         var findings: [Finding] = []
         // A one-day trip has no night, so there is no check-in or check-out to check.
-        let hasNight = days.first?.date != days.last?.date
-        if hasNight, let first = days.first {
-            for stop in first.stops where stop.kind == .logistics && stop.placeId == stay.placeId {
-                if stop.start < stay.checkIn {
-                    let message = "\(context.label(stop)) starts at \(stop.start), before check-in at \(stay.checkIn)."
+        let hasNight = !context.guide.isOneDay
+        if hasNight, let first = days.first, let checkIn = stay.checkIn {
+            for stop in first.stops where stop.kind == .logistics && stay.holds(stop.placeId) {
+                if stop.start < checkIn {
+                    let message = "\(context.label(stop)) starts at \(stop.start), before check-in at \(checkIn)."
                     findings.append(Finding(.error, .checkInEarly, date: first.date, stop: stop, message: message))
                 }
             }
@@ -23,17 +23,18 @@ extension PlanChecker {
 
     private func checkOutFindings(_ day: Day, _ context: CheckContext) -> [Finding] {
         let stay = context.guide.stay
+        guard let checkOut = stay.checkOut, stay.placeId != nil else { return [] }
         var stayLogisticsSeen = false
         for stop in day.stops.sorted(by: { $0.start < $1.start }) {
-            if stop.placeId == stay.placeId {
+            if stay.holds(stop.placeId) {
                 if stop.kind == .logistics {
                     stayLogisticsSeen = true
                 }
                 continue
             }
             // This is the first stop away from the stay.
-            if !stayLogisticsSeen && stop.start > stay.checkOut {
-                let message = "\(context.label(stop)) starts at \(stop.start), after check-out at \(stay.checkOut), "
+            if !stayLogisticsSeen && stop.start > checkOut {
+                let message = "\(context.label(stop)) starts at \(stop.start), after check-out at \(checkOut), "
                     + "and nothing at the stay comes before it."
                 return [Finding(.error, .checkOutLate, date: day.date, stop: stop, message: message)]
             }
@@ -73,22 +74,25 @@ extension PlanChecker {
             return []
         }
         var findings: [Finding] = []
-        if let arrival = context.arrival, arrival.time.time < stay.checkIn,
+        // Without a check-in, bags are carried from arrival until a stop leaves them.
+        let checkIn = stay.checkIn?.minutesSinceMidnight ?? Int.max
+        if let arrival = context.arrival, arrival.time.time.minutesSinceMidnight < checkIn,
            let day = context.day(on: arrival.time.date) {
             let from = arrival.time.time.minutesSinceMidnight
             let firstStayStart = stayStops(day, context).map { $0.start.minutesSinceMidnight }.min()
-            let to = min(stay.checkIn.minutesSinceMidnight, firstStayStart ?? Int.max)
+            let to = min(checkIn, firstStayStart ?? Int.max, 1439)
             if to > from && isUnused(store, day, from: from, to: to) {
                 let message = "You arrive at \(Clock.text(from)), and \(store.name) is open, "
-                    + "but no stop leaves bags there before \(Clock.text(to))."
+                    + (to == 1439 ? "but no stop leaves bags there."
+                        : "but no stop leaves bags there before \(Clock.text(to)).")
                 findings.append(Finding(.warning, .luggageUnused, date: day.date, message: message))
             }
         }
-        if let departure = context.departure, stay.checkOut < departure.time.time,
+        if let departure = context.departure, let checkOut = stay.checkOut, checkOut < departure.time.time,
            let day = context.day(on: departure.time.date) {
             let to = departure.time.time.minutesSinceMidnight
             let lastStayEnd = stayStops(day, context).map { $0.start.minutesSinceMidnight + $0.minutes }.max()
-            let from = min(stay.checkOut.minutesSinceMidnight, lastStayEnd ?? Int.max)
+            let from = min(checkOut.minutesSinceMidnight, lastStayEnd ?? Int.max)
             if to > from && isUnused(store, day, from: from, to: to) {
                 let message = "You are away from the stay from \(Clock.text(from)) and leave at \(Clock.text(to)), "
                     + "and \(store.name) is open, but no stop leaves bags there."
@@ -99,7 +103,7 @@ extension PlanChecker {
     }
 
     private func stayStops(_ day: Day, _ context: CheckContext) -> [Stop] {
-        day.stops.filter { $0.placeId == context.guide.stay.placeId }
+        day.stops.filter { context.guide.stay.holds($0.placeId) }
     }
 
     private func isUnused(_ store: Place, _ day: Day, from: Int, to: Int) -> Bool {

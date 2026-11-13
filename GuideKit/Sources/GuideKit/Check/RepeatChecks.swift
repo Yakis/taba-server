@@ -37,7 +37,7 @@ extension PlanChecker {
             return false
         }
         let stay = context.guide.stay
-        if place.id == stay.placeId || place.id == stay.luggage?.placeId {
+        if stay.holds(place.id) || place.id == stay.luggage?.placeId || context.isTravelPlace(place.id) {
             return false
         }
         return ![PlaceKind.lodging, .luggage, .station].contains(place.kind)

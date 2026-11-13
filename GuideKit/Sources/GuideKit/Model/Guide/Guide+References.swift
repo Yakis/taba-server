@@ -3,7 +3,11 @@ extension Guide {
     var referenceProblems: [StructureProblem] {
         var problems: [StructureProblem] = []
 
-        var placeReferences: [(placeId: String, from: String)] = [(stay.placeId, "stay")]
+        var placeReferences: [(placeId: String, from: String)] = stay.placeId.map { [($0, "stay")] } ?? []
+        if let travel = trip.travel {
+            placeReferences += [travel.arrivalPlaceId.map { ($0, "travel arrival") },
+                                travel.departurePlaceId.map { ($0, "travel departure") }].compactMap { $0 }
+        }
         if let luggage = stay.luggage {
             placeReferences.append((luggage.placeId, "stay luggage"))
         }

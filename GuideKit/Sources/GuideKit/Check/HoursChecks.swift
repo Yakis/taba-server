@@ -26,7 +26,7 @@ extension PlanChecker {
         guard stop.kind == .travel || stop.kind == .logistics else {
             return false
         }
-        return place.kind == .station || place.id == context.guide.stay.placeId
+        return place.kind == .station || context.guide.stay.holds(place.id) || context.isTravelPlace(place.id)
     }
 
     private func knownHoursFindings(_ stop: Stop, _ place: Place, on date: LocalDate) -> [Finding] {

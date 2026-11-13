@@ -8,6 +8,8 @@ public struct Trip: Hashable, Sendable, Codable {
     public let pace: Pace
     /// Free text describing the writing style.
     public let voice: String
+    /// How the traveller gets there and back. Omitted when not said.
+    public let travel: TripTravel?
 
     public init(
         destination: Destination,
@@ -16,7 +18,8 @@ public struct Trip: Hashable, Sendable, Codable {
         budget: Budget,
         interests: [String],
         pace: Pace,
-        voice: String
+        voice: String,
+        travel: TripTravel? = nil
     ) {
         self.destination = destination
         self.dates = dates
@@ -25,5 +28,6 @@ public struct Trip: Hashable, Sendable, Codable {
         self.interests = interests
         self.pace = pace
         self.voice = voice
+        self.travel = travel
     }
 }

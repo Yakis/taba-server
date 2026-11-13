@@ -42,15 +42,25 @@ struct CheckContext {
         self.arrivalBooking = arrivalBooking
         self.departureBooking = departureBooking
         let dates = guide.trip.dates
-        // A booking wins over the times the traveller typed.
+        // A booking wins over the times the traveller typed. Typed times start and end at the place the traveller
+        // said they arrive at and leave from, when there is one.
+        let travel = guide.trip.travel
         self.arrival = arrivalBooking.map { TransitTime(time: $0.arrives, stationPlaceId: $0.toPlaceId) }
             ?? dates.arrives.map {
-                TransitTime(time: LocalDateTime(date: dates.start, time: $0), stationPlaceId: nil, isBooking: false)
+                TransitTime(time: LocalDateTime(date: dates.start, time: $0), stationPlaceId: travel?.arrivalPlaceId,
+                            isBooking: false)
             }
         self.departure = departureBooking.map { TransitTime(time: $0.departs, stationPlaceId: $0.fromPlaceId) }
             ?? dates.leaves.map {
-                TransitTime(time: LocalDateTime(date: dates.end, time: $0), stationPlaceId: nil, isBooking: false)
+                TransitTime(time: LocalDateTime(date: dates.end, time: $0), stationPlaceId: travel?.departurePlaceId,
+                            isBooking: false)
             }
+    }
+
+    /// True when `placeId` is where the traveller said they arrive or leave: a station, an airport or where they park.
+    func isTravelPlace(_ placeId: String?) -> Bool {
+        guard let placeId, let travel = guide.trip.travel else { return false }
+        return placeId == travel.arrivalPlaceId || placeId == travel.departurePlaceId
     }
 
     func place(_ id: String?) -> Place? {

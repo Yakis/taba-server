@@ -1,32 +1,31 @@
-/// How far a place is from the guide's stay, in the app's words: "6 min from the stay", or "9.6 km from the stay" when
-/// walking would take more than 45 minutes. Straight-line estimates, the same as the app.
+/// How far a place is from the guide's base (see `Guide.base`), in the app's words: "6 min from the stay",
+/// "6 min from the station", or "9.6 km from the stay" when walking would take more than 45 minutes. Straight-line
+/// estimates, the same as the app. A guide with no base shows no distance.
 enum RenderStay {
     /// Walks longer than this read as a distance instead, since nobody plans a two-hour walk from a list.
     static let longestWalkMinutes = 45
 
-    /// "6 min from the stay" for a list row, or nil for the stay itself and places it cannot measure.
+    /// "6 min from the stay" for a list row, or nil for the base itself and places it cannot measure.
     static func listText(to place: Place, guide: Guide) -> String? {
-        guard let distance = distance(to: place, guide: guide) else { return nil }
+        guard let base = guide.base, let distance = distance(to: place, from: base) else { return nil }
         if distance.isWalk {
-            return "\(RenderText.duration(minutes: distance.minutes)) from the stay"
+            return "\(RenderText.duration(minutes: distance.minutes)) from \(base.phrase)"
         }
-        return "\(distance.kilometreText) km from the stay"
+        return "\(distance.kilometreText) km from \(base.phrase)"
     }
 
-    /// "6 min walk from the stay" for a place card, or nil for the stay itself and places it cannot measure.
+    /// "6 min walk from the stay" for a place card, or nil for the base itself and places it cannot measure.
     static func walkText(to place: Place, guide: Guide) -> String? {
-        guard let distance = distance(to: place, guide: guide) else { return nil }
+        guard let base = guide.base, let distance = distance(to: place, from: base) else { return nil }
         if distance.isWalk {
-            return "\(RenderText.duration(minutes: distance.minutes)) walk from the stay"
+            return "\(RenderText.duration(minutes: distance.minutes)) walk from \(base.phrase)"
         }
-        return "\(distance.kilometreText) km from the stay"
+        return "\(distance.kilometreText) km from \(base.phrase)"
     }
 
-    private static func distance(to place: Place, guide: Guide) -> Distance? {
-        guard place.id != guide.stay.placeId, let stay = guide.places[guide.stay.placeId] else {
-            return nil
-        }
-        let from = stay.location.coordinate
+    private static func distance(to place: Place, from base: GuideBase) -> Distance? {
+        guard place.id != base.place.id else { return nil }
+        let from = base.place.location.coordinate
         let to = place.location.coordinate
         return Distance(
             minutes: StraightLineWalkTimes().minutes(from: from, to: to),

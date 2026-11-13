@@ -42,6 +42,10 @@ public enum IssueKind: String, CaseIterable, Hashable, Sendable, Codable {
     case stationUnknown
     /// A place is used by more than one stop on the trip.
     case placeRepeated
+    /// The plan or its words contradict what the traveller arranged, such as a hotel on a trip with no stay.
+    case stayContradiction
+    /// A pick list holds a place whose kind does not fit it, such as a museum in the eat list.
+    case listKindMismatch
     /// A trip interest that no stop serves, though at least one candidate does. Info only: it never triggers a repair.
     case interestMissed
 }

@@ -20,6 +20,8 @@ public struct PlanChecker: Sendable {
             + stayFindings(context)
             + paceFindings(context)
             + repeatFindings(context)
+            + contradictionFindings(context)
+            + listFindings(context)
         return findings.sorted(by: Self.isOrderedBefore).map(\.issue)
     }
 
