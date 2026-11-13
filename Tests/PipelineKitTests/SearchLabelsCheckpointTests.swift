@@ -5,7 +5,7 @@ import Testing
 
 struct SearchLabelsCheckpointTests {
     private func measurements() -> PipelineInputMeasurements {
-        PipelineInputMeasurements(areas: ["p": "a"], walkFromStay: ["p": 4], areaWalkMinutes: .object([:]),
+        PipelineInputMeasurements(areas: ["p": "a"], walkFromBase: ["p": 4], areaWalkMinutes: .object([:]),
                                   arrivalWalkMinutes: 1, departureWalkMinutes: 2,
                                   searchLabels: ["p": ["music", "parks"]])
     }
@@ -29,6 +29,6 @@ struct SearchLabelsCheckpointTests {
         let restored = try JSONDecoder().decode(MeasurementsCheckpoint.self, from: data)
         #expect(restored.value.searchLabels.isEmpty)
         #expect(restored.value.areas == ["p": "a"])
-        #expect(restored.value.walkFromStay == ["p": 4])
+        #expect(restored.value.walkFromBase == ["p": 4])
     }
 }

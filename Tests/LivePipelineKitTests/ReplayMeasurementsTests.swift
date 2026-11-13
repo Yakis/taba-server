@@ -32,12 +32,12 @@ struct ReplayMeasurementsTests {
         let old = try measurements(event(searchLabels: nil), fallback: nil, facts: facts)
         #expect(old.searchLabels.isEmpty)
         #expect(old.areas == ["p": "a"])
-        #expect(old.walkFromStay == ["p": 3])
+        #expect(old.walkFromBase == ["p": 3])
     }
 
     @Test func suggestionEvidenceWithoutLabelsKeepsTheFallbacksLabels() throws {
         let facts = try tripFacts()
-        let before = PipelineInputMeasurements(areas: ["p": "a"], walkFromStay: ["p": 3],
+        let before = PipelineInputMeasurements(areas: ["p": "a"], walkFromBase: ["p": 3],
                                                areaWalkMinutes: .object([:]), arrivalWalkMinutes: 5,
                                                departureWalkMinutes: 6, searchLabels: ["p": ["parks"]])
         let after = try measurements(event(searchLabels: nil), fallback: before, facts: facts)

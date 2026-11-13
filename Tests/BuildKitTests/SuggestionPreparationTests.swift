@@ -32,7 +32,7 @@ private func place(_ base: Place, kind: PlaceKind, indoor: Bool) -> Place {
 }
 
 private func measurements(_ labels: [String: [String]]) -> PipelineInputMeasurements {
-    PipelineInputMeasurements(areas: [:], walkFromStay: [:], areaWalkMinutes: .object([:]),
+    PipelineInputMeasurements(areas: [:], walkFromBase: [:], areaWalkMinutes: .object([:]),
                               arrivalWalkMinutes: 0, departureWalkMinutes: 0, searchLabels: labels)
 }
 

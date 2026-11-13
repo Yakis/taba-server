@@ -29,14 +29,26 @@ private let assumedHours = "Luggage store hours 08:00 to 20:00 are an assumption
 private let notFound = "The luggage store could not be found on the map, so the plan carries the bags. "
     + "Check where bags can be left."
 
-private func basics(luggage: String?, handLuggageOnly: Bool = false, fetcher: NominatimFake) async throws -> TripFacts {
+private func options(luggage: String?, handLuggageOnly: Bool = false) throws -> SourceInput {
     let start = try #require(LocalDate("2025-11-23"))
     let end = try #require(LocalDate("2025-11-25"))
-    let options = SourceInput(destination: "Edinburgh", from: start, to: end, luggage: luggage,
-                              handLuggageOnly: handLuggageOnly)
+    return SourceInput(destination: "Edinburgh", from: start, to: end, luggage: luggage,
+                       handLuggageOnly: handLuggageOnly)
+}
+
+private func basics(luggage: String?, handLuggageOnly: Bool = false, fetcher: NominatimFake) async throws -> TripFacts {
     let centre = try #require(Coordinate(latitude: 55.95, longitude: -3.19))
-    return try await SourcePreparation.baseFacts(options, seed: nil, centre: centre, country: "GB",
-        timeZone: "Europe/London", geocoder: NominatimGeocoder(fetcher: fetcher, interval: .zero))
+    return try await SourcePreparation.baseFacts(try options(luggage: luggage, handLuggageOnly: handLuggageOnly),
+        seed: nil, centre: centre, country: "GB", timeZone: "Europe/London",
+        geocoder: NominatimGeocoder(fetcher: fetcher, interval: .zero))
+}
+
+/// The practical facts the build adds for these options and the facts it made.
+private func assumptionTexts(_ options: SourceInput, facts: TripFacts) throws -> [String] {
+    var sources: [Source] = []
+    let today = try #require(LocalDate("2025-11-23"))
+    return SourcePreparation.assumptions(options, seed: nil, today: today, facts: facts, sources: &sources)
+        .map(\.text)
 }
 
 @Test func foundLuggageStoreIsPlacedAndGivenAssumedHours() async throws {
@@ -54,8 +66,10 @@ private func basics(luggage: String?, handLuggageOnly: Bool = false, fetcher: No
     #expect(place.booking == PlaceBooking(needed: false, url: nil))
     #expect(place.indoor)
     #expect(place.images.isEmpty && place.facts.isEmpty && place.copy == nil)
-    #expect(facts.places.count == 2)
-    #expect(facts.stay.placeId == "manual:stay")
+    // A multi-day trip with no stay named has no stay place: only the luggage store is placed.
+    #expect(facts.places.count == 1)
+    #expect(facts.stay.placeId == nil)
+    #expect(facts.stay.arrangement == .unknown)
     let slot = LuggageSlot(placeId: "manual:luggage", opens: try #require(LocalTime("08:00")),
                            closes: try #require(LocalTime("20:00")))
     #expect(facts.stay.luggage == slot)
@@ -66,7 +80,7 @@ private func basics(luggage: String?, handLuggageOnly: Bool = false, fetcher: No
     let fetcher = NominatimFake(answers: [:])
     let facts = try await basics(luggage: "Nowhere Left Luggage", fetcher: fetcher)
     #expect(facts.places["manual:luggage"] == nil)
-    #expect(facts.places.count == 1)
+    #expect(facts.places.isEmpty)
     #expect(facts.stay.luggage == nil)
     #expect(await fetcher.queries.count == 1)
 }
@@ -74,64 +88,47 @@ private func basics(luggage: String?, handLuggageOnly: Bool = false, fetcher: No
 @Test func noLuggageNameLeavesThePlanAsBefore() async throws {
     let fetcher = NominatimFake(answers: ["Station": luggageHit])
     let facts = try await basics(luggage: nil, fetcher: fetcher)
-    #expect(facts.places.count == 1)
+    #expect(facts.places.isEmpty)
     #expect(facts.stay.luggage == nil)
     #expect(await fetcher.queries.isEmpty)
 }
 
-@Test func foundLuggageAddsTheAssumptionFact() throws {
-    let start = try #require(LocalDate("2025-11-23"))
-    let end = try #require(LocalDate("2025-11-25"))
-    let options = SourceInput(destination: "Edinburgh", from: start, to: end, luggage: "Station Left Luggage")
-    var sources: [Source] = []
-    let facts = SourcePreparation.assumptions(options, seed: nil, country: "GB", today: start,
-                                              luggageFound: true, sources: &sources)
-    #expect(facts.contains { $0.text == assumedHours })
-    #expect(!facts.contains { $0.text == notFound })
+@Test func foundLuggageAddsTheAssumptionFact() async throws {
+    let fetcher = NominatimFake(answers: ["Station": luggageHit])
+    let facts = try await basics(luggage: "Station Left Luggage", fetcher: fetcher)
+    let texts = try assumptionTexts(try options(luggage: "Station Left Luggage"), facts: facts)
+    #expect(texts.contains(assumedHours))
+    #expect(!texts.contains(notFound))
 }
 
-@Test func notFoundLuggageAddsTheCheckFactWithoutTheTypedName() throws {
-    let start = try #require(LocalDate("2025-11-23"))
-    let end = try #require(LocalDate("2025-11-25"))
-    let options = SourceInput(destination: "Edinburgh", from: start, to: end, luggage: "Station Left Luggage")
-    var sources: [Source] = []
-    let facts = SourcePreparation.assumptions(options, seed: nil, country: "GB", today: start,
-                                              luggageFound: false, sources: &sources)
-    #expect(facts.contains { $0.text == notFound })
-    #expect(!facts.contains { $0.text == assumedHours })
-    #expect(!facts.contains { $0.text.contains("Station Left Luggage") })
+@Test func notFoundLuggageAddsTheCheckFactWithoutTheTypedName() async throws {
+    let facts = try await basics(luggage: "Station Left Luggage", fetcher: NominatimFake(answers: [:]))
+    let texts = try assumptionTexts(try options(luggage: "Station Left Luggage"), facts: facts)
+    #expect(texts.contains(notFound))
+    #expect(!texts.contains(assumedHours))
+    #expect(!texts.contains { $0.contains("Station Left Luggage") })
 }
 
 @Test func handLuggageOnlyLooksUpNoStoreAndPlansNoBags() async throws {
     let fetcher = NominatimFake(answers: ["Station": luggageHit])
     let facts = try await basics(luggage: "Station Left Luggage", handLuggageOnly: true, fetcher: fetcher)
     #expect(facts.places["manual:luggage"] == nil)
-    #expect(facts.places.count == 1)
+    #expect(facts.places.isEmpty)
     #expect(facts.stay.luggage == nil)
     #expect(facts.stay.handLuggageOnly == true)
     #expect(await fetcher.queries.isEmpty)
 }
 
-@Test func handLuggageOnlyAddsNoLuggageFact() throws {
-    let start = try #require(LocalDate("2025-11-23"))
-    let end = try #require(LocalDate("2025-11-25"))
-    let options = SourceInput(destination: "Edinburgh", from: start, to: end, luggage: "Station Left Luggage",
-                              handLuggageOnly: true)
-    var sources: [Source] = []
-    let facts = SourcePreparation.assumptions(options, seed: nil, country: "GB", today: start,
-                                              luggageFound: false, sources: &sources)
-    #expect(facts.count == 2)
-    #expect(!facts.contains { $0.text.localizedCaseInsensitiveContains("luggage") })
-    #expect(!facts.contains { $0.text == notFound })
+@Test func handLuggageOnlyAddsNoLuggageFact() async throws {
+    let facts = try await basics(luggage: "Station Left Luggage", handLuggageOnly: true,
+                                 fetcher: NominatimFake(answers: [:]))
+    let texts = try assumptionTexts(try options(luggage: "Station Left Luggage", handLuggageOnly: true),
+                                    facts: facts)
+    #expect(texts.isEmpty)
 }
 
-@Test func noLuggageNameAddsNoLuggageFact() throws {
-    let start = try #require(LocalDate("2025-11-23"))
-    let end = try #require(LocalDate("2025-11-25"))
-    let options = SourceInput(destination: "Edinburgh", from: start, to: end)
-    var sources: [Source] = []
-    let facts = SourcePreparation.assumptions(options, seed: nil, country: "GB", today: start,
-                                              luggageFound: false, sources: &sources)
-    #expect(facts.count == 2)
-    #expect(!facts.contains { $0.text.contains("uggage") })
+@Test func noLuggageNameAddsNoLuggageFact() async throws {
+    let facts = try await basics(luggage: nil, fetcher: NominatimFake(answers: [:]))
+    let texts = try assumptionTexts(try options(luggage: nil), facts: facts)
+    #expect(texts.isEmpty)
 }

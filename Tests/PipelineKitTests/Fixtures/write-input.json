@@ -1,5 +1,10 @@
 {
   "anchors" : {
+    "base" : {
+      "kind" : "stay",
+      "phrase" : "the stay",
+      "placeId" : "manual:stay-new-town"
+    },
     "bookings" : [
       {
         "arrives" : "2025-11-23T12:29",
@@ -27,15 +32,19 @@
       }
     ],
     "stay" : {
+      "arrangement" : "booked",
       "checkIn" : "15:00",
       "checkOut" : "11:00",
+      "handLuggageOnly" : false,
       "luggage" : {
         "closes" : "17:00",
         "opens" : "09:00",
         "placeId" : "manual:luggage-rose"
       },
-      "placeId" : "manual:stay-new-town"
-    }
+      "placeId" : "manual:stay-new-town",
+      "timesEstimated" : false
+    },
+    "travel" : null
   },
   "days" : [
     {
@@ -557,7 +566,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 11,
         "mode" : "walk"
       },
@@ -582,7 +591,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 6,
         "mode" : "walk"
       },
@@ -613,7 +622,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 12,
         "mode" : "walk"
       },
@@ -638,7 +647,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 1,
         "mode" : "walk"
       },
@@ -663,7 +672,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 14,
         "mode" : "walk"
       },
@@ -692,7 +701,7 @@
           }
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 14,
         "mode" : "walk"
       },
@@ -717,7 +726,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 18,
         "mode" : "walk"
       },
@@ -746,7 +755,7 @@
           }
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 13,
         "mode" : "walk"
       },
@@ -771,7 +780,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 6,
         "mode" : "walk"
       },
@@ -800,7 +809,7 @@
           }
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 11,
         "mode" : "walk"
       },
@@ -827,7 +836,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 13,
         "mode" : "walk"
       },
@@ -856,7 +865,7 @@
           }
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 4,
         "mode" : "walk"
       },
@@ -891,7 +900,7 @@
           }
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 10,
         "mode" : "walk"
       },
@@ -916,7 +925,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 15,
         "mode" : "walk"
       },
@@ -941,7 +950,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 8,
         "mode" : "walk"
       },
@@ -966,7 +975,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 11,
         "mode" : "walk"
       },
@@ -991,7 +1000,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 11,
         "mode" : "walk"
       },
@@ -1016,7 +1025,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 20,
         "mode" : "walk"
       },
@@ -1041,7 +1050,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 14,
         "mode" : "walk"
       },
@@ -1066,7 +1075,7 @@
 
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 13,
         "mode" : "walk"
       },
@@ -1095,7 +1104,7 @@
           }
         ]
       },
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 8,
         "mode" : "walk"
       },
@@ -1117,16 +1126,6 @@
       "priceLevel" : null
     }
   ],
-  "stay" : {
-    "checkIn" : "15:00",
-    "checkOut" : "11:00",
-    "luggage" : {
-      "closes" : "17:00",
-      "opens" : "09:00",
-      "placeId" : "manual:luggage-rose"
-    },
-    "placeId" : "manual:stay-new-town"
-  },
   "trip" : {
     "dates" : {
       "end" : "2025-11-25",
@@ -1134,8 +1133,8 @@
     },
     "destination" : {
       "centre" : {
-        "latitude" : 55.953345599999999,
-        "longitude" : -3.1883748999999999
+        "latitude" : 55.9533456,
+        "longitude" : -3.1883749
       },
       "countryCode" : "GB",
       "name" : "Edinburgh",

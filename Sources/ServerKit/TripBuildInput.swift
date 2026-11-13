@@ -28,22 +28,26 @@ public struct TripBuildInput: Codable, Sendable {
     public let luggage: String?
     /// True when the travellers carry only hand luggage, so the plan has no bag drops. Nil when not said or false.
     public let handLuggageOnly: Bool?
+    /// How the traveller gets to the city and leaves it. Nil when not said.
+    public let travel: TripTravelInput?
 
     public enum ValidationError: Error, Equatable, Sendable {
         case invalidDestination, invalidStay, invalidDates, factsMismatch, tooManyFacts, unknownField
         case invalidInterests, invalidParty, invalidMobility, preferencesWithFacts, invalidModel, invalidTimes
-        case invalidLuggage
+        case invalidLuggage, invalidTravel
     }
 
+    // swiftlint:disable:next cyclomatic_complexity
     public init(destination: String, from: LocalDate, to: LocalDate, stay: String? = nil,
                 facts: Guide? = nil, pace: Pace? = nil, interests: [String]? = nil,
                 dailySpend: DailySpend? = nil, adults: Int? = nil, children: Int? = nil,
                 mobilityNotes: [String]? = nil, model: String? = nil,
                 arrives: LocalTime? = nil, leaves: LocalTime? = nil, luggage: String? = nil,
-                handLuggageOnly: Bool? = nil) throws {
+                handLuggageOnly: Bool? = nil, travel: TripTravelInput? = nil) throws {
         guard Self.validName(destination) else { throw ValidationError.invalidDestination }
         guard model.map({ ModelChoice.isWellFormed($0) }) ?? true else { throw ValidationError.invalidModel }
         try Self.validatePlaces(stay: stay, luggage: luggage)
+        guard travel?.place.map({ Self.validName($0) }) ?? true else { throw ValidationError.invalidTravel }
         // Hand luggage only means there are no bags, so a place where bags can wait cannot also be named.
         let onlyHandLuggage = handLuggageOnly == true
         guard !(onlyHandLuggage && luggage != nil) else { throw ValidationError.invalidLuggage }
@@ -56,7 +60,7 @@ public struct TripBuildInput: Codable, Sendable {
         // Stated times are preferences too: a facts seed already says when the traveller is in the city.
         let hasPreferences = pace != nil || interests != nil || dailySpend != nil
             || adults != nil || children != nil || mobilityNotes != nil || arrives != nil || leaves != nil
-            || luggage != nil || onlyHandLuggage
+            || luggage != nil || onlyHandLuggage || travel != nil
         // On a one-day trip, the traveller must have at least two hours there between arriving and leaving.
         if let arrives, let leaves, from == to {
             guard leaves.minutesSinceMidnight - arrives.minutesSinceMidnight >= 120 else {
@@ -91,6 +95,7 @@ public struct TripBuildInput: Codable, Sendable {
         self.leaves = leaves
         self.luggage = luggage
         self.handLuggageOnly = onlyHandLuggage ? true : nil
+        self.travel = travel
     }
 
     /// The same input with the model resolved, so the stored trip records the model its build will use even if the
@@ -101,7 +106,7 @@ public struct TripBuildInput: Codable, Sendable {
                                     pace: pace, interests: interests, dailySpend: dailySpend, adults: adults,
                                     children: children, mobilityNotes: mobilityNotes, model: resolved,
                                     arrives: arrives, leaves: leaves, luggage: luggage,
-                                    handLuggageOnly: handLuggageOnly)) ?? self
+                                    handLuggageOnly: handLuggageOnly, travel: travel)) ?? self
     }
 
     /// The places a trip may name: where it stays, and where bags can wait.
@@ -139,7 +144,7 @@ public struct TripBuildInput: Codable, Sendable {
     private enum Keys: String, CodingKey, CaseIterable {
         case destination, from, to, stay, facts
         case pace, interests, dailySpend, adults, children, mobilityNotes, model, arrives, leaves, luggage
-        case handLuggageOnly
+        case handLuggageOnly, travel
     }
     private struct AnyKey: CodingKey {
         let stringValue: String
@@ -168,6 +173,41 @@ public struct TripBuildInput: Codable, Sendable {
                       arrives: values.decodeIfPresent(LocalTime.self, forKey: .arrives),
                       leaves: values.decodeIfPresent(LocalTime.self, forKey: .leaves),
                       luggage: values.decodeIfPresent(String.self, forKey: .luggage),
-                      handLuggageOnly: values.decodeIfPresent(Bool.self, forKey: .handLuggageOnly))
+                      handLuggageOnly: values.decodeIfPresent(Bool.self, forKey: .handLuggageOnly),
+                      travel: values.decodeIfPresent(TripTravelInput.self, forKey: .travel))
+    }
+}
+
+/// How the traveller reaches the city and leaves it: `{"mode": "train", "place": "Leeds station"}`. `place` names the
+/// station, coach station or airport, or where they park; it is optional. Unknown keys are rejected.
+/// `TripBuildInput` checks the place name.
+public struct TripTravelInput: Codable, Sendable, Equatable {
+    public let mode: TravelMode
+    public let place: String?
+
+    public init(mode: TravelMode, place: String? = nil) {
+        self.mode = mode
+        self.place = place
+    }
+
+    private enum Keys: String, CodingKey, CaseIterable {
+        case mode, place
+    }
+    private struct AnyKey: CodingKey {
+        let stringValue: String
+        let intValue: Int? = nil
+        init?(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { return nil }
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let all = try decoder.container(keyedBy: AnyKey.self)
+        let allowed = Set(Keys.allCases.map(\.rawValue))
+        guard all.allKeys.allSatisfy({ allowed.contains($0.stringValue) }) else {
+            throw TripBuildInput.ValidationError.unknownField
+        }
+        let values = try decoder.container(keyedBy: Keys.self)
+        self.init(mode: try values.decode(TravelMode.self, forKey: .mode),
+                  place: try values.decodeIfPresent(String.self, forKey: .place))
     }
 }

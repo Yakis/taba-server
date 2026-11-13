@@ -1,5 +1,10 @@
 {
   "anchors" : {
+    "base" : {
+      "kind" : "stay",
+      "phrase" : "the stay",
+      "placeId" : "manual:stay-new-town"
+    },
     "bookings" : [
       {
         "arrives" : "2025-11-23T12:29",
@@ -27,15 +32,19 @@
       }
     ],
     "stay" : {
+      "arrangement" : "booked",
       "checkIn" : "15:00",
       "checkOut" : "11:00",
+      "handLuggageOnly" : false,
       "luggage" : {
         "closes" : "17:00",
         "opens" : "09:00",
         "placeId" : "manual:luggage-rose"
       },
-      "placeId" : "manual:stay-new-town"
-    }
+      "placeId" : "manual:stay-new-town",
+      "timesEstimated" : false
+    },
+    "travel" : null
   },
   "areaTravelMinutes" : {
     "manual:castle-esplanade" : {
@@ -124,7 +133,7 @@
       "area" : "manual:castle-esplanade",
       "areaName" : "New Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 11,
         "mode" : "walk"
       },
@@ -146,7 +155,7 @@
       "area" : "manual:castle-esplanade",
       "areaName" : "New Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 6,
         "mode" : "walk"
       },
@@ -171,7 +180,7 @@
       "area" : "manual:royal-mile",
       "areaName" : "Old Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 12,
         "mode" : "walk"
       },
@@ -193,7 +202,7 @@
       "area" : "manual:stay-new-town",
       "areaName" : "New Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 1,
         "mode" : "walk"
       },
@@ -212,7 +221,7 @@
       "area" : "manual:royal-mile",
       "areaName" : "Old Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 14,
         "mode" : "walk"
       },
@@ -234,7 +243,7 @@
       "area" : "osm:node/10785545157",
       "areaName" : "Calton Hill",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 14,
         "mode" : "walk"
       },
@@ -257,7 +266,7 @@
       "area" : "osm:node/10785545157",
       "areaName" : "Calton Hill",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 18,
         "mode" : "walk"
       },
@@ -279,7 +288,7 @@
       "area" : "manual:royal-mile",
       "areaName" : "Old Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 13,
         "mode" : "walk"
       },
@@ -301,7 +310,7 @@
       "area" : "manual:stay-new-town",
       "areaName" : "New Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 6,
         "mode" : "walk"
       },
@@ -323,7 +332,7 @@
       "area" : "osm:node/2338447599",
       "areaName" : "Stockbridge",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 11,
         "mode" : "walk"
       },
@@ -348,7 +357,7 @@
       "area" : "manual:royal-mile",
       "areaName" : "Old Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 13,
         "mode" : "walk"
       },
@@ -370,7 +379,7 @@
       "area" : "manual:castle-esplanade",
       "areaName" : "New Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 4,
         "mode" : "walk"
       },
@@ -398,7 +407,7 @@
       "area" : "osm:node/33185107",
       "areaName" : "New Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 10,
         "mode" : "walk"
       },
@@ -420,7 +429,7 @@
       "area" : "osm:node/2338447599",
       "areaName" : "Stockbridge",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 15,
         "mode" : "walk"
       },
@@ -442,7 +451,7 @@
       "area" : "osm:node/57543992",
       "areaName" : "New Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 8,
         "mode" : "walk"
       },
@@ -464,7 +473,7 @@
       "area" : "manual:royal-mile",
       "areaName" : "Old Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 11,
         "mode" : "walk"
       },
@@ -486,7 +495,7 @@
       "area" : "osm:node/33185107",
       "areaName" : "New Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 11,
         "mode" : "walk"
       },
@@ -505,7 +514,7 @@
       "area" : "osm:relation/18573379",
       "areaName" : "Dean Village",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 20,
         "mode" : "walk"
       },
@@ -527,7 +536,7 @@
       "area" : "manual:royal-mile",
       "areaName" : "Old Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 14,
         "mode" : "walk"
       },
@@ -549,7 +558,7 @@
       "area" : "manual:royal-mile",
       "areaName" : "Old Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 13,
         "mode" : "walk"
       },
@@ -571,7 +580,7 @@
       "area" : "manual:castle-esplanade",
       "areaName" : "New Town",
       "bookingNeeded" : false,
-      "fromStay" : {
+      "fromBase" : {
         "minutes" : 8,
         "mode" : "walk"
       },
@@ -683,8 +692,8 @@
     },
     "destination" : {
       "centre" : {
-        "latitude" : 55.953345599999999,
-        "longitude" : -3.1883748999999999
+        "latitude" : 55.9533456,
+        "longitude" : -3.1883749
       },
       "countryCode" : "GB",
       "name" : "Edinburgh",

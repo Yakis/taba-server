@@ -25,6 +25,7 @@ private actor PipelineScript {
     enum ScriptError: Error { case exhausted }
 }
 
+// swiftlint:disable:next type_body_length
 struct GuidePipelineTests {
     private struct Fixture {
         let facts: TripFacts
@@ -45,9 +46,12 @@ struct GuidePipelineTests {
                               practical: guide.practical, sources: guide.sources)
         let areas = Dictionary(uniqueKeysWithValues: facts.places.keys.map { ($0, "area") })
         let walks = Dictionary(uniqueKeysWithValues: facts.places.keys.map { ($0, 1) })
-        let measurements = PipelineInputMeasurements(areas: areas, walkFromStay: walks,
+        let measurements = PipelineInputMeasurements(areas: areas, walkFromBase: walks,
             areaWalkMinutes: .object([:]), arrivalWalkMinutes: 0, departureWalkMinutes: 0)
-        let place = try #require(facts.places.values.first { $0.kind.needsCopy })
+        // A place that fits the eat list, picked in id order so the fixture is the same on every run.
+        let eatKinds = try #require(PlanChecker.listKinds[.eat])
+        let place = try #require(facts.places.values.sorted { $0.id < $1.id }
+            .first { $0.kind.needsCopy && eatKinds.contains($0.kind) })
         let stop = PlanDraftStop(id: "original-stop", placeId: nil, kind: .meal, mealSlot: .breakfast,
                                  start: try #require(LocalTime("09:00")), minutes: 30, flexible: false,
                                  alternative: nil, reason: "Rest", findingIds: [])
@@ -80,8 +84,9 @@ struct GuidePipelineTests {
         let original = fixture.measurements
         let measurements = PipelineInputMeasurements(
             areas: original.areas, areaLabels: original.areas.mapValues { _ in "Named area" },
-            walkFromStay: original.walkFromStay, areaWalkMinutes: original.areaWalkMinutes,
-            alwaysOpenPlaceIDs: [fixture.facts.stay.placeId], arrivalWalkMinutes: 2, departureWalkMinutes: 3,
+            walkFromBase: original.walkFromBase, areaWalkMinutes: original.areaWalkMinutes,
+            alwaysOpenPlaceIDs: Set([fixture.facts.stay.placeId].compactMap { $0 }),
+            arrivalWalkMinutes: 2, departureWalkMinutes: 3,
             arrivalMarginMinutes: 4, departureMarginMinutes: 5)
         let researched = try await pipeline.researchStage(
             model: "fake", facts: fixture.facts, measurements: measurements, stayArea: "Centre",
@@ -514,7 +519,7 @@ extension GuidePipelineTests {
 
     @Test func informationalIssuesDoNotTriggerRepair() async throws {
         let fixture = try data()
-        let place = try #require(fixture.facts.places.values.first {
+        let place = try #require(fixture.facts.places.values.sorted { $0.id < $1.id }.first {
             !$0.hours.hoursKnown && $0.kind.needsCopy && $0.indoor
                 && ![.lodging, .station, .luggage].contains($0.kind)
         })
@@ -528,10 +533,10 @@ extension GuidePipelineTests {
                            start: try #require(LocalTime("10:00")), minutes: 30, flexible: true,
                            alternative: nil, reason: "Check hours", findingIds: [])]
         let draft = PlanDraft(days: [.init(date: day, theme: "Walk", stops: stops)],
-            lists: fixture.draft.lists, skippedMeals: [], openQuestions: [], changes: [])
-        let existing = fixture.copy.places
-        let places = existing.contains { $0.id == place.id } ? existing
-            : existing + [.init(id: place.id, tag: "Local", blurb: "Enjoy a visit.")]
+            lists: fittingLists(fixture.draft.lists, in: fixture.facts), skippedMeals: [],
+            openQuestions: [], changes: [])
+        // Copy for this test's place only: the fixture's own copy names a place chosen another way.
+        let places = copyPlaces(for: draft, facts: fixture.facts)
         let copy = GuideCopy(hero: fixture.copy.hero, days: fixture.copy.days,
             stops: stops.map { GuideCopyStop(id: $0.id, title: "Stop", body: "Enjoy the day.", actionLabel: nil) },
             places: places, lists: fixture.copy.lists, tasting: fixture.copy.tasting, notes: fixture.copy.notes)
@@ -550,7 +555,7 @@ extension GuidePipelineTests {
 
     @Test func unservedInterestIsRecordedOnTheAcceptedPlanWithoutRepair() async throws {
         let fixture = try data()
-        let place = try #require(fixture.facts.places.values.first {
+        let place = try #require(fixture.facts.places.values.sorted { $0.id < $1.id }.first {
             !$0.hours.hoursKnown && $0.kind.needsCopy && $0.indoor
                 && ![.lodging, .station, .luggage].contains($0.kind)
         })
@@ -565,7 +570,7 @@ extension GuidePipelineTests {
             practical: fixture.facts.practical, sources: fixture.facts.sources)
         let base = fixture.measurements
         let measurements = PipelineInputMeasurements(areas: base.areas, areaLabels: base.areaLabels,
-            walkFromStay: base.walkFromStay, areaWalkMinutes: base.areaWalkMinutes, alwaysOpenPlaceIDs: [],
+            walkFromBase: base.walkFromBase, areaWalkMinutes: base.areaWalkMinutes, alwaysOpenPlaceIDs: [],
             arrivalWalkMinutes: base.arrivalWalkMinutes, departureWalkMinutes: base.departureWalkMinutes,
             arrivalMarginMinutes: base.arrivalMarginMinutes, departureMarginMinutes: base.departureMarginMinutes,
             searchLabels: [venue.id: ["music"]])
@@ -579,10 +584,10 @@ extension GuidePipelineTests {
                            start: try #require(LocalTime("10:00")), minutes: 30, flexible: true,
                            alternative: nil, reason: "Check hours", findingIds: [])]
         let draft = PlanDraft(days: [.init(date: day, theme: "Walk", stops: stops)],
-            lists: fixture.draft.lists, skippedMeals: [], openQuestions: [], changes: [])
-        let existing = fixture.copy.places
-        let places = existing.contains { $0.id == place.id } ? existing
-            : existing + [.init(id: place.id, tag: "Local", blurb: "Enjoy a visit.")]
+            lists: fittingLists(fixture.draft.lists, in: fixture.facts), skippedMeals: [],
+            openQuestions: [], changes: [])
+        // Copy for this test's place only: the fixture's own copy names a place chosen another way.
+        let places = copyPlaces(for: draft, facts: fixture.facts)
         let copy = GuideCopy(hero: fixture.copy.hero, days: fixture.copy.days,
             stops: stops.map { GuideCopyStop(id: $0.id, title: "Stop", body: "Enjoy the day.", actionLabel: nil) },
             places: places, lists: fixture.copy.lists, tasting: fixture.copy.tasting, notes: fixture.copy.notes)
@@ -631,7 +636,7 @@ extension GuidePipelineTests {
         let facts = TripFacts(trip: fixture.facts.trip, bookings: [booking], stay: fixture.facts.stay,
             places: fixture.facts.places, practical: fixture.facts.practical, sources: fixture.facts.sources)
         let measurements = PipelineInputMeasurements(areas: fixture.measurements.areas,
-            walkFromStay: fixture.measurements.walkFromStay, areaWalkMinutes: .object([:]),
+            walkFromBase: fixture.measurements.walkFromBase, areaWalkMinutes: .object([:]),
             arrivalWalkMinutes: 90, departureWalkMinutes: 0)
         let script = try PipelineScript([research, json(fixture.draft), json(fixture.draft), json(fixture.draft)])
         await #expect(throws: GuidePipelineError.self) {
@@ -677,5 +682,30 @@ extension GuidePipelineTests {
         let events = await script.events
         #expect(events.contains { if case .failure = $0 { true } else { false } })
         #expect(events.filter { if case .plan = $0 { true } else { false } }.count == 3)
+    }
+}
+
+/// Copy for every place the draft names that needs copy, so no copy target is missing.
+private func copyPlaces(for draft: PlanDraft, facts: TripFacts) -> [GuideCopyPlace] {
+    let named = Set(draft.days.flatMap(\.stops).compactMap(\.placeId) + draft.lists.flatMap(\.placeIds))
+    return named.filter { facts.places[$0]?.kind.needsCopy == true }.sorted().map {
+        GuideCopyPlace(id: $0, tag: "Local", blurb: "Enjoy a visit.")
+    }
+}
+
+/// The fixture's pick lists with only the places whose kind fits each list. The kinds mirror
+/// `PlanChecker.listKinds`, so
+/// the lists raise no warning and the plan is accepted without repair.
+private func fittingLists(_ lists: [DraftList], in facts: TripFacts) -> [DraftList] {
+    let fitting: [ListKey: Set<PlaceKind>] = [
+        .eat: [.market, .foodHall, .cafe, .restaurant, .pub],
+        .drink: [.pub, .bar, .cafe, .venue, .foodHall],
+        .photos: [.viewpoint, .street, .neighbourhood, .landmark, .market, .other],
+        .groceries: [.grocery, .market, .foodHall, .shop]
+    ]
+    return lists.map { list in
+        DraftList(key: list.key, placeIds: list.placeIds.filter { id in
+            facts.places[id].map { fitting[list.key]?.contains($0.kind) == true } ?? false
+        })
     }
 }

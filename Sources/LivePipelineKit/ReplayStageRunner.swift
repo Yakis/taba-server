@@ -59,7 +59,7 @@ public struct ReplayStageRunner: Sendable {
             let measurement = try measurements(source, fallback: nil, facts: facts)
             let prepared = CandidatesCheckpoint(facts: facts, measurements: measurement,
                 weather: try weather(source),
-                stayArea: measurement.areaLabels[facts.stay.placeId] ?? work.input.destination)
+                stayArea: facts.base.flatMap { measurement.areaLabels[$0.place.id] } ?? work.input.destination)
             await evidence(.source(["event": .string("replayCandidates")]))
             return try result(prepared)
         case .research:
@@ -87,8 +87,7 @@ public struct ReplayStageRunner: Sendable {
         case .plan:
             let candidate: CandidatesCheckpoint = try load(.candidates, work)
             let researched: ResearchedPipeline = try load(.research, work)
-            let requests: JSONValue = .object(["accommodationQuestion": .string(
-                "Confirm check-in and check-out times; supplied defaults may be assumptions.")])
+            let requests: JSONValue = .object([:])
             return try await result(pipeline.initialPlanStage(id: id, model: model, researched: researched,
                 weather: candidate.weather.map(\.value), requests: requests, send: send, evidence: emit))
         case .check:
@@ -187,7 +186,7 @@ func measurements(_ event: [String: JSONValue], fallback: PipelineInputMeasureme
         .compactMap { $0.toPlaceId.flatMap { facts.places[$0] } }
     let departures = facts.bookings.filter { $0.departs.date == facts.trip.dates.end }
         .compactMap { $0.fromPlaceId.flatMap { facts.places[$0] } }
-    return PipelineInputMeasurements(areas: areas, areaLabels: labels, walkFromStay: try decode(event, "stayWalks"),
+    return PipelineInputMeasurements(areas: areas, areaLabels: labels, walkFromBase: try decode(event, "stayWalks"),
         areaWalkMinutes: try decode(event, "areaWalks"), alwaysOpenPlaceIDs: [],
         arrivalWalkMinutes: fallback == nil ? try decode(event, "arrivalWalkMinutes") : maximum(arrivals),
         departureWalkMinutes: fallback == nil ? try decode(event, "departureWalkMinutes") : maximum(departures),

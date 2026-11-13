@@ -53,8 +53,7 @@ public enum SourcePreparation {
         let base = try await baseFacts(options, seed: seed, centre: centre, country: country,
                                        timeZone: outlook.timeZoneId, geocoder: geocoder)
         var sources = base.sources
-        let practical = assumptions(options, seed: seed, country: country, today: today,
-                                    luggageFound: base.stay.luggage != nil, sources: &sources)
+        let practical = assumptions(options, seed: seed, today: today, facts: base, sources: &sources)
         let facts = TripFacts(trip: base.trip, bookings: base.bookings, stay: base.stay, places: base.places,
                               practical: practical, sources: sources)
         return BasicsCheckpoint(facts: facts, weather: outlook.days, today: today)
@@ -78,36 +77,8 @@ public enum SourcePreparation {
         await recordSources(facts, measurements: measurements, walks: stayWalks, weather: weather,
                             lookup: lookup, started: started, record: record)
         return Prepared(facts: facts, measurements: measurements, weather: weather,
-                        stayArea: measurements.areaLabels[base.stay.placeId] ?? options.destination)
+                        stayArea: facts.base.flatMap { measurements.areaLabels[$0.place.id] } ?? options.destination)
     }
-
-    // swiftlint:disable function_parameter_count
-    /// `luggageFound` says whether the plan's stay has a luggage store. It matters only when the traveller named one.
-    public static func assumptions(_ options: SourceInput, seed: Guide?, country: String, today: LocalDate,
-                                   luggageFound: Bool, sources: inout [Source]) -> [Fact] {
-        if let seed { return seed.practical }
-        let source = Source(id: "taba-assumptions", url: "https://example.com/assumptions",
-                            title: "Planning assumptions", checkedAt: today)
-        sources.append(source)
-        let accommodation = options.stay == nil
-            ? "Accommodation is not booked; the base is an approximate destination centre. "
-                + "Choose accommodation. Check-in 15:00 and check-out 11:00 are placeholders, not confirmed."
-            : "Stay check-in 15:00 and check-out 11:00 are assumptions, not confirmed. Confirm both times."
-        var facts = [Fact(text: accommodation, sourceId: source.id, checkedAt: today),
-                     Fact(text: "Budget currency \(currency(for: country)) is assumed; confirm it.",
-                          sourceId: source.id, checkedAt: today)]
-        // Hand luggage only means there are no bags to store, so there is no luggage store to report on.
-        if options.luggage != nil && !options.handLuggageOnly {
-            let luggage = luggageFound
-                ? "Luggage store hours 08:00 to 20:00 are an assumption, not confirmed. "
-                    + "Check them before relying on it."
-                : "The luggage store could not be found on the map, so the plan carries the bags. "
-                    + "Check where bags can be left."
-            facts.append(Fact(text: luggage, sourceId: source.id, checkedAt: today))
-        }
-        return facts
-    }
-    // swiftlint:enable function_parameter_count
 
     // swiftlint:disable:next function_parameter_count
     static func recordSources(_ facts: TripFacts, measurements: PipelineInputMeasurements, walks: [String: Int],
@@ -204,7 +175,7 @@ public enum SourcePreparation {
         return event
     }
 
-    // swiftlint:disable:next function_parameter_count
+    // swiftlint:disable:next function_parameter_count function_body_length
     public static func baseFacts(_ options: SourceInput, seed: Guide?, centre: Coordinate, country: String,
                                  timeZone: String, geocoder: NominatimGeocoder) async throws -> TripFacts {
         if let seed {
@@ -212,20 +183,49 @@ public enum SourcePreparation {
             return TripFacts(trip: seed.trip, bookings: seed.bookings, stay: seed.stay, places: seed.places,
                              practical: seed.practical, sources: seed.sources)
         }
-        let found: GeocodedPlace?
+        // A named stay is a place with its check-in and check-out. With no stay there is no stay place at all: the
+        // trip's base is then the arrival hub, if any. A one-day trip has no night, so no check-in or check-out.
+        let nights = options.from != options.to
+        var places: [String: Place] = [:]
+        var stayPlace: String?
+        var checkIn: LocalTime?
+        var checkOut: LocalTime?
+        let arrangement: StayArrangement
+        var timesEstimated: Bool?
         if let name = options.stay {
-            found = try await geocoder.geocode(name + ", " + options.destination)
-            if found == nil { throw SourcePreparationError.geocoding }
-        } else { found = nil }
-        guard let checkIn = LocalTime("15:00"), let checkOut = LocalTime("11:00") else {
-            throw SourcePreparationError.service
+            guard let found = try await geocoder.geocode(name + ", " + options.destination) else {
+                throw SourcePreparationError.geocoding
+            }
+            let place = Place(id: stayPlaceId, name: name, kind: .lodging,
+                              location: PlaceLocation(coordinate: found.coordinate, address: found.displayName,
+                                                      approximate: false),
+                              hours: OpeningHours(hoursKnown: false, weekly: [], exceptions: []), priceLevel: nil,
+                              booking: PlaceBooking(needed: false, url: nil), indoor: true,
+                              images: [], facts: [], copy: nil)
+            places[place.id] = place
+            stayPlace = place.id
+            if nights {
+                guard let arrive = LocalTime("15:00"), let leave = LocalTime("11:00") else {
+                    throw SourcePreparationError.service
+                }
+                checkIn = arrive
+                checkOut = leave
+                timesEstimated = true
+            }
+            arrangement = .booked
+        } else {
+            arrangement = nights ? .unknown : .notNeeded
         }
-        let place = Place(id: "manual:stay", name: options.stay ?? "Unbooked base (choose accommodation)",
-                          kind: .lodging, location: PlaceLocation(coordinate: found?.coordinate ?? centre,
-                          address: found?.displayName, approximate: options.stay == nil),
-                          hours: OpeningHours(hoursKnown: false, weekly: [], exceptions: []), priceLevel: nil,
-                          booking: PlaceBooking(needed: false, url: nil), indoor: true,
-                          images: [], facts: [], copy: nil)
+        let hub = try await travelHub(options, geocoder: geocoder)
+        var travel: TripTravel?
+        if let mode = options.travelMode {
+            var hubId: String?
+            if case .found(let place, _) = hub {
+                places[place.id] = place
+                hubId = place.id
+            }
+            travel = TripTravel(mode: mode, arrivalPlaceId: hubId, departurePlaceId: hubId)
+        }
         // With hand luggage only, no luggage store is looked up at all.
         let store: (place: Place, slot: LuggageSlot)?
         if options.handLuggageOnly {
@@ -233,10 +233,10 @@ public enum SourcePreparation {
         } else {
             store = try await luggageStore(options, geocoder: geocoder)
         }
-        var places = [place.id: place]
         if let store { places[store.place.id] = store.place }
-        let stay = Stay(placeId: place.id, checkIn: checkIn, checkOut: checkOut, luggage: store?.slot,
-                        handLuggageOnly: options.handLuggageOnly ? true : nil)
+        let stay = Stay(placeId: stayPlace, checkIn: checkIn, checkOut: checkOut, luggage: store?.slot,
+                        handLuggageOnly: options.handLuggageOnly ? true : nil, arrangement: arrangement,
+                        timesEstimated: timesEstimated)
         let trip = Trip(destination: Destination(name: options.destination, countryCode: country,
                                                  timeZoneId: timeZone, centre: centre),
                         dates: TripDates(start: options.from, end: options.to, arrives: options.arrives,
@@ -245,34 +245,12 @@ public enum SourcePreparation {
                         budget: Budget(currencyCode: currency(for: country), stayMaxPerNight: 0,
                                        dailySpend: options.preferences.dailySpend),
                         interests: options.preferences.interests, pace: options.preferences.pace,
-                        voice: "Warm, practical and concise")
+                        voice: "Warm, practical and concise", travel: travel)
         return TripFacts(trip: trip, bookings: [], stay: stay, places: places, practical: [], sources: [])
     }
 
-    public static func measure(_ facts: TripFacts, geocoder: NominatimGeocoder,
-                               searchLabels: [String: [String]] = [:]) async throws
-        -> (PipelineInputMeasurements, [String: Int]) {
-        let places = facts.places
-        guard let stayPlace = places[facts.stay.placeId] else { throw SourcePreparationError.factsMismatch }
-        let candidates = places.values.map { AreaCandidate(id: $0.id, coordinate: $0.location.coordinate) }
-        let areas = try await AreaNameFallback.cluster(candidates, destination: facts.trip.destination.name) { point in
-            try await geocoder.areaName(near: point, preferSuburbOrQuarter: true)
-        }
-        let walker = StraightLineWalkTimes()
-        let walks = places.mapValues { walker.minutes(from: stayPlace.location.coordinate, to: $0.location.coordinate) }
-        let arrivals = facts.bookings.filter { $0.arrives.date == facts.trip.dates.start }
-            .compactMap { $0.toPlaceId.flatMap { places[$0] } }
-        let departures = facts.bookings.filter { $0.departs.date == facts.trip.dates.end }
-            .compactMap { $0.fromPlaceId.flatMap { places[$0] } }
-        func maximum(_ anchors: [Place]) -> Int {
-            anchors.flatMap { anchor in places.values.map {
-                walker.minutes(from: anchor.location.coordinate, to: $0.location.coordinate)
-            } }.max() ?? 0
-        }
-        return (PipelineInputMeasurements(areas: areas, places: places, stayWalks: walks,
-                    arrivalWalkMinutes: maximum(arrivals), departureWalkMinutes: maximum(departures),
-                    searchLabels: searchLabels), walks)
-    }
+    /// The id of the stay the traveller named. Only a booked stay has a place.
+    static let stayPlaceId = "manual:stay"
 
     public static func currency(for country: String) -> String {
         switch country.uppercased() {

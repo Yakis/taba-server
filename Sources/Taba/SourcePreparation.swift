@@ -26,11 +26,10 @@ enum SourcePreparation {
         return result
     }
 
-    // swiftlint:disable:next function_parameter_count
-    static func assumptions(_ options: Options, seed: Guide?, country: String, today: LocalDate,
-                            luggageFound: Bool, sources: inout [Source]) -> [Fact] {
-        BuildKit.SourcePreparation.assumptions(input(options, seed: seed), seed: seed, country: country,
-                                                today: today, luggageFound: luggageFound, sources: &sources)
+    static func assumptions(_ options: Options, seed: Guide?, today: LocalDate, facts: TripFacts,
+                            sources: inout [Source]) -> [Fact] {
+        BuildKit.SourcePreparation.assumptions(input(options, seed: seed), seed: seed, today: today, facts: facts,
+                                               sources: &sources)
     }
 
     // swiftlint:disable:next function_parameter_count

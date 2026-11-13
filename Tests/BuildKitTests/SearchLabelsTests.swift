@@ -24,7 +24,7 @@ struct SearchLabelsTests {
     }
 
     @Test func measurementsSnapshotKeepsLabelsAndReadsOldCheckpoints() throws {
-        let measurements = PipelineInputMeasurements(areas: ["p": "a"], walkFromStay: ["p": 4],
+        let measurements = PipelineInputMeasurements(areas: ["p": "a"], walkFromBase: ["p": 4],
             areaWalkMinutes: .object([:]), arrivalWalkMinutes: 1, departureWalkMinutes: 2,
             searchLabels: ["p": ["music"]])
         let encoded = try JSONEncoder().encode(MeasurementsSnapshot(measurements))
@@ -37,6 +37,6 @@ struct SearchLabelsTests {
         let old = try JSONDecoder().decode(MeasurementsSnapshot.self, from: oldData)
         #expect(old.value.searchLabels.isEmpty)
         #expect(old.value.areas == ["p": "a"])
-        #expect(old.value.walkFromStay == ["p": 4])
+        #expect(old.value.walkFromBase == ["p": 4])
     }
 }

@@ -10,16 +10,22 @@ public struct CopyCheckIssue: Hashable, Sendable {
         /// Facts the guide's cards already show, plan talk, and transport the trip does not have. The payload is the
         /// matching words.
         case hoursInBody(String), walkInBody(String), planTalk(String), inventedTransport(String)
+        /// Words in the guide's text that contradict its facts, such as a hotel on a trip with no stay. The payload is
+        /// the words. `note` says what the facts say instead.
+        case stayContradiction(String)
     }
     public let kind: Kind
     public let path: String
     /// The affected text (or sentence for a numerical claim), suitable for review and retry.
     public let text: String?
+    /// What the facts say instead, for issues whose kind does not carry a reason. Nil for the others.
+    public let note: String?
 
-    public init(kind: Kind, path: String, text: String? = nil) {
+    public init(kind: Kind, path: String, text: String? = nil, note: String? = nil) {
         self.kind = kind
         self.path = path
         self.text = text
+        self.note = note
     }
 
     /// What the writer is told to do about this issue. Kinds without a plain instruction keep their case name.
@@ -34,6 +40,8 @@ public struct CopyCheckIssue: Hashable, Sendable {
             return "Remove the plan talk ('\(phrase)') from this sentence, and write about the place: '\(sentence)'"
         case .inventedTransport(let word):
             return "Remove '\(word)' from this sentence, since the trip has no matching booking: '\(sentence)'"
+        case .stayContradiction(let words):
+            return "Remove '\(words)' from this text: \(note ?? "the facts say otherwise.") '\(sentence)'"
         default:
             return String(describing: kind)
         }

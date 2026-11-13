@@ -55,7 +55,7 @@ private func fixture() throws -> Guide {
     let guide = try fixture()
     let facts = TripFacts(trip: guide.trip, bookings: guide.bookings, stay: guide.stay,
                           places: guide.places, practical: guide.practical, sources: guide.sources)
-    let place = try #require(guide.places[guide.stay.placeId])
+    let place = try #require(guide.stayPlace)
     let folder = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     let fetcher = SearchFetcher()
@@ -66,27 +66,24 @@ private func fixture() throws -> Guide {
     #expect(await fetcher.count < 1)
 }
 
-@Test func unbookedBaseIsExplicitAndNotABooking() async throws {
+@Test func tripWithoutAStayHasNoStayPlaceOrAccommodationFact() async throws {
     let options = try Options.parse(["build", "--destination", "Example", "--from", "2025-11-23",
                                      "--to", "2025-11-25"])
     let centre = try #require(Coordinate(latitude: 55.95, longitude: -3.19))
     let fetcher = SearchFetcher()
     let facts = try await SourcePreparation.baseFacts(options, seed: nil, centre: centre, country: "US",
         timeZone: "Europe/London", geocoder: NominatimGeocoder(fetcher: fetcher))
-    let place = try #require(facts.places[facts.stay.placeId])
-    #expect(place.name == "Unbooked base (choose accommodation)")
-    #expect(place.location.approximate)
-    #expect(place.location.coordinate == centre)
+    #expect(facts.stay.placeId == nil)
+    #expect(facts.stay.arrangement == .unknown)
+    #expect(facts.places.values.allSatisfy { $0.kind != .lodging })
     #expect(facts.bookings.isEmpty)
     #expect(facts.trip.budget.currencyCode == "USD")
     #expect(await fetcher.count < 1)
     var sources: [Source] = []
-    let assumptions = SourcePreparation.assumptions(options, seed: nil, country: "US", today: options.from,
-                                                    luggageFound: false, sources: &sources)
-    #expect(assumptions.contains { $0.text.contains("not booked") && $0.text.contains("not confirmed") })
-    let result = Taba.addingAssumptionQuestions(to: try fixture(), options: options)
-    #expect(result.openQuestions?.contains { $0.contains("Choose accommodation") } == true)
-    #expect(result.openQuestions?.contains { $0.contains("15:00") && $0.contains("11:00") } == true)
+    let assumptions = SourcePreparation.assumptions(options, seed: nil, today: options.from, facts: facts,
+                                                    sources: &sources)
+    #expect(assumptions.isEmpty)
+    #expect(sources.isEmpty)
 }
 
 @Test func transportEvidenceNeverIncludesErrorText() async throws {

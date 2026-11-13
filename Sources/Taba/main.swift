@@ -67,16 +67,14 @@ struct Taba {
             let built = try await GuidePipeline().run(
                 id: UUID().uuidString, model: options.model, facts: prepared.facts,
                 measurements: prepared.measurements, weather: prepared.weather, stayArea: prepared.stayArea,
-                requests: .object(["accommodationQuestion": .string(options.stay == nil && options.facts == nil
-                    ? "Choose accommodation; the base is unbooked and approximate." :
-                    "Confirm check-in and check-out times; supplied defaults may be assumptions.")]),
+                requests: .object([:]),
                 resolveSuggestion: { try await suggestions.resolve($0) },
                 prepareCandidates: { try await suggestions.prepare($0, facts: $1, measurements: $2) },
                 send: { request in
                     try await send(request, session: session, client: client, record: record)
                 }, evidence: { event in await record.record(event) }
             )
-            let guide = addingAssumptionQuestions(to: built, options: options)
+            let guide = built.recordingAIModel(options.model)
             try await record.check()
             let encoder = JSONEncoder()
             encoder.outputFormatting = [.prettyPrinted, .sortedKeys, .withoutEscapingSlashes]
@@ -122,17 +120,5 @@ struct Taba {
             throw CLIError.service
         }
         return result
-    }
-
-    static func addingAssumptionQuestions(to guide: Guide, options: Options) -> Guide {
-        guard options.facts == nil else { return guide }
-        var questions = guide.openQuestions ?? []
-        if options.stay == nil { questions.append("Choose accommodation; the base is an approximate placeholder.") }
-        questions.append("Confirm check-in and check-out; 15:00 and 11:00 are assumptions, not confirmed.")
-        questions.append("Confirm the assumed budget currency.")
-        return Guide(id: guide.id, version: guide.version, status: guide.status, trip: guide.trip,
-                     bookings: guide.bookings, stay: guide.stay, places: guide.places, days: guide.days,
-                     lists: guide.lists, tasting: guide.tasting, practical: guide.practical, sources: guide.sources,
-                     hero: guide.hero, notes: guide.notes, openQuestions: questions)
     }
 }

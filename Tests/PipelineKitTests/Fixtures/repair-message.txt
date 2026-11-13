@@ -4,6 +4,8 @@ priority order still apply.
 
 - Each issue has `severity` (`error`, `warning` or `info`), `kind`, `date`, `stopId` (or `null`) and `message`.
   Times and distances in messages were measured by code. Trust them over your own estimates.
+- An issue of kind `stayContradiction` means a stop or an open question contradicts what the traveller arranged
+  in `anchors`, such as a hotel on a trip with no stay. Remove that stop or question; don't reword it.
 - `legs` gives the measured minutes and the mode (`walk`, or `transit` for a bus or taxi ride) between consecutive
   stops in your plan. Use them instead of `areaTravelMinutes` for stops that stay where they are.
 

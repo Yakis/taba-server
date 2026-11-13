@@ -21,6 +21,8 @@ public enum GuidePipelineError: Error, Sendable {
     case planErrors([PlanIssue])
     case copyErrors([CopyCheckIssue])
     case assemblyProblems([AssemblyProblem])
+    /// The finished guide's words contradict its facts, such as a hotel on a trip with no stay.
+    case contradictions([GuideContradiction])
 }
 /// The inputs accepted after research and candidate preparation.
 public struct ResearchedPipeline: Sendable {
@@ -228,6 +230,7 @@ public struct GuidePipeline: Sendable {
             let (copy, response): (GuideCopy, ResponsesResult) = try await decoded(
                 current, prompt: writePrompt, step: "write", send: send, evidence: evidence)
             let issues = CopyChecker().check(copy, expected: targets, input: inputText)
+                + stayContradictions(copy, id: id, draft: draft, facts: facts)
             await evidence(.copy(issues: issues))
             let blocking = issues.filter { Self.blocksCopy($0.kind, retried: attempt > 0) }
             if blocking.isEmpty { return copy }
@@ -249,8 +252,20 @@ public struct GuidePipeline: Sendable {
         switch kind {
         case .ungroundedNumber: false
         case .wordLimit, .sentenceLimit, .hoursInBody, .walkInBody, .planTalk, .inventedTransport: !retried
+        // A contradiction of the facts always blocks, on both attempts: the facts win over the prose.
+        case .stayContradiction: true
         default: true
         }
+    }
+
+    /// The copy's words that contradict the facts (see `Guide.contradictions`), as copy issues. The guide is assembled
+    /// with this copy, so the check reads the same words the finished guide would show.
+    private func stayContradictions(_ copy: GuideCopy, id: String, draft: PlanDraft,
+                                    facts: TripFacts) -> [CopyCheckIssue] {
+        GuideAssembler(walkTimes: walkTimes).assemble(id: id, facts: facts, draft: draft, copy: copy)
+            .guide.contradictions.map {
+                CopyCheckIssue(kind: .stayContradiction($0.words), path: $0.path, text: $0.text, note: $0.reason)
+            }
     }
 
     /// Assembles and validates the finished guide; completion is emitted only on success. Each day gets the weather
@@ -265,6 +280,12 @@ public struct GuidePipeline: Sendable {
         guard result.problems.isEmpty else { throw GuidePipelineError.assemblyProblems(result.problems) }
         try result.guide.validateStructure()
         let finalIssues = PlanChecker(walkTimes: walkTimes).check(result.guide)
+        // The final gate: no guide whose words contradict its facts is ever completed. The evidence keeps the issues.
+        let contradictions = result.guide.contradictions
+        guard contradictions.isEmpty else {
+            await evidence(.plan(round: 3, issues: finalIssues))
+            throw GuidePipelineError.contradictions(contradictions)
+        }
         await evidence(.plan(round: 3, issues: finalIssues))
         guard !finalIssues.contains(where: { $0.severity == .error }) else {
             throw GuidePipelineError.planErrors(finalIssues)
@@ -483,6 +504,14 @@ private extension GuidePipeline {
     }
     private func duplicatesTransit(_ stop: PlanDraftStop, date: LocalDate, facts: TripFacts) -> Bool {
         guard stop.kind == .travel else { return false }
+        // The arrival and departure the traveller gave count the same as a booking.
+        if let travel = facts.trip.travel, stop.placeId != nil {
+            let statedArrival = date == facts.trip.dates.start && stop.placeId == travel.arrivalPlaceId
+                && facts.trip.dates.arrives == stop.start
+            let statedDeparture = date == facts.trip.dates.end && stop.placeId == travel.departurePlaceId
+                && facts.trip.dates.leaves == stop.start
+            if statedArrival || statedDeparture { return true }
+        }
         return facts.bookings.contains { booking in
             func local(_ id: String?, _ name: String) -> Bool {
                 (id.map { facts.places[$0] != nil } ?? false)
@@ -564,22 +593,47 @@ private extension GuidePipeline {
             && local($0.toPlaceId, $0.to) && !local($0.fromPlaceId, $0.from) }.min { $0.arrives < $1.arrives }
         let departure = bookings.filter { $0.departs.date == facts.trip.dates.end
             && local($0.fromPlaceId, $0.from) && !local($0.toPlaceId, $0.to) }.min { $0.departs < $1.departs }
-        func stop(_ id: String, _ place: String?, _ time: LocalTime) -> PlanDraftStop {
+        func stop(_ id: String, _ place: String?, _ time: LocalTime, reason: String) -> PlanDraftStop {
             PlanDraftStop(id: id, placeId: place, kind: .travel, mealSlot: nil, start: time, minutes: 1,
-                          flexible: false, alternative: nil, reason: "Fixed transport booking", findingIds: [])
+                          flexible: false, alternative: nil, reason: reason, findingIds: [])
+        }
+        // A booking gives the arrival and departure. Without one, the place and time the traveller gave do.
+        let travel = facts.trip.travel
+        let arrivalStop: (date: LocalDate, stop: PlanDraftStop)? = arrival.map {
+            ($0.arrives.date, stop("taba-transit-arrival", $0.toPlaceId, $0.arrives.time,
+                                   reason: "Fixed transport booking"))
+        } ?? travel?.arrivalPlaceId.flatMap { placeId in
+            facts.trip.dates.arrives.map {
+                (facts.trip.dates.start,
+                 stop("taba-transit-arrival", placeId, $0, reason: "Arrival the traveller gave"))
+            }
+        }
+        let departureStop: (date: LocalDate, stop: PlanDraftStop)? = departure.map {
+            ($0.departs.date, stop("taba-transit-departure", $0.fromPlaceId, $0.departs.time,
+                                   reason: "Fixed transport booking"))
+        } ?? travel?.departurePlaceId.flatMap { placeId in
+            facts.trip.dates.leaves.map {
+                (facts.trip.dates.end,
+                 stop("taba-transit-departure", placeId, $0, reason: "Departure the traveller gave"))
+            }
         }
         let days = draft.days.map { day in
             var stops = day.stops
-            if let arrival, day.date == arrival.arrives.date {
-                stops.append(stop("taba-transit-arrival", arrival.toPlaceId, arrival.arrives.time))
-            }
-            if let departure, day.date == departure.departs.date {
-                stops.append(stop("taba-transit-departure", departure.fromPlaceId, departure.departs.time))
-            }
+            if let arrivalStop, day.date == arrivalStop.date { stops.append(arrivalStop.stop) }
+            if let departureStop, day.date == departureStop.date { stops.append(departureStop.stop) }
             return PlanDraftDay(date: day.date, theme: day.theme, stops: stops)
         }
-        let skippedNotes = draft.skippedMeals.map { "Skipped \($0.slot.rawValue) on \($0.date): \($0.reason)" }
-        return PlanDraft(days: days, lists: draft.lists, skippedMeals: draft.skippedMeals,
-                         openQuestions: draft.openQuestions + skippedNotes, changes: draft.changes)
+        // Skipped meals stay in the draft for the evidence; they are not questions for the traveller. A pick list
+        // keeps only places whose kind fits it, so a misfiled place costs no repair round.
+        let lists = draft.lists.map { list in
+            DraftList(key: list.key, placeIds: list.placeIds.filter { id in
+                guard let kind = facts.places[id]?.kind, let allowed = PlanChecker.listKinds[list.key] else {
+                    return true
+                }
+                return allowed.contains(kind)
+            })
+        }
+        return PlanDraft(days: days, lists: lists, skippedMeals: draft.skippedMeals,
+                         openQuestions: draft.openQuestions, changes: draft.changes)
     }
 }

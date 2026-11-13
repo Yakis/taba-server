@@ -41,7 +41,7 @@ public struct WeatherSnapshot: Codable, Sendable {
 public struct MeasurementsSnapshot: Codable, Sendable {
     public let areas: [String: String]
     public let areaLabels: [String: String]
-    public let walkFromStay: [String: Int]
+    public let walkFromBase: [String: Int]
     public let areaWalkMinutes: JSONValue
     public let alwaysOpenPlaceIDs: Set<String>
     public let arrivalWalkMinutes: Int
@@ -50,15 +50,21 @@ public struct MeasurementsSnapshot: Codable, Sendable {
     public let departureMarginMinutes: Int
     /// Optional so that checkpoints written before this key existed still decode; nil means no interest labels.
     public let searchLabels: [String: [String]]?
+    /// The stored key stays `walkFromStay`, so checkpoints written before the rename still decode.
+    private enum CodingKeys: String, CodingKey {
+        case areas, areaLabels, walkFromBase = "walkFromStay", areaWalkMinutes, alwaysOpenPlaceIDs
+        case arrivalWalkMinutes, departureWalkMinutes, arrivalMarginMinutes, departureMarginMinutes, searchLabels
+    }
+
     public init(_ input: PipelineInputMeasurements) {
-        areas = input.areas; areaLabels = input.areaLabels; walkFromStay = input.walkFromStay
+        areas = input.areas; areaLabels = input.areaLabels; walkFromBase = input.walkFromBase
         areaWalkMinutes = input.areaWalkMinutes; alwaysOpenPlaceIDs = input.alwaysOpenPlaceIDs
         arrivalWalkMinutes = input.arrivalWalkMinutes; departureWalkMinutes = input.departureWalkMinutes
         arrivalMarginMinutes = input.arrivalMarginMinutes; departureMarginMinutes = input.departureMarginMinutes
         searchLabels = input.searchLabels
     }
     public var value: PipelineInputMeasurements {
-        PipelineInputMeasurements(areas: areas, areaLabels: areaLabels, walkFromStay: walkFromStay,
+        PipelineInputMeasurements(areas: areas, areaLabels: areaLabels, walkFromBase: walkFromBase,
                                   areaWalkMinutes: areaWalkMinutes, alwaysOpenPlaceIDs: alwaysOpenPlaceIDs,
                                   arrivalWalkMinutes: arrivalWalkMinutes, departureWalkMinutes: departureWalkMinutes,
                                   arrivalMarginMinutes: arrivalMarginMinutes,

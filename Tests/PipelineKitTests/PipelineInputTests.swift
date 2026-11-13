@@ -46,11 +46,11 @@ struct PipelineInputTests {
             AreaCandidate(id: place.id, coordinate: place.location.coordinate, areaName: names[place.id])
         }
         let areas = try AreaClusterer(walkTimes: StraightLineWalkTimes()).cluster(candidates)
-        let stay = try #require(guide.places[guide.stay.placeId])
+        let stay = try #require(guide.stayPlace)
         let walks = guide.places.mapValues {
             StraightLineWalkTimes().minutes(from: stay.location.coordinate, to: $0.location.coordinate)
         }
-        return PipelineInputMeasurements(areas: areas, places: guide.places, stayWalks: walks,
+        return PipelineInputMeasurements(areas: areas, places: guide.places, baseWalks: walks,
                                          arrivalWalkMinutes: 10, departureWalkMinutes: 12)
     }
     private func assembled(_ guide: Guide, _ draft: PlanDraft, stops: [GuideCopyStop] = []) -> AssemblyResult {
@@ -152,7 +152,7 @@ extension PipelineInputTests {
     @Test func planCandidatesNameOnlyTheInterestsTheyServe() throws {
         let source = try guide()
         let base = try measurements(source)
-        let stay = try #require(source.places[source.stay.placeId])
+        let stay = try #require(source.stayPlace)
         let venue = try #require(source.places.values.sorted { $0.id < $1.id }.first { $0.kind != .lodging })
         let trip = Trip(destination: source.trip.destination, dates: source.trip.dates, party: source.trip.party,
                         budget: source.trip.budget, interests: ["Music"], pace: source.trip.pace,
@@ -162,7 +162,7 @@ extension PipelineInputTests {
                           lists: source.lists, tasting: source.tasting, practical: source.practical,
                           sources: source.sources)
         let labelled = PipelineInputMeasurements(areas: base.areas, areaLabels: base.areaLabels,
-            walkFromStay: base.walkFromStay, areaWalkMinutes: base.areaWalkMinutes, alwaysOpenPlaceIDs: [],
+            walkFromBase: base.walkFromBase, areaWalkMinutes: base.areaWalkMinutes, alwaysOpenPlaceIDs: [],
             arrivalWalkMinutes: 10, departureWalkMinutes: 12, arrivalMarginMinutes: 0, departureMarginMinutes: 30,
             searchLabels: [venue.id: ["music"]])
         let input = try PipelineInputBuilder.plan(guide: guide, measurements: labelled, weather: [],
@@ -282,7 +282,7 @@ extension PipelineInputTests {
         let stayFields = withOnly.objectValue?["anchors"]?.objectValue?["stay"]?.objectValue
         #expect(stayFields?["handLuggageOnly"] == .bool(true))
         let unsaid = try plan(base)
-        #expect(unsaid.objectValue?["anchors"]?.objectValue?["stay"]?.objectValue?["handLuggageOnly"] == nil)
+        #expect(unsaid.objectValue?["anchors"]?.objectValue?["stay"]?.objectValue?["handLuggageOnly"] == .bool(false))
     }
 
     /// The fixture with its trip dates replaced by the given times, and optionally its bookings.
@@ -406,13 +406,13 @@ extension PipelineInputTests {
     }
     @Test func invalidWindowAndMissingMeasurementsAreRejected() throws {
         let guide = try guide()
-        let missing = PipelineInputMeasurements(areas: [:], walkFromStay: [:], areaWalkMinutes: .object([:]),
+        let missing = PipelineInputMeasurements(areas: [:], walkFromBase: [:], areaWalkMinutes: .object([:]),
                                                 arrivalWalkMinutes: 0, departureWalkMinutes: 0)
         #expect(throws: PipelineInputError.missingArea("manual:castle-esplanade")) {
             try PipelineInputBuilder.plan(guide: guide, measurements: missing, weather: [],
                                           findings: [], requests: .null)
         }
-        let impossible = PipelineInputMeasurements(areas: [:], walkFromStay: [:], areaWalkMinutes: .object([:]),
+        let impossible = PipelineInputMeasurements(areas: [:], walkFromBase: [:], areaWalkMinutes: .object([:]),
                                                    arrivalWalkMinutes: 1439, departureWalkMinutes: 0)
         #expect(throws: PipelineInputError.invalidWindow(guide.trip.dates.start)) {
             try PipelineInputBuilder.plan(guide: guide, measurements: impossible, weather: [],
@@ -425,7 +425,7 @@ extension PipelineInputTests {
             for field in 0..<4 {
                 var values = [0, 0, 0, 0]
                 values[field] = invalid
-                let measurements = PipelineInputMeasurements(areas: [:], walkFromStay: [:],
+                let measurements = PipelineInputMeasurements(areas: [:], walkFromBase: [:],
                     areaWalkMinutes: .object([:]), arrivalWalkMinutes: values[0], departureWalkMinutes: values[1],
                     arrivalMarginMinutes: values[2], departureMarginMinutes: values[3])
                 #expect(throws: PipelineInputError.invalidMeasurement) {
@@ -447,13 +447,13 @@ extension PipelineInputTests {
     @Test func planCandidatesCarryWalkOrRideFromTheStay() throws {
         let guide = try guide()
         let base = try measurements(guide)
-        let stay = try #require(guide.places[guide.stay.placeId])
+        let stay = try #require(guide.stayPlace)
         let far = try #require(guide.places["osm:node/2338447599"])
-        var walks = base.walkFromStay
+        var walks = base.walkFromBase
         walks[far.id] = 200
         let stayWalk = try #require(walks[stay.id])
         let measurements = PipelineInputMeasurements(
-            areas: base.areas, areaLabels: base.areaLabels, walkFromStay: walks, areaWalkMinutes: base.areaWalkMinutes,
+            areas: base.areas, areaLabels: base.areaLabels, walkFromBase: walks, areaWalkMinutes: base.areaWalkMinutes,
             alwaysOpenPlaceIDs: [], arrivalWalkMinutes: 10, departureWalkMinutes: 12,
             arrivalMarginMinutes: 0, departureMarginMinutes: 30
         )
@@ -465,12 +465,12 @@ extension PipelineInputTests {
         let candidates = try #require(root["candidates"]?.arrayValue).compactMap(\.objectValue)
         let farEntry = try #require(candidates.first { $0["id"] == .string(far.id) })
         let metres = Travel.metres(from: stay.location.coordinate, to: far.location.coordinate)
-        #expect(farEntry["walkFromStay"] == nil)
-        #expect(farEntry["fromStay"] == .object([
+        #expect(farEntry["walkFromBase"] == nil)
+        #expect(farEntry["fromBase"] == .object([
             "mode": .string("transit"), "minutes": .integer(Travel.rideMinutes(metres: metres))
         ]))
         let stayEntry = try #require(candidates.first { $0["id"] == .string(stay.id) })
-        #expect(stayEntry["fromStay"] == .object(["mode": .string("walk"), "minutes": .integer(stayWalk)]))
+        #expect(stayEntry["fromBase"] == .object(["mode": .string("walk"), "minutes": .integer(stayWalk)]))
     }
 
     @Test func writePayloadCarriesWalkAndRideLegsAndStayTravel() throws {
@@ -503,7 +503,7 @@ extension PipelineInputTests {
             })
             let places = try #require(root["places"]?.arrayValue).compactMap(\.objectValue)
             #expect(!places.isEmpty)
-            #expect(places.allSatisfy { $0["walkFromStay"] == nil && $0["fromStay"]?.objectValue?["mode"] != nil })
+            #expect(places.allSatisfy { $0["walkFromBase"] == nil && $0["fromBase"]?.objectValue?["mode"] != nil })
         }
     }
 }

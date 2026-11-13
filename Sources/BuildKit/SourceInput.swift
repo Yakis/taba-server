@@ -17,10 +17,15 @@ public struct SourceInput: Sendable {
     public let luggage: String?
     /// True when the travellers carry only hand luggage. Then no luggage store is looked up or planned.
     public let handLuggageOnly: Bool
+    /// How the traveller reaches the city and leaves it. Nil when not said.
+    public let travelMode: TravelMode?
+    /// The station, coach station, airport or car park the traveller named. Nil when they named none.
+    public let travelPlace: String?
 
     public init(destination: String, from: LocalDate, to: LocalDate, stay: String? = nil, facts: Guide? = nil,
                 preferences: TripPreferences = .standard, arrives: LocalTime? = nil, leaves: LocalTime? = nil,
-                luggage: String? = nil, handLuggageOnly: Bool = false) {
+                luggage: String? = nil, handLuggageOnly: Bool = false, travelMode: TravelMode? = nil,
+                travelPlace: String? = nil) {
         self.destination = destination
         self.from = from
         self.to = to
@@ -31,6 +36,8 @@ public struct SourceInput: Sendable {
         self.leaves = leaves
         self.luggage = luggage
         self.handLuggageOnly = handLuggageOnly
+        self.travelMode = travelMode
+        self.travelPlace = travelPlace
     }
 }
 

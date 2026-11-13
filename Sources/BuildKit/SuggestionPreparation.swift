@@ -98,7 +98,7 @@ public actor SuggestionPreparation {
         }
         guard labels != measurements.searchLabels else { return measurements }
         return PipelineInputMeasurements(areas: measurements.areas, areaLabels: measurements.areaLabels,
-            walkFromStay: measurements.walkFromStay, areaWalkMinutes: measurements.areaWalkMinutes,
+            walkFromBase: measurements.walkFromBase, areaWalkMinutes: measurements.areaWalkMinutes,
             alwaysOpenPlaceIDs: measurements.alwaysOpenPlaceIDs, arrivalWalkMinutes: measurements.arrivalWalkMinutes,
             departureWalkMinutes: measurements.departureWalkMinutes,
             arrivalMarginMinutes: measurements.arrivalMarginMinutes,

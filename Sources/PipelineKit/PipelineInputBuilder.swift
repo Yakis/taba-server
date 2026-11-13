@@ -1,3 +1,4 @@
+// swiftlint:disable file_length
 import Foundation
 import GuideKit
 import ResponsesKit
@@ -7,7 +8,7 @@ import SourcesKit
 public struct PipelineInputMeasurements: Sendable {
     public let areas: [String: String]
     public let areaLabels: [String: String]
-    public let walkFromStay: [String: Int]
+    public let walkFromBase: [String: Int]
     public let areaWalkMinutes: JSONValue
     public let alwaysOpenPlaceIDs: Set<String>
     /// Walk from the arrival to the first planned stop and from the last stop to departure.
@@ -19,13 +20,13 @@ public struct PipelineInputMeasurements: Sendable {
     /// found by no interest search are absent.
     public let searchLabels: [String: [String]]
 
-    public init(areas: [String: String], walkFromStay: [String: Int], areaWalkMinutes: JSONValue,
+    public init(areas: [String: String], walkFromBase: [String: Int], areaWalkMinutes: JSONValue,
                 arrivalWalkMinutes: Int, departureWalkMinutes: Int,
                 arrivalMarginMinutes: Int = 0, departureMarginMinutes: Int = 30,
                 alwaysOpenPlaceIDs: Set<String> = [], searchLabels: [String: [String]] = [:]) {
         self.areas = areas
         self.areaLabels = areas
-        self.walkFromStay = walkFromStay
+        self.walkFromBase = walkFromBase
         self.areaWalkMinutes = areaWalkMinutes
         self.alwaysOpenPlaceIDs = alwaysOpenPlaceIDs
         self.arrivalWalkMinutes = arrivalWalkMinutes
@@ -36,13 +37,13 @@ public struct PipelineInputMeasurements: Sendable {
     }
 
     /// Reconstructs a measured input without losing the distinction between area IDs and labels.
-    public init(areas: [String: String], areaLabels: [String: String], walkFromStay: [String: Int],
+    public init(areas: [String: String], areaLabels: [String: String], walkFromBase: [String: Int],
                 areaWalkMinutes: JSONValue, alwaysOpenPlaceIDs: Set<String>, arrivalWalkMinutes: Int,
                 departureWalkMinutes: Int, arrivalMarginMinutes: Int, departureMarginMinutes: Int,
                 searchLabels: [String: [String]] = [:]) {
         self.areas = areas
         self.areaLabels = areaLabels
-        self.walkFromStay = walkFromStay
+        self.walkFromBase = walkFromBase
         self.areaWalkMinutes = areaWalkMinutes
         self.alwaysOpenPlaceIDs = alwaysOpenPlaceIDs
         self.arrivalWalkMinutes = arrivalWalkMinutes
@@ -52,7 +53,7 @@ public struct PipelineInputMeasurements: Sendable {
         self.searchLabels = searchLabels
     }
 
-    public init(areas: Areas, places: [String: Place], stayWalks: [String: Int],
+    public init(areas: Areas, places: [String: Place], baseWalks: [String: Int],
                 arrivalWalkMinutes: Int, departureWalkMinutes: Int,
                 arrivalMarginMinutes: Int = 0, departureMarginMinutes: Int = 30,
                 alwaysOpenPlaceIDs: Set<String> = [], searchLabels: [String: [String]] = [:]) {
@@ -71,7 +72,7 @@ public struct PipelineInputMeasurements: Sendable {
         }
         self.areas = ids
         self.areaLabels = labels
-        self.walkFromStay = stayWalks
+        self.walkFromBase = baseWalks
         self.areaWalkMinutes = .object(matrix.mapValues { .object($0) })
         self.arrivalWalkMinutes = arrivalWalkMinutes
         self.departureWalkMinutes = departureWalkMinutes
@@ -216,7 +217,41 @@ public enum PipelineInputBuilder {
             fields["external"] = .object(["notes": try optional(booking.notes)])
             return .object(fields)
         }
-        return .object(["bookings": .array(bookings), "stay": try value(guide.stay)])
+        return .object(["bookings": .array(bookings), "stay": try stayAnchor(guide),
+                        "travel": travelAnchor(guide.trip.travel), "base": baseAnchor(guide.base)])
+    }
+    /// The stay as the guide now reads it. Every key is present. The arrangement is the effective one, so old guides
+    /// and facts seeds that carry no `arrangement` still read as booked when they name a stay.
+    private static func stayAnchor(_ guide: Guide) throws -> JSONValue {
+        let stay = guide.stay
+        return .object([
+            "arrangement": .string(guide.stayArrangement.rawValue),
+            "placeId": stringValue(guide.stayPlace?.id),
+            "checkIn": try optional(stay.checkIn),
+            "checkOut": try optional(stay.checkOut),
+            "timesEstimated": .bool(stay.timesEstimated ?? false),
+            "luggage": try optional(stay.luggage),
+            "handLuggageOnly": .bool(stay.handLuggageOnly ?? false)
+        ])
+    }
+    /// How the traveller reaches the city and leaves it, or null when they did not say.
+    private static func travelAnchor(_ travel: TripTravel?) -> JSONValue {
+        guard let travel else { return .null }
+        return .object(["mode": .string(travel.mode.rawValue), "arrivalPlaceId": stringValue(travel.arrivalPlaceId),
+                        "departurePlaceId": stringValue(travel.departurePlaceId)])
+    }
+    /// The place distances are measured from, and how the guide names it. Null when there is none.
+    private static func baseAnchor(_ base: GuideBase?) -> JSONValue {
+        guard let base else { return .null }
+        let kind: String
+        switch base.kind {
+        case .stay: kind = "stay"
+        case .arrival: kind = "arrival"
+        }
+        return .object(["placeId": .string(base.place.id), "kind": .string(kind), "phrase": .string(base.phrase)])
+    }
+    private static func stringValue(_ text: String?) -> JSONValue {
+        text.map(JSONValue.string) ?? .null
     }
     private static func weather(_ day: DayWeather?) -> JSONValue {
         guard let day else { return .null }
@@ -238,21 +273,25 @@ public enum PipelineInputBuilder {
     private static func travelValue(mode: LegMode, minutes: Int) -> JSONValue {
         .object(["mode": .string(mode.rawValue), "minutes": .integer(minutes)])
     }
-    /// The walk, or bus or taxi ride, from the stay to a candidate. Without the stay's place it falls back to the walk.
-    private static func fromStay(walk: Int, to place: Place, stay: Place?) -> JSONValue {
-        guard let stay else {
-            return travelValue(mode: .walk, minutes: walk)
-        }
-        let leg = Travel.leg(walkMinutes: walk, metres: Travel.metres(from: stay.location.coordinate,
+    /// The walk, or bus or taxi ride, from the base to a candidate.
+    private static func travelFromBase(walk: Int, to place: Place, origin: Place) -> JSONValue {
+        let leg = Travel.leg(walkMinutes: walk, metres: Travel.metres(from: origin.location.coordinate,
                                                                     to: place.location.coordinate))
         return travelValue(mode: leg.mode, minutes: leg.minutes)
     }
     // Interests are only for the plan's candidates, so the writer's input is unchanged.
+    // With no base, `fromBase` is null and no walk is required.
     private static func place(_ place: Place, dates: [LocalDate], measurements: PipelineInputMeasurements,
-                              writing: Bool, stay: Place?, interests: [String] = []) throws -> JSONValue {
+                              writing: Bool, base: GuideBase?, interests: [String] = []) throws -> JSONValue {
         guard let area = measurements.areas[place.id] else { throw PipelineInputError.missingArea(place.id) }
-        guard let walk = measurements.walkFromStay[place.id], walk >= 0 else {
-            throw PipelineInputError.missingWalk(place.id)
+        let fromBase: JSONValue
+        if let base {
+            guard let walk = measurements.walkFromBase[place.id], walk >= 0 else {
+                throw PipelineInputError.missingWalk(place.id)
+            }
+            fromBase = travelFromBase(walk: walk, to: place, origin: base.place)
+        } else {
+            fromBase = .null
         }
         let hoursByDate = Dictionary(uniqueKeysWithValues: dates.map {
             ($0.description, hours(place.hours, on: $0, always: measurements.alwaysOpenPlaceIDs.contains(place.id)))
@@ -260,7 +299,7 @@ public enum PipelineInputBuilder {
         var result: [String: JSONValue] = [
             "id": .string(place.id), "name": .string(place.name), "kind": try value(place.kind),
             "area": .string(area), "areaName": .string(measurements.areaLabels[place.id] ?? area),
-            "fromStay": fromStay(walk: walk, to: place, stay: stay), "hours": .object(hoursByDate),
+            "fromBase": fromBase, "hours": .object(hoursByDate),
             "priceLevel": try optional(place.priceLevel), "bookingNeeded": .bool(place.booking.needed),
             "indoor": .bool(place.indoor)
         ]
@@ -283,9 +322,9 @@ public enum PipelineInputBuilder {
             result["window"] = try window(date, guide: guide, measurements: measurements)
             return .object(result)
         }
-        let stay = guide.places[guide.stay.placeId]
+        let base = guide.base
         let places = try guide.places.values.sorted { $0.id < $1.id }.map {
-            try place($0, dates: dates, measurements: measurements, writing: false, stay: stay,
+            try place($0, dates: dates, measurements: measurements, writing: false, base: base,
                       interests: guide.trip.interests)
         }
         return .object(["trip": try trip(guide.trip, writing: false, locale: ""), "anchors": try anchors(guide),
@@ -323,16 +362,16 @@ public enum PipelineInputBuilder {
         }
         let ids = Set(draft.days.flatMap(\.stops).flatMap { [$0.placeId, $0.alternative?.placeId].compactMap { $0 } }
                       + draft.lists.flatMap(\.placeIds))
-        let stay = guide.places[guide.stay.placeId]
+        let base = guide.base
         let places = try ids.sorted().map { id in
             guard let item = guide.places[id] else { throw PipelineInputError.missingPlace(id) }
-            return try place(item, dates: dates, measurements: measurements, writing: true, stay: stay)
+            return try place(item, dates: dates, measurements: measurements, writing: true, base: base)
         }
         return .object(["trip": try trip(guide.trip, writing: true, locale: locale), "days": .array(days),
                         "light": .array(try dates.map {
                             .object(try light($0, trip: guide.trip, weather: weather))
                         }),
-                        "places": .array(places), "findings": try findings(research), "stay": try value(guide.stay),
+                        "places": .array(places), "findings": try findings(research),
                         "anchors": try anchors(guide), "lists": try value(draft.lists),
                         "openQuestions": try value(draft.openQuestions),
                         "external": .object(["practical": try value(guide.practical),

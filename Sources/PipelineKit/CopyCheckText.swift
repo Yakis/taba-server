@@ -141,13 +141,16 @@ enum CopyTextChecks {
         return matches(hoursPhrase, sentence).first ?? matches(hoursPattern, sentence).first
     }
 
-    /// The booking kinds in the write input's `anchors.bookings`, such as "train". Empty when there are none.
+    /// The transport the trip has, such as "train": the kinds of its `anchors.bookings`, and the way of travel the
+    /// traveller said in `anchors.travel`. Empty when there is none.
     private static func bookingKinds(_ input: String) -> Set<String> {
         guard let data = input.data(using: .utf8),
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
-              let anchors = json["anchors"] as? [String: Any],
-              let bookings = anchors["bookings"] as? [[String: Any]] else { return [] }
-        return Set(bookings.compactMap { $0["kind"] as? String })
+              let anchors = json["anchors"] as? [String: Any] else { return [] }
+        let bookings = (anchors["bookings"] as? [[String: Any]] ?? []).compactMap { $0["kind"] as? String }
+        let travel = (anchors["travel"] as? [String: Any])?["mode"] as? String
+        let stated: [String: String] = ["train": "train", "coach": "bus", "flight": "flight"]
+        return Set(bookings + (travel.flatMap { stated[$0] }.map { [$0] } ?? []))
     }
 
     /// Booking times arrive as ISO local date-times (`2025-11-25T18:52`). The `T` would make the whole value

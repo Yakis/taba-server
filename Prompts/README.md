@@ -17,6 +17,11 @@ Everything else is code: places, walking times, sun times, weather, checks, asse
 
 ## Design rules
 
+0. **The trip's facts outrank the words.** What the traveller arranged (dates, times, how they travel, whether
+   and where they stay, their bags) is a typed fact that code sets once and passes in as `anchors`. Missing
+   information stays unknown: code never invents a stay, a station, check-in times or opening hours to fill a
+   gap, and checks every answer, including the finished guide, against the facts.
+
 1. **The AI chooses and writes. Code measures and checks.** The AI never works out walking times, sunsets,
    totals or opening hours. Code works them out first, passes them in, and checks the answer. If code can do
    it, code does it.
@@ -68,10 +73,14 @@ The prompts ask for good behaviour. Code makes sure of it:
 | Research | Suggested places resolve through the places provider | Drop the suggestion |
 | Plan | Every place id is a candidate | Treated as an error and sent to repair |
 | Plan | `PlanChecker`: hours, gaps, walks, meals, daylight, logistics, pace | Errors and warnings sent to repair |
+| Plan | Stops and open questions against what the traveller arranged (`Guide.contradictions`): no hotel, check-in or accommodation talk without a booked stay, no check-in or check-out on a one-day trip | Error, sent to repair |
+| Plan | Pick-list places fit their list (`eat`, `drink`, `photos`, `groceries`) | Warning, sent to repair |
 | Copy | Every day, stop, place and list id is present, and no others | Retry once |
 | Copy | Every time, date, price and number in the text appears in the input | Flag the sentence for review |
 | Copy | Banned phrases, emoji, exclamation marks, word limits | Retry the affected items once |
-| Copy | Opening hours and walk minutes in stop bodies, day summaries and blurbs; plan talk; station, train, flight or airport words without a matching booking | Retry the affected sentences once, then flag them for review |
+| Copy | Opening hours and walk minutes in stop bodies, day summaries and blurbs; plan talk; station, train, flight or airport words without a matching booking or travel mode | Retry the affected sentences once, then flag them for review |
+| Copy | Every word the guide shows against what the traveller arranged (`Guide.contradictions`) | Retry once, then fail the step: facts win over prose |
+| Finished guide | `Guide.contradictions` again, after assembly | Fail the build |
 
 ## Versions
 
