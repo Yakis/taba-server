@@ -125,8 +125,8 @@ continue without asking the owner what happened.
 
 ## Current state
 
-M1 is done and the server is deployed (static Linux image, tailnet-only HTTPS). Guide-quality fixes Q1–Q13 in
-`docs/PLAN.md` are deployed (`taba-server:q13`). Q14 (2026-11-13, committed, not deployed): the trip's typed facts
+M1 is done and the server is deployed (static Linux image, tailnet-only HTTPS). Guide-quality fixes Q1–Q14 in
+`docs/PLAN.md` are deployed (`taba-server:q14`, 2026-11-13). Q14: the trip's typed facts
 outrank the prose: stay arrangement, trip travel and the guide's base; no invented stay; a contradiction check on
 all copy; pick lists keep fitting kinds; plan.md v8, write.md v8, repair.md v3. Default model: Sol.
-Next: deploy Q14 with the owner's yes and rebuild the Leeds trip. Deploying: `docs/SERVER.md`, "Deployment".
+Next: the owner rebuilds the Leeds trip to judge Q14. Deploying: `docs/SERVER.md`, "Deployment".
