@@ -257,6 +257,7 @@ Q17: the Q16 baseline built 5 of 11 (6 failed in seconds at research or plan; th
 `60b96f6` now keeps it). The Q17 run then failed at candidates: Foursquare answered 429 "no API credits remaining"
 (free tier). Evaluation runs spend Foursquare credits as well as ChatGPT usage.
 Q18: the public Overpass servers can be down for long spells (2026-11-14: 502 and 90 s timeouts on both), which also stalls the hours lookup, so OSM is a weak last resort. A live test of the Apple Maps Server API (owner's key) found well-known Leeds places by category with addresses and real walking times (`/v1/etas`, Walking); no hours, no website, some places with no category, and "park" also returns car parks unless filtered by category.
+Apple's terms (Developer Program License Agreement, Attachment 6) rule it out as the server's place source: no derived database of Map Data (2.2), no storing beyond temporary use (2.5), Map Data shown only with an Apple map (2.4). Guides store places and walk minutes for good, so Apple data cannot go into them. Allowed: live MapKit walking times on the phone, shown and not stored, and storing Apple Place IDs (Apple documents them as persistent).
 Q12: Foursquare files streets and hills as `other` or `landmark`, and indoor follows the kind, so suggested photo spots
 lost Photography; research now tags interests. Replay gap: when every suggestion is already a candidate, no
 `suggestionPreparation` event is recorded, so a replay of that research stage fails (older than Q12).
