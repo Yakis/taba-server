@@ -5,17 +5,21 @@ import FoundationNetworking
 import FoursquareKit
 import GuideKit
 
-/// Finds candidate places in OpenStreetMap through Overpass. It is the fallback for when Foursquare gives nothing.
+/// Finds candidate places in OpenStreetMap through Overpass. It is the first OpenStreetMap fallback for when Foursquare
+/// gives nothing; Nominatim is the second.
 ///
 /// `sweep` runs every search in one Overpass query. Each filter is one union branch around the centre, and an element
 /// goes to every search that has a filter it matches. Elements without a name or a coordinate, and those whose
 /// `opening_hours` says closed or off, are skipped. Each search keeps its best `limit` elements: those with a Wikidata
 /// or Wikipedia tag first, then those with a website or opening hours, then the nearest. A place is listed once in
-/// `report.places`, though several searches may return it. `find` looks one place up by name.
+/// `report.places`, though several searches may return it. `find` looks one place up by name. Both send at most two
+/// attempts with a 45 second query timeout, so a slow server cannot hold a stage for long.
 public struct OverpassPlacesSource: Sendable {
     /// The prefix of every place id from OpenStreetMap, as in "osm:node/123".
     public static let idPrefix = "osm:"
-    static let timeoutSeconds = 60
+    static let timeoutSeconds = 45
+    /// The first try and one retry.
+    static let attempts = 2
 
     /// One search: a label, and the tag filters that find its places. Each filter is one Overpass selector, such as
     /// `["amenity"="cafe"]` or `["shop"~"^(supermarket|greengrocer|deli)$"]`.
@@ -30,27 +34,15 @@ public struct OverpassPlacesSource: Sendable {
     }
 
     /// What one search did. `returned` counts the elements the query matched to the search, before the skips.
-    public struct SweepOutcome: Sendable, Equatable {
-        public let label: String
-        public let returned: Int
-        /// The ids of the places this search kept, which may include places another search also kept.
-        public let placeIds: [String]
-    }
+    public typealias SweepOutcome = OSMSweep.Outcome
 
-    public struct SweepReport: Sendable, Equatable {
-        public let places: [Place]
-        /// The OpenStreetMap pages of the places whose hours are known or that have a fact.
-        public let sources: [Source]
-        public let sweeps: [SweepOutcome]
-        /// Why the query failed, or nil when it worked.
-        public let error: SourcesError?
-    }
+    public typealias SweepReport = OSMSweep.Report
 
     private let client: OverpassClient
 
     /// - Parameters:
     ///   - endpoints: Tried in rotation. Empty falls back to `OverpassHoursSource.defaultEndpoints`.
-    ///   - retryDelay: The wait before the first retry. Tests pass zero.
+    ///   - retryDelay: The wait before the one retry. Tests pass zero.
     ///   - sleep: Injected so tests do not wait.
     public init(
         fetcher: any HTTPFetching,
@@ -59,7 +51,7 @@ public struct OverpassPlacesSource: Sendable {
         sleep: @escaping OverpassHoursSource.Sleep = { try await Task.sleep(for: $0) }
     ) {
         self.client = OverpassClient(fetcher: fetcher, endpoints: endpoints, timeoutSeconds: Self.timeoutSeconds,
-                                     retryDelay: retryDelay, sleep: sleep)
+                                     retryDelay: retryDelay, attempts: Self.attempts, sleep: sleep)
     }
 
     /// Sweeps every search around `centre` in one query. Never throws. A failed query gives no places, one outcome per
@@ -73,12 +65,12 @@ public struct OverpassPlacesSource: Sendable {
     ) async -> SweepReport {
         let filters = Self.uniqueFilters(searches)
         guard !filters.isEmpty else {
-            return Self.emptyReport(searches, error: nil)
+            return OSMSweep.emptyReport(labels: searches.map(\.label), error: nil)
         }
         let query = Self.sweepQuery(filters: filters, around: centre, radiusMetres: radiusMetres)
         switch await client.run(query) {
         case .failure(let error):
-            return Self.emptyReport(searches, error: error)
+            return OSMSweep.emptyReport(labels: searches.map(\.label), error: error)
         case .success(let elements):
             return Self.report(searches: searches, elements: elements, around: centre, limit: limit,
                                checkedAt: checkedAt)
@@ -169,27 +161,12 @@ public struct OverpassPlacesSource: Sendable {
         return result
     }
 
-    // MARK: Matching and ranking
-
-    private struct Candidate {
-        let place: Place
-        let score: Int
-        let distance: Double
-    }
+    // MARK: Matching
 
     private struct NamedMatch {
         let place: Place
         let similarity: Double
         let distance: Double
-    }
-
-    private static func emptyReport(_ searches: [Search], error: SourcesError?) -> SweepReport {
-        SweepReport(
-            places: [],
-            sources: [],
-            sweeps: searches.map { SweepOutcome(label: $0.label, returned: 0, placeIds: []) },
-            error: error
-        )
     }
 
     static func report(
@@ -199,38 +176,20 @@ public struct OverpassPlacesSource: Sendable {
         limit: Int,
         checkedAt: LocalDate
     ) -> SweepReport {
-        var places: [Place] = []
-        var sources: [Source] = []
-        var seenIds = Set<String>()
-        var sweeps: [SweepOutcome] = []
-        for search in searches {
+        let results = searches.map { search -> OSMSweep.SearchResult in
             let matched = elements.filter { matches(search, $0) }
-            let candidates = matched.compactMap { element -> Candidate? in
+            let candidates = matched.compactMap { element -> OSMSweep.Candidate? in
                 guard let place = OSMPlaceMapper.makePlace(from: element, checkedAt: checkedAt),
                       let point = element.coordinate
                 else {
                     return nil
                 }
-                return Candidate(place: place, score: score(element.tags ?? [:]),
-                                 distance: Geo.metres(from: centre, to: point))
+                return OSMSweep.Candidate(place: place, score: OSMSweep.score(element.tags ?? [:]), importance: 0,
+                                          distance: Geo.metres(from: centre, to: point))
             }
-            let ranked = candidates.sorted { first, second in
-                if first.score != second.score {
-                    return first.score > second.score
-                }
-                return first.distance < second.distance
-            }
-            let kept = Array(ranked.prefix(max(limit, 0))).map(\.place)
-            for place in kept where seenIds.insert(place.id).inserted {
-                places.append(place)
-                if place.hours.hoursKnown || !place.facts.isEmpty,
-                   let source = source(forPlaceId: place.id, checkedAt: checkedAt) {
-                    sources.append(source)
-                }
-            }
-            sweeps.append(SweepOutcome(label: search.label, returned: matched.count, placeIds: kept.map(\.id)))
+            return OSMSweep.SearchResult(label: search.label, returned: matched.count, candidates: candidates)
         }
-        return SweepReport(places: places, sources: sources, sweeps: sweeps, error: nil)
+        return OSMSweep.report(results, limit: limit, checkedAt: checkedAt, error: nil)
     }
 
     /// The most similar name among the elements, from `similarity` up to the threshold. Ties go to the nearest.
@@ -261,25 +220,7 @@ public struct OverpassPlacesSource: Sendable {
 
     /// True when the element has a tag that one of the search's filters selects.
     static func matches(_ search: Search, _ element: OverpassElement) -> Bool {
-        let tags = element.tags ?? [:]
-        return search.filters.contains { filter in
-            TagSelector(filter)?.matches(tags) ?? false
-        }
-    }
-
-    /// Wikidata and Wikipedia tags are worth most, then a website, then opening hours.
-    static func score(_ tags: [String: String]) -> Int {
-        var score = 0
-        if OSMPlaceMapper.value("wikidata", in: tags) != nil || OSMPlaceMapper.value("wikipedia", in: tags) != nil {
-            score += 4
-        }
-        if OSMPlaceMapper.website(in: tags) != nil {
-            score += 1
-        }
-        if OSMPlaceMapper.value("opening_hours", in: tags) != nil {
-            score += 1
-        }
-        return score
+        OSMSweep.selects(search.filters, element.tags ?? [:])
     }
 }
 

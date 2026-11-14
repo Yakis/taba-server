@@ -118,7 +118,9 @@ public enum SourcePreparation {
     static func collectCandidates(_ options: SourceInput, fetcher: CappedFetcher, key: String, today: LocalDate,
                                   centre: Coordinate, seed: Guide?, places: inout [String: Place],
                                   sources: inout [Source],
-                                  record: SourceRecord) async throws -> (OverpassLookup, [String: [String]]) {
+                                  record: SourceRecord,
+                                  openStreetMap: OpenStreetMapFallback? = nil) async throws
+        -> (OverpassLookup, [String: [String]]) {
         let started = ContinuousClock.now
         let baseKinds: [PlaceKind] = [.cafe, .restaurant, .pub, .viewpoint, .museum, .market, .shop, .grocery]
         let interestSearches = InterestSearches.searches(for: options.preferences.interests)
@@ -137,11 +139,8 @@ public enum SourcePreparation {
         var sweeps = report.sweeps.map { (label: $0.label, placeIds: $0.placeIds) }
         var openStreetMapSources: [Source] = []
         if report.places.isEmpty {
-            let osmStarted = ContinuousClock.now
-            let osm = await OverpassPlacesSource(fetcher: fetcher)
-                .sweep(searches: OSMSearches.searches(for: searches), around: centre, limit: 6, checkedAt: today)
-            try Task.checkCancellation()
-            await record.append(OSMEvidence.sweepEvent(osm, seconds: seconds(osmStarted.duration(to: .now))))
+            let fallback = openStreetMap ?? OpenStreetMapFallback(fetcher: fetcher)
+            let osm = try await fallback.sweep(searches, centre: centre, today: today, record: record)
             found = osm.places
             sweeps = osm.sweeps.map { (label: $0.label, placeIds: $0.placeIds) }
             openStreetMapSources = osm.sources

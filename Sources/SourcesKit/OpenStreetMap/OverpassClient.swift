@@ -8,51 +8,55 @@ import GuideKit
 /// Sends one Overpass query and decodes its elements. Both OpenStreetMap sources use it.
 ///
 /// The query goes to the endpoints in turn, one per attempt, so the endpoints take turns. A failure worth another
-/// try (a timeout, a lost connection, or a 429, 502, 503 or 504) is retried up to three times, with waits of
-/// `retryDelay`, then twice that, then four times that. Any other failure is not retried. Nothing throws: the result
-/// is a `Result`.
+/// try (a timeout, a lost connection, or a 429, 502, 503 or 504) is retried, up to `attempts` attempts in all, with
+/// waits of `retryDelay`, then twice that, then four times that. Any other failure is not retried. Nothing throws: the
+/// result is a `Result`.
 struct OverpassClient: Sendable {
     typealias Sleep = @Sendable (Duration) async throws -> Void
 
-    /// Attempts per query: the first try and three retries.
-    static let attempts = 4
+    /// Attempts per query for the hours lookup: the first try and three retries.
+    static let defaultAttempts = 4
 
     private let fetcher: any HTTPFetching
     private let endpoints: [URL]
     private let timeoutSeconds: Int
     private let retryDelay: Duration
+    private let attempts: Int
     private let sleep: Sleep
 
     /// - Parameters:
     ///   - endpoints: Tried in rotation. Empty falls back to `OverpassHoursSource.defaultEndpoints`.
     ///   - timeoutSeconds: The `[timeout:]` the queries are written with. The request waits 30 seconds longer.
     ///   - retryDelay: The wait before the first retry. Each later retry waits twice as long as the one before.
+    ///   - attempts: The most tries for one query, the first included. At least one.
     ///   - sleep: Injected so tests do not wait.
     init(
         fetcher: any HTTPFetching,
         endpoints: [URL],
         timeoutSeconds: Int,
         retryDelay: Duration,
+        attempts: Int = OverpassClient.defaultAttempts,
         sleep: @escaping Sleep
     ) {
         self.fetcher = fetcher
         self.endpoints = endpoints.isEmpty ? OverpassHoursSource.defaultEndpoints : endpoints
         self.timeoutSeconds = timeoutSeconds
         self.retryDelay = retryDelay
+        self.attempts = max(attempts, 1)
         self.sleep = sleep
     }
 
     /// Runs one query, with its permitted retries, and returns the elements of the answer.
     func run(_ query: String) async -> Result<[OverpassElement], SourcesError> {
         var lastError = SourcesError.refused("no attempt was made")
-        for attempt in 0..<Self.attempts {
+        for attempt in 0..<attempts {
             let url = endpoints[attempt % endpoints.count]
             switch await send(query: query, to: url) {
             case .success(let elements):
                 return .success(elements)
             case .failure(let error):
                 lastError = error
-                guard attempt + 1 < Self.attempts, Self.isRetryable(error) else {
+                guard attempt + 1 < attempts, Self.isRetryable(error) else {
                     return .failure(error)
                 }
                 do {

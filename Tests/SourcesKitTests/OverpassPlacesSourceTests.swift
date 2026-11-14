@@ -82,7 +82,7 @@ struct OverpassPlacesSourceTests {
             around: centre,
             radiusMetres: 1500
         )
-        #expect(query.hasPrefix("[out:json][timeout:60];"))
+        #expect(query.hasPrefix("[out:json][timeout:45];"))
         #expect(query.contains("  nwr[\"amenity\"=\"cafe\"](around:1500,55.950000,-3.200000);"))
         #expect(query.contains("  nwr[\"shop\"~\"^(deli|greengrocer)$\"](around:1500,55.950000,-3.200000);"))
         #expect(query.components(separatedBy: "nwr[").count - 1 == 2)
@@ -97,6 +97,18 @@ struct OverpassPlacesSourceTests {
         #expect(text.contains("nwr[\"amenity\"=\"cafe\"](around:1500,55.950000,-3.200000);"))
         #expect(text.contains("nwr[\"leisure\"=\"park\"](around:1500,55.950000,-3.200000);"))
         #expect(text.components(separatedBy: "nwr[").count - 1 == 6)
+    }
+
+    @Test func aSweepTriesTwiceAndWaitsThirtySecondsPastItsQueryTimeout() async throws {
+        let fetcher = ScriptedFetcher([.respond(Samples.response("", status: 504)),
+                                       .respond(Samples.response("", status: 504))])
+        let source = OverpassPlacesSource(fetcher: fetcher, retryDelay: .zero, sleep: { _ in })
+        let report = await source.sweep(searches: [cafeSearch], around: centre, checkedAt: checkedAt)
+        #expect(report.error == .http(status: 504))
+        #expect(report.places.isEmpty)
+        let requests = await fetcher.requests
+        #expect(requests.count == 2)
+        #expect(try #require(requests.first).timeoutInterval == 75)
     }
 
     @Test func aFilterInTwoSearchesIsAskedForOnce() async {

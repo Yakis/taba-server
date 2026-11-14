@@ -30,23 +30,28 @@ enum OSMPlaceMapper {
         KindRule(key: "shop", values: ["supermarket", "greengrocer", "deli"], kind: .grocery),
         KindRule(key: "leisure", values: ["park", "garden"], kind: .landmark),
         KindRule(key: "historic", values: nil, kind: .landmark),
+        KindRule(key: "amenity", values: ["place_of_worship"], kind: .landmark),
         KindRule(key: "man_made", values: ["bridge"], kind: .landmark),
         KindRule(key: "place", values: ["square"], kind: .landmark)
     ]
 
     /// The place for one element, or nil when it is unnamed, has no coordinate, or is marked closed or off.
     static func makePlace(from element: OverpassElement, checkedAt: LocalDate) -> Place? {
-        guard let tags = element.tags,
-              let name = value("name", in: tags),
-              let coordinate = element.coordinate
-        else {
-            return nil
-        }
+        guard let tags = element.tags, let coordinate = element.coordinate else { return nil }
+        return makePlace(osmType: element.type, osmId: element.id, tags: tags, coordinate: coordinate,
+                         checkedAt: checkedAt)
+    }
+
+    /// The place for one OpenStreetMap object, given by its type ("node", "way" or "relation"), its id, its tags and
+    /// its point. Nil when it is unnamed, or marked closed or off.
+    static func makePlace(osmType: String, osmId: Int64, tags: [String: String], coordinate: Coordinate,
+                          checkedAt: LocalDate) -> Place? {
+        guard let name = value("name", in: tags) else { return nil }
         let raw = value("opening_hours", in: tags)
         if let raw, ["closed", "off"].contains(raw.lowercased()) {
             return nil
         }
-        let id = "\(OverpassPlacesSource.idPrefix)\(element.type)/\(element.id)"
+        let id = "\(OverpassPlacesSource.idPrefix)\(osmType)/\(osmId)"
         let hours = raw.map { OpeningHoursParser.parse($0).hours }
             ?? OpeningHours(hoursKnown: false, weekly: [], exceptions: [])
         var facts: [Fact] = []

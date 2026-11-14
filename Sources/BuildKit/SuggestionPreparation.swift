@@ -11,6 +11,7 @@ public actor SuggestionPreparation {
     private let initial: TripFacts
     private let record: SourceRecord
     private let geocoder: NominatimGeocoder
+    private let openStreetMap: OpenStreetMapFallback
     /// How many research suggestions are looked up for one trip. Each is one Foursquare search, or one OpenStreetMap
     /// lookup once Foursquare has failed.
     public static let maximumSuggestions = 12
@@ -20,11 +21,18 @@ public actor SuggestionPreparation {
 
     public init(fetcher: CappedFetcher, key: String, facts: TripFacts, record: SourceRecord,
                 geocoder: NominatimGeocoder? = nil) {
+        self.init(fetcher: fetcher, key: key, facts: facts, record: record, geocoder: geocoder,
+                  openStreetMap: OpenStreetMapFallback(fetcher: fetcher))
+    }
+
+    init(fetcher: CappedFetcher, key: String, facts: TripFacts, record: SourceRecord,
+         geocoder: NominatimGeocoder?, openStreetMap: OpenStreetMapFallback) {
         self.fetcher = fetcher
         self.builder = FoursquareRequestBuilder(apiKey: key)
         self.initial = facts
         self.record = record
         self.geocoder = geocoder ?? NominatimGeocoder(fetcher: fetcher)
+        self.openStreetMap = openStreetMap
     }
 
     public func resolve(_ suggestion: SuggestedPlace) async throws -> Place? {
@@ -85,24 +93,49 @@ public actor SuggestionPreparation {
     }
 
     /// The OpenStreetMap lookup for a suggestion, used once Foursquare has failed. It matches by name, within 10 km.
+    /// Nominatim is asked first, as it is fast and reliable for names. Overpass is asked only when Nominatim fails; a
+    /// Nominatim answer with no match is final.
     private func resolveWithOpenStreetMap(_ suggestion: SuggestedPlace, centre: Coordinate) async throws -> Place? {
         guard let today = Self.today() else { throw SourcePreparationError.service }
-        let start = ContinuousClock.now
-        let result = await OverpassPlacesSource(fetcher: fetcher).find(
-            named: suggestion.name, near: centre, cityName: initial.trip.destination.name, checkedAt: today)
+        let city = initial.trip.destination.name
+        let nominatimStart = ContinuousClock.now
+        let nominatim = await openStreetMap.nominatim.find(named: suggestion.name, near: centre, cityName: city,
+                                                           checkedAt: today)
         try Task.checkCancellation()
-        switch result {
+        switch nominatim {
         case .success(let found):
-            let place = found.map { Self.keepingSuggestedKind($0, suggested: suggestion.kind) }
-            await record.append(["event": .string("suggestion"), "source": .string("osm"),
-                                 "result": .string(place == nil ? "unmatched" : "matched"),
-                                 "seconds": .number(seconds(start.duration(to: .now)))])
-            return place
+            return await recordOpenStreetMapMatch(found, source: "nominatim", suggested: suggestion.kind,
+                                                  start: nominatimStart)
         case .failure:
-            await record.append(["event": .string("suggestion"), "source": .string("osm"),
-                                 "result": .string("failed"), "seconds": .number(seconds(start.duration(to: .now)))])
+            await recordOpenStreetMapFailure(source: "nominatim", start: nominatimStart)
+        }
+        let overpassStart = ContinuousClock.now
+        let overpass = await openStreetMap.overpass.find(named: suggestion.name, near: centre, cityName: city,
+                                                         checkedAt: today)
+        try Task.checkCancellation()
+        switch overpass {
+        case .success(let found):
+            return await recordOpenStreetMapMatch(found, source: "osm", suggested: suggestion.kind,
+                                                  start: overpassStart)
+        case .failure:
+            await recordOpenStreetMapFailure(source: "osm", start: overpassStart)
             return nil
         }
+    }
+
+    /// Records a lookup that answered, matched or not, and returns the place with the suggested kind.
+    private func recordOpenStreetMapMatch(_ found: Place?, source: String, suggested: PlaceKind,
+                                          start: ContinuousClock.Instant) async -> Place? {
+        let place = found.map { Self.keepingSuggestedKind($0, suggested: suggested) }
+        await record.append(["event": .string("suggestion"), "source": .string(source),
+                             "result": .string(place == nil ? "unmatched" : "matched"),
+                             "seconds": .number(seconds(start.duration(to: .now)))])
+        return place
+    }
+
+    private func recordOpenStreetMapFailure(source: String, start: ContinuousClock.Instant) async {
+        await record.append(["event": .string("suggestion"), "source": .string(source),
+                             "result": .string("failed"), "seconds": .number(seconds(start.duration(to: .now)))])
     }
 
     /// Today's date in GMT, as the trip dates are compared with it.
