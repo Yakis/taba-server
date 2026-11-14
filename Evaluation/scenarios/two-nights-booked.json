@@ -1,0 +1,15 @@
+{
+  "name": "two-nights-booked",
+  "description": "York for two nights at a named hotel, by train. History, food and pubs at a moderate budget.",
+  "startInDays": 22,
+  "input": {
+    "destination": "York",
+    "from": "2026-12-06",
+    "to": "2026-12-08",
+    "stay": "The Grand, York",
+    "travel": { "mode": "train" },
+    "pace": "unhurried",
+    "interests": ["History", "Food", "Pubs"],
+    "dailySpend": "moderate"
+  }
+}

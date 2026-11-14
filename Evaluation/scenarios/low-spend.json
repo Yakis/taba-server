@@ -1,0 +1,14 @@
+{
+  "name": "low-spend",
+  "description": "London for two days on a low daily budget, with food, markets and museums.",
+  "startInDays": 27,
+  "input": {
+    "destination": "London",
+    "from": "2026-12-11",
+    "to": "2026-12-12",
+    "travel": { "mode": "train" },
+    "pace": "unhurried",
+    "interests": ["Food", "Markets", "Museums"],
+    "dailySpend": "low"
+  }
+}

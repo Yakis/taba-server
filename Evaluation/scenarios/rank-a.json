@@ -1,0 +1,14 @@
+{
+  "name": "rank-a",
+  "description": "Sheffield for two days, interests ranked pubs first. One half of the rank test; rank-b has the same interests in another order.",
+  "startInDays": 29,
+  "input": {
+    "destination": "Sheffield",
+    "from": "2026-12-13",
+    "to": "2026-12-14",
+    "travel": { "mode": "train" },
+    "pace": "unhurried",
+    "interests": ["Pubs", "Markets", "Photography", "Food"],
+    "dailySpend": "moderate"
+  }
+}

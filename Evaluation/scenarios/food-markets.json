@@ -1,0 +1,14 @@
+{
+  "name": "food-markets",
+  "description": "Bristol for two days, food-led: markets, coffee and eating out at a moderate budget.",
+  "startInDays": 24,
+  "input": {
+    "destination": "Bristol",
+    "from": "2026-12-08",
+    "to": "2026-12-09",
+    "travel": { "mode": "train" },
+    "pace": "unhurried",
+    "interests": ["Food", "Markets", "Coffee"],
+    "dailySpend": "moderate"
+  }
+}

@@ -14,7 +14,8 @@ let package = Package(
         .library(name: "SourcesKit", targets: ["SourcesKit"]),
         .executable(name: "taba-sources-probe", targets: ["SourcesProbe"]),
         .executable(name: "taba", targets: ["Taba"]),
-        .executable(name: "taba-server", targets: ["TabaServer"])
+        .executable(name: "taba-server", targets: ["TabaServer"]),
+        .executable(name: "taba-score", targets: ["TabaScore"])
     ],
     dependencies: [
         .package(path: "GuideKit"),
@@ -39,8 +40,8 @@ let package = Package(
                       "GuideKit", "Sources/FoursquareKit", "Sources/FoursquareProbe", "Sources/ResponsesKit",
                       "Sources/TabaChatGPT", "Sources/SourcesKit", "Sources/SourcesProbe", "Sources/Taba",
                       "Sources/ServerHTTPKit", "Sources/ServerKit", "Sources/BuildKit",
-                      "Sources/LivePipelineKit", "Sources/TabaServer", "Dockerfile", "compose.local.yml",
-                      ".dockerignore"],
+                      "Sources/LivePipelineKit", "Sources/TabaServer", "Sources/GuideScoreKit", "Sources/TabaScore",
+                      "Evaluation", "Dockerfile", "compose.local.yml", ".dockerignore"],
             sources: ["Sources/PipelineKit"],
             resources: [.copy("Prompts")]
         ),
@@ -171,6 +172,22 @@ let package = Package(
         .testTarget(
             name: "ResponsesKitTests",
             dependencies: ["ResponsesKit"]
+        ),
+        .target(
+            name: "GuideScoreKit",
+            dependencies: [
+                .product(name: "GuideKit", package: "GuideKit"), "PipelineKit", "ResponsesKit"
+            ]
+        ),
+        .executableTarget(
+            name: "TabaScore",
+            dependencies: ["GuideScoreKit"]
+        ),
+        .testTarget(
+            name: "GuideScoreKitTests",
+            dependencies: [
+                "GuideScoreKit", "ServerKit", .product(name: "GuideKit", package: "GuideKit")
+            ]
         )
     ],
     swiftLanguageModes: [.v6]

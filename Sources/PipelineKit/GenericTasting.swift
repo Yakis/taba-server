@@ -4,7 +4,7 @@ import GuideKit
 /// Tasting names that are only a category of food or drink, such as "Bread" or "Indian snacks". A tasting item must be
 /// a named local speciality (write.md rule 8), so a category is reported to the writer and, if it is still there after
 /// the rewrite, removed before the guide is used.
-enum GenericTasting {
+public enum GenericTasting {
     /// Category words, singular and plural. A name is generic only when at least one of its words is one of these.
     static let categoryNouns: Set<String> = [
         "bread", "cheese", "cheeses", "vegetable", "vegetables", "veg", "fruit", "fruits", "meat", "meats", "fish",
@@ -27,7 +27,7 @@ enum GenericTasting {
     /// hyphens, "&" and punctuation separate words, and "and" is ignored. It is generic when every word is a category
     /// word or a modifier, and at least one is a category word. "Bread", "Indian snacks" and "Craft beer" are generic;
     /// "Parkin", "Earl Grey tea" (the name word is not a modifier) and "Fish and chips" are not.
-    static func isGeneric(_ name: String) -> Bool {
+    public static func isGeneric(_ name: String) -> Bool {
         let words = name.lowercased().split { !$0.isLetter }.map(String.init).filter { $0 != "and" }
         var hasCategory = false
         for word in words {

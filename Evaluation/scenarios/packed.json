@@ -1,0 +1,14 @@
+{
+  "name": "packed",
+  "description": "Bath for two days at a packed pace, with history and food at a moderate budget. Same trip as relaxed.",
+  "startInDays": 26,
+  "input": {
+    "destination": "Bath",
+    "from": "2026-12-10",
+    "to": "2026-12-11",
+    "travel": { "mode": "train" },
+    "pace": "packed",
+    "interests": ["History", "Food"],
+    "dailySpend": "moderate"
+  }
+}

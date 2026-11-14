@@ -1,0 +1,14 @@
+{
+  "name": "spread-out",
+  "description": "Glasgow for three days: art, music, parks and food at a moderate budget, to see whether the days spread the interests.",
+  "startInDays": 28,
+  "input": {
+    "destination": "Glasgow",
+    "from": "2026-12-12",
+    "to": "2026-12-14",
+    "travel": { "mode": "train" },
+    "pace": "unhurried",
+    "interests": ["Art", "Music", "Parks", "Food"],
+    "dailySpend": "moderate"
+  }
+}

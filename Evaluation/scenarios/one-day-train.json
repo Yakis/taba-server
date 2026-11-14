@@ -1,0 +1,16 @@
+{
+  "name": "one-day-train",
+  "description": "Leeds in one day: arrive by train at 11:00, leave at 18:00, no stay. Markets, pubs and food on a low budget.",
+  "startInDays": 21,
+  "input": {
+    "destination": "Leeds",
+    "from": "2026-12-05",
+    "to": "2026-12-05",
+    "arrives": "11:00",
+    "leaves": "18:00",
+    "travel": { "mode": "train" },
+    "pace": "unhurried",
+    "interests": ["Markets", "Pubs", "Food"],
+    "dailySpend": "low"
+  }
+}

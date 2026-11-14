@@ -1,0 +1,14 @@
+{
+  "name": "three-days-no-stay",
+  "description": "Manchester for three days by train, with no stay named. Music, food and art at a moderate budget.",
+  "startInDays": 23,
+  "input": {
+    "destination": "Manchester",
+    "from": "2026-12-07",
+    "to": "2026-12-09",
+    "travel": { "mode": "train" },
+    "pace": "unhurried",
+    "interests": ["Music", "Food", "Art"],
+    "dailySpend": "moderate"
+  }
+}

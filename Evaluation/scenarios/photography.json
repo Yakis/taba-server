@@ -1,0 +1,14 @@
+{
+  "name": "photography",
+  "description": "Edinburgh for two days for photography, with history and pubs at a moderate budget.",
+  "startInDays": 25,
+  "input": {
+    "destination": "Edinburgh",
+    "from": "2026-12-09",
+    "to": "2026-12-10",
+    "travel": { "mode": "train" },
+    "pace": "unhurried",
+    "interests": ["Photography", "History", "Pubs"],
+    "dailySpend": "moderate"
+  }
+}

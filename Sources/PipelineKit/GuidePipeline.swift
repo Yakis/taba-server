@@ -289,9 +289,11 @@ public struct GuidePipeline: Sendable {
     ) async throws -> Guide {
         let facts = ResearchFactFilter.filtered(researched.facts, findings: researched.verified.result.findings,
                                                 draft: draft)
-        let result = GuideAssembler(walkTimes: walkTimes).assemble(id: id, facts: facts,
-                                                                   draft: draft, copy: copy,
-                                                                   weather: DayOutlook.outlooks(weather))
+        let served = ServedInterests.byPlace(facts.places, interests: facts.trip.interests,
+                                             searchLabels: researched.measurements.searchLabels)
+        let result = GuideAssembler(walkTimes: walkTimes).assemble(id: id, facts: facts, draft: draft, copy: copy,
+                                                                   weather: DayOutlook.outlooks(weather),
+                                                                   servedInterests: served)
         guard result.problems.isEmpty else { throw GuidePipelineError.assemblyProblems(result.problems) }
         try result.guide.validateStructure()
         let finalIssues = PlanChecker(walkTimes: walkTimes).check(result.guide)
