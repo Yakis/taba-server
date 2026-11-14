@@ -20,6 +20,17 @@ What to do:
 6. Move a stop in time before you replace its place. Replace a place only when no move fixes the issue.
 7. If an issue can't be fixed without breaking a stronger rule, leave it and explain it in `openQuestions`.
 
+Preference issues come from the interests, pace and spend rules. `topInterestOutweighed` means a lower-ranked
+interest has more main-stop time than the top one: swap one stop of that lower interest for a nearby candidate
+that serves the top interest. `interestDominates` means one interest takes over half the main-stop time: swap one
+stop of it for a nearby candidate serving the next interest. `drinkHeavyDay` means more than two drink stops: turn
+the extra drink into a sight nearby, or drop it. `mainStopsOverPace` means too many main stops: drop the weakest
+main stop rather than squeezing the times. `startsBeforePace` means the first main stop is too early: move it
+later. `restMissing` means a full day has no rest of 45 minutes: add one in the afternoon. `overSpend` means a
+meal or drink above the ceiling: swap it for a candidate within the ceiling, and keep it only if none fits, saying
+so in `openQuestions`. Fix each of these without breaking an error, a booked time or the opening hours. A
+`mainStopsUnderPace` issue is info: leave it alone.
+
 Return the full plan, with every day, as the same JSON schema. In `changes`, describe each change in one plain
 sentence, for example: "Moved d2-s4 from 15:10 to 14:40 so it ends before sunset."
 

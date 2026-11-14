@@ -77,9 +77,9 @@ struct GuideScorerTests {
     }
 
     @Test func aHighBudgetHasNoCeiling() {
-        #expect(SpendScore.ceiling(for: .low) == 2)
-        #expect(SpendScore.ceiling(for: .moderate) == 3)
-        #expect(SpendScore.ceiling(for: .high) == nil)
+        #expect(DailySpend.low.priceCeiling == 2)
+        #expect(DailySpend.moderate.priceCeiling == 3)
+        #expect(DailySpend.high.priceCeiling == nil)
     }
 
     @Test func feasibilityFindsUnknownHoursAndUnusualLengths() {

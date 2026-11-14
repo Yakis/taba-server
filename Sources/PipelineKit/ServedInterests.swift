@@ -16,4 +16,10 @@ enum ServedInterests {
         }
         return served
     }
+
+    /// The map for every guide assembly in the pipeline: the plan check, the copy and the finished guide all use it,
+    /// so the checks see the interests the guide records.
+    static func forTrip(_ facts: TripFacts, measurements: PipelineInputMeasurements) -> [String: [String]] {
+        byPlace(facts.places, interests: facts.trip.interests, searchLabels: measurements.searchLabels)
+    }
 }

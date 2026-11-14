@@ -444,7 +444,8 @@ extension PipelineInputTests {
         let guide = try guide()
         let missing = PipelineInputMeasurements(areas: [:], walkFromBase: [:], areaWalkMinutes: .object([:]),
                                                 arrivalWalkMinutes: 0, departureWalkMinutes: 0)
-        #expect(throws: PipelineInputError.missingArea("manual:castle-esplanade")) {
+        // Candidates are ordered by interest rank, so the first one measured is the top-ranked food candidate.
+        #expect(throws: PipelineInputError.missingArea("osm:node/10785545157")) {
             try PipelineInputBuilder.plan(guide: guide, measurements: missing, weather: [],
                                           findings: [], requests: .null)
         }

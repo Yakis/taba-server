@@ -54,13 +54,6 @@ struct GuideScoreContext: Sendable {
     }
 }
 
-extension Stop {
-    /// Sights and drinks: the stops a day's pace counts. Meals, rests and logistics do not count.
-    var isMainStop: Bool {
-        kind == .sight || kind == .drink
-    }
-}
-
 /// A ratio rounded to three decimal places, so the JSON is short and stable.
 func thousandths(_ value: Double) -> Double {
     (value * 1000).rounded() / 1000

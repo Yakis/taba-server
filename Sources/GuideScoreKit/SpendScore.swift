@@ -23,7 +23,7 @@ public struct SpendCount: Codable, Sendable, Equatable {
 extension SpendScore {
     static func make(_ context: GuideScoreContext) -> SpendScore {
         let spend = context.guide.trip.budget.dailySpend
-        let ceiling = ceiling(for: spend)
+        let ceiling = spend.priceCeiling
         let stops = context.guide.days.flatMap(\.stops)
         return SpendScore(
             dailySpend: spend.rawValue,
@@ -31,15 +31,6 @@ extension SpendScore {
             mealAndDrink: count(stops.filter { [.meal, .drink].contains($0.kind) }, ceiling: ceiling, context),
             sights: count(stops.filter { $0.kind == .sight }, ceiling: ceiling, context)
         )
-    }
-
-    /// The highest price level each daily spend allows, from plan.md rule 17.
-    static func ceiling(for spend: DailySpend) -> Int? {
-        switch spend {
-        case .low: 2
-        case .moderate: 3
-        case .high: nil
-        }
     }
 
     private static func count(_ stops: [Stop], ceiling: Int?, _ context: GuideScoreContext) -> SpendCount {

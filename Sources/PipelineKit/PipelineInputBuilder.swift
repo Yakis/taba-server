@@ -323,7 +323,7 @@ public enum PipelineInputBuilder {
             return .object(result)
         }
         let base = guide.base
-        let places = try guide.places.values.sorted { $0.id < $1.id }.map {
+        let places = try rankedCandidates(guide, measurements: measurements).map {
             try place($0, dates: dates, measurements: measurements, writing: false, base: base,
                       interests: guide.trip.interests)
         }
@@ -389,6 +389,23 @@ public enum PipelineInputBuilder {
 
 /// The trip window of a day, in minutes since midnight. Kept apart from the enum so its body stays short.
 private extension PipelineInputBuilder {
+    /// The candidates, ordered by the best trip interest each one serves (its place in the trip's list), then by id.
+    /// A candidate that serves none comes last. The planner meets the top-ranked interests first.
+    static func rankedCandidates(_ guide: Guide, measurements: PipelineInputMeasurements) -> [Place] {
+        let interests = guide.trip.interests
+        let ranked = guide.places.values.map { place in
+            (place: place, rank: bestInterestRank(place, interests: interests, measurements: measurements))
+        }
+        return ranked.sorted { ($0.rank, $0.place.id) < ($1.rank, $1.place.id) }.map(\.place)
+    }
+
+    /// The position in the trip's interests of the best one `place` serves, or `Int.max` when it serves none.
+    static func bestInterestRank(_ place: Place, interests: [String], measurements: PipelineInputMeasurements) -> Int {
+        let served = InterestMatch.interests(for: interests, kind: place.kind, indoor: place.indoor,
+                                             searchLabels: measurements.searchLabels[place.id] ?? [])
+        return served.compactMap { interests.firstIndex(of: $0) }.min() ?? Int.max
+    }
+
     /// Minutes between a stated arrival and the start of the day's plan, when no transport booking gives one.
     static let arrivalBufferMinutes = 30
     /// Minutes between the end of the day's plan and a stated leaving time, when no transport booking gives one.

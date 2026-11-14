@@ -72,7 +72,7 @@ The prompts ask for good behaviour. Code makes sure of it:
 | Research | Each finding's URL is among the search sources the response reports | Drop the finding |
 | Research | Suggested places resolve through the places provider | Drop the suggestion |
 | Plan | Every place id is a candidate | Treated as an error and sent to repair |
-| Plan | `PlanChecker`: hours, gaps, walks, meals, daylight, logistics, pace | Errors and warnings sent to repair |
+| Plan | `PlanChecker`: hours, gaps, walks, meals, daylight, logistics, pace, interests, spend | Errors and warnings sent to repair; info never is |
 | Plan | Stops and open questions against what the traveller arranged (`Guide.contradictions`): no hotel, check-in or accommodation talk without a booked stay, no check-in or check-out on a one-day trip | Error, sent to repair |
 | Plan | Pick-list places fit their list (`eat`, `drink`, `photos`, `groceries`) | Warning, sent to repair |
 | Copy | Every day, stop, place and list id is present, and no others | Retry once |

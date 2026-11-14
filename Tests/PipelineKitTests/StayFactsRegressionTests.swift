@@ -159,6 +159,7 @@ private func planDraft(dates: [LocalDate], kind: BaseKind, cafe: String, pub: St
             stops.append(try stop("d\(number)-view", viewpoint, .sight, "14:45", 30, "View"))
             stops.append(try stop("d\(number)-cafe", cafe, .sight, "15:30", 30, "Cafe"))
             if !arrivesByTrain {
+                stops.append(try stop("d\(number)-rest", cafe, .rest, "16:15", 45, "Rest"))
                 stops.append(try stop("d\(number)-dinner", nil, .meal, slot: .dinner, "18:30", 60, "Dinner"))
             }
         } else {
@@ -167,6 +168,7 @@ private func planDraft(dates: [LocalDate], kind: BaseKind, cafe: String, pub: St
                 stops.append(try stop("d\(number)-checkout", hotel, .logistics, "10:00", 15, "Check out"))
             }
             stops.append(try stop("d\(number)-lunch", nil, .meal, slot: .lunch, "12:00", 45, "Lunch"))
+            stops.append(try stop("d\(number)-rest", cafe, .rest, "15:00", 45, "Rest"))
             stops.append(try stop("d\(number)-dinner", nil, .meal, slot: .dinner, "18:30", 60, "Dinner"))
         }
         days.append(PlanDraftDay(date: date, theme: "Walk", stops: stops))

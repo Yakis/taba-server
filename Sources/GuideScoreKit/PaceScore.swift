@@ -19,17 +19,13 @@ public struct PaceTarget: Codable, Sendable, Equatable {
     public let walkingMinutes: Int
 
     static func of(_ pace: Pace) -> PaceTarget {
-        switch pace {
-        case .relaxed:
-            PaceTarget(mainStopsMin: 3, mainStopsMax: 4, firstStartNotBefore: "09:30",
-                       walkingMinutes: pace.walkingLimitMinutes)
-        case .unhurried:
-            PaceTarget(mainStopsMin: 4, mainStopsMax: 5, firstStartNotBefore: "09:00",
-                       walkingMinutes: pace.walkingLimitMinutes)
-        case .packed:
-            PaceTarget(mainStopsMin: 6, mainStopsMax: nil, firstStartNotBefore: nil,
-                       walkingMinutes: pace.walkingLimitMinutes)
-        }
+        let range = pace.mainStopRange
+        return PaceTarget(
+            mainStopsMin: range.lowerBound,
+            mainStopsMax: range.upperBound == Int.max ? nil : range.upperBound,
+            firstStartNotBefore: pace.firstMainStopNotBefore?.description,
+            walkingMinutes: pace.walkingLimitMinutes
+        )
     }
 }
 

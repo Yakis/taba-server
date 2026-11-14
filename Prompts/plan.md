@@ -1,6 +1,6 @@
 ---
 id: plan
-version: 9
+version: 10
 role: instructions
 output: PlanDraft
 effort: high
@@ -37,7 +37,8 @@ the words. Your job is choosing and timing.
 - `areaTravelMinutes`: typical minutes between the trip's areas: a walk up to 30 minutes, otherwise a bus or taxi
   ride, as code decides. Measured by code, keyed by stable area cluster ids.
 - `candidates`: the only places you may use, including the booked stay, the luggage store and the arrival and
-  departure places when there are any. Each has `id`, `name`,
+  departure places when there are any. They are ordered by the best-ranked interest each one serves, so the
+  first candidates serve the top interests. Each has `id`, `name`,
   `kind`, `area` (the stable cluster id used in `areaTravelMinutes`), `areaName` (the human-readable majority
   label for the cluster; different clusters can share a name), `fromBase` (`mode`, `walk` or `transit` for a
   bus or taxi ride, and `minutes` from `anchors.base`, as code decides; `null` when there is no base), `indoor`,
@@ -113,7 +114,8 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
     | `unhurried` | 4–5 | 09:00 | about 130 minutes |
     | `packed` | 6 or more | no limit | about 180 minutes |
 
-    Walking counts only walks, not bus or taxi rides.
+    Walking counts only walks, not bus or taxi rides. Never add stops just to reach the pace's range: fewer stops is
+    fine when the places deserve the time.
 
     Relaxed and unhurried days include a rest stop of at least 45 minutes in the afternoon: a cafe, a park or
     a museum bench. It can be at the stay only when one is booked.
@@ -138,16 +140,21 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
 
 ## C. Taste.
 
-16. Give each day one clear highlight and a theme you can say in a few words. Give every interest at least one
-    stop over the trip, using a candidate whose `interests` include it or a finding about it, and the top-ranked
-    interests more than one. Time them to suit: music in the evening (a gig, a session or a venue's bar),
+16. Give each day one clear highlight and a theme you can say in a few words. Rank means weight. The top-ranked
+    interest gets the most time across the trip and its best slots: its best time of day and its most memorable
+    candidate. Each next interest gets less. Every interest gets at least one stop when a candidate or a finding
+    serves it (`interests` says which interests each candidate serves), using that candidate or finding. No single
+    interest takes more than half the main-stop time (sights and drinks). A high rank never means repeating the
+    same kind of place: at most two drink stops a day. Time them to suit: music in the evening (a gig, a session or
+    a venue's bar),
     photography at an outdoor place near `sunset` or before `blueHourEnds`. When photography or views is an
     interest, give it an outdoor stop on every full day, at a different place each day, choosing viewpoints,
     streets and neighbourhoods whose `interests` include it. If no candidate or finding serves an interest, say
     so in `openQuestions`. Don't put two stops of the same kind back to back, unless that kind is
     the top interest.
 17. Keep to `dailySpend`: mostly `priceLevel` 1–2 for `low`, up to 3 for `moderate`, any for `high`. Free
-    sights suit every level.
+    sights suit every level. A meal or drink above that ceiling is a deliberate exception only, and the check
+    will flag it.
 18. Respect mobility notes. For anyone who mentions stairs or hills, avoid long climbs late in the day.
 19. Leave slack. A plan with 15 minutes to spare beats one that only just fits.
 20. Mark stops that depend on weather or mood as `flexible: true`.

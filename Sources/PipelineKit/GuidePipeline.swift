@@ -147,13 +147,15 @@ public struct GuidePipeline: Sendable {
         var previousAssistant = planned.previousAssistant
         let assembler = GuideAssembler(walkTimes: walkTimes)
         let checker = PlanChecker(walkTimes: walkTimes)
+        let served = ServedInterests.forTrip(facts, measurements: researched.measurements)
         for round in 0...2 {
             let problems = draftProblems(draft, facts: facts, findings: verified.result.findings,
                                          planInput: planned.planInput)
             let withTransit = addTransit(draft, facts: facts)
             var issues = problems
             if problems.isEmpty {
-                let assembled = assembler.assemble(id: id, facts: facts, draft: withTransit, copy: emptyCopy)
+                let assembled = assembler.assemble(id: id, facts: facts, draft: withTransit, copy: emptyCopy,
+                                                   servedInterests: served)
                 let reverse = Dictionary(assembled.stopIds.map { ($0.value, $0.key) },
                                          uniquingKeysWith: { first, _ in first })
                 issues += checker.check(assembled.guide).map { issue in
@@ -208,7 +210,9 @@ public struct GuidePipeline: Sendable {
         let verified = researched.verified
         let assembler = GuideAssembler(walkTimes: walkTimes)
         let writePrompt = try PromptLibrary.load("write")
-        let measured = assembler.assemble(id: id, facts: facts, draft: draft, copy: emptyCopy).guide
+        let served = ServedInterests.forTrip(facts, measurements: measurements)
+        let measured = assembler.assemble(id: id, facts: facts, draft: draft, copy: emptyCopy,
+                                          servedInterests: served).guide
         let writeInput = try PipelineInputBuilder.write(guide: measured, draft: draft, measurements: measurements,
                                                          weather: weather, findings: verified.result.findings,
                                                          locale: locale)
@@ -230,7 +234,7 @@ public struct GuidePipeline: Sendable {
             let (copy, response): (GuideCopy, ResponsesResult) = try await decoded(
                 current, prompt: writePrompt, step: "write", send: send, evidence: evidence)
             let issues = CopyChecker().check(copy, expected: targets, input: inputText)
-                + stayContradictions(copy, id: id, draft: draft, facts: facts)
+                + stayContradictions(copy, id: id, draft: draft, facts: facts, served: served)
             await evidence(.copy(issues: issues))
             let blocking = issues.filter { Self.blocksCopy($0.kind, retried: attempt > 0) }
             if blocking.isEmpty { return await usableCopy(copy, evidence: evidence) }
@@ -272,9 +276,10 @@ public struct GuidePipeline: Sendable {
 
     /// The copy's words that contradict the facts (see `Guide.contradictions`), as copy issues. The guide is assembled
     /// with this copy, so the check reads the same words the finished guide would show.
-    private func stayContradictions(_ copy: GuideCopy, id: String, draft: PlanDraft,
-                                    facts: TripFacts) -> [CopyCheckIssue] {
-        GuideAssembler(walkTimes: walkTimes).assemble(id: id, facts: facts, draft: draft, copy: copy)
+    private func stayContradictions(_ copy: GuideCopy, id: String, draft: PlanDraft, facts: TripFacts,
+                                    served: [String: [String]]) -> [CopyCheckIssue] {
+        GuideAssembler(walkTimes: walkTimes).assemble(id: id, facts: facts, draft: draft, copy: copy,
+                                                      servedInterests: served)
             .guide.contradictions.map {
                 CopyCheckIssue(kind: .stayContradiction($0.words), path: $0.path, text: $0.text, note: $0.reason)
             }
@@ -289,8 +294,7 @@ public struct GuidePipeline: Sendable {
     ) async throws -> Guide {
         let facts = ResearchFactFilter.filtered(researched.facts, findings: researched.verified.result.findings,
                                                 draft: draft)
-        let served = ServedInterests.byPlace(facts.places, interests: facts.trip.interests,
-                                             searchLabels: researched.measurements.searchLabels)
+        let served = ServedInterests.forTrip(facts, measurements: researched.measurements)
         let result = GuideAssembler(walkTimes: walkTimes).assemble(id: id, facts: facts, draft: draft, copy: copy,
                                                                    weather: DayOutlook.outlooks(weather),
                                                                    servedInterests: served)
