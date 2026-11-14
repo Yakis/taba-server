@@ -233,7 +233,7 @@ public struct GuidePipeline: Sendable {
                 + stayContradictions(copy, id: id, draft: draft, facts: facts)
             await evidence(.copy(issues: issues))
             let blocking = issues.filter { Self.blocksCopy($0.kind, retried: attempt > 0) }
-            if blocking.isEmpty { return copy }
+            if blocking.isEmpty { return await usableCopy(copy, evidence: evidence) }
             guard attempt == 0 else { throw GuidePipelineError.copyErrors(issues) }
             let feedback = blocking.map { "\($0.path): \($0.message)" }.joined(separator: "\n")
             current = ResponsesRequest(model: model, instructions: writePrompt.body, messages: request.messages + [
@@ -244,14 +244,26 @@ public struct GuidePipeline: Sendable {
         throw GuidePipelineError.invalidPlan("No accepted copy")
     }
 
+    /// The copy the guide is built from. Generic tasting items are removed, so a category is never shipped. If that
+    /// leaves the tasting list outside 6 to 8 items, the count is flagged for review rather than failing the build.
+    private func usableCopy(_ copy: GuideCopy, evidence: EvidenceSink) async -> GuideCopy {
+        let used = copy.removingGenericTasting()
+        if used.tasting.count != copy.tasting.count, let issue = CopyChecker.tastingCountIssue(used) {
+            await evidence(.copy(issues: [issue]))
+        }
+        return used
+    }
+
     /// Whether a copy issue stops the copy being used. Numbers are never blocking: they are flagged for review. Length
     /// limits and the card and plan checks (opening hours, walks, plan talk, transport) block the first answer, so the
     /// writer is asked to fix them, but not the corrected one: one sentence a word too long, or one stray closing time,
-    /// should not throw away a whole guide. They are flagged for review instead.
+    /// should not throw away a whole guide. They are flagged for review instead. Generic tasting items and a tasting
+    /// list of the wrong length follow the same rule: the writer is asked once, and what is left is removed or flagged.
     static func blocksCopy(_ kind: CopyCheckIssue.Kind, retried: Bool) -> Bool {
         switch kind {
         case .ungroundedNumber: false
         case .wordLimit, .sentenceLimit, .hoursInBody, .walkInBody, .planTalk, .inventedTransport: !retried
+        case .genericTasting, .tastingCount: !retried
         // A contradiction of the facts always blocks, on both attempts: the facts win over the prose.
         case .stayContradiction: true
         default: true
@@ -269,12 +281,15 @@ public struct GuidePipeline: Sendable {
     }
 
     /// Assembles and validates the finished guide; completion is emitted only on success. Each day gets the weather
-    /// for its date from `weather`, when there is some.
+    /// for its date from `weather`, when there is some. Research facts the plan does not need are left out of the
+    /// guide here (see `ResearchFactFilter`); the planner and writer still saw every finding.
     public func assembleStage(
         id: String, researched: ResearchedPipeline, draft: PlanDraft, copy: GuideCopy,
         weather: [DayWeather] = [], evidence: EvidenceSink
     ) async throws -> Guide {
-        let result = GuideAssembler(walkTimes: walkTimes).assemble(id: id, facts: researched.facts,
+        let facts = ResearchFactFilter.filtered(researched.facts, findings: researched.verified.result.findings,
+                                                draft: draft)
+        let result = GuideAssembler(walkTimes: walkTimes).assemble(id: id, facts: facts,
                                                                    draft: draft, copy: copy,
                                                                    weather: DayOutlook.outlooks(weather))
         guard result.problems.isEmpty else { throw GuidePipelineError.assemblyProblems(result.problems) }
@@ -342,7 +357,7 @@ private extension GuidePipeline {
             var id = "taba-research-\(index)"
             while sources.contains(where: { $0.id == id }) { id += "-source" }
             sources.append(Source(id: id, url: finding.url, title: finding.sourceTitle, checkedAt: checked))
-            practical.append(Fact(text: "\(finding.title): \(finding.summary)", sourceId: id, checkedAt: checked))
+            practical.append(Fact(text: ResearchFactFilter.factText(for: finding), sourceId: id, checkedAt: checked))
         }
         return TripFacts(trip: facts.trip, bookings: facts.bookings, stay: facts.stay, places: facts.places,
                          practical: practical, sources: sources)

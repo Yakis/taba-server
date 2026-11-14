@@ -195,6 +195,33 @@ struct GuidePipelineTests {
         #expect(events.contains { if case .completed = $0 { true } else { false } })
     }
 
+    /// A generic tasting name blocks the first answer. If the rewrite still has it, the copy is used without that item,
+    /// and the shortened tasting list is flagged for review.
+    @Test func copyStageRemovesGenericTastingThatTheRewriteKept() async throws {
+        let fixture = try data()
+        let original = fixture.copy
+        let withBread = GuideCopy(hero: original.hero, days: original.days, stops: original.stops,
+                                  places: original.places, lists: original.lists,
+                                  tasting: [TasteItem(name: "Bread", note: "A warm loaf.")]
+                                      + Array(original.tasting.dropLast()),
+                                  notes: original.notes)
+        let script = try PipelineScript([research, json(withBread), json(withBread)])
+        let pipeline = GuidePipeline()
+        let researched = try await pipeline.researchStage(
+            model: "fake", facts: fixture.facts, measurements: fixture.measurements, stayArea: "Centre",
+            send: { try await script.send($0) }, evidence: { await script.record($0) })
+        let copy = try await pipeline.copyStage(
+            id: "test", model: "fake", researched: researched, draft: fixture.draft, weather: [],
+            send: { try await script.send($0) }, evidence: { await script.record($0) })
+        #expect(copy.tasting.map(\.name) == Array(repeating: "Oats", count: 5))
+        #expect(await script.requests.count == 3)
+        let flagged = await script.events.flatMap { event -> [CopyCheckIssue] in
+            if case .copy(let issues) = event { return issues }
+            return []
+        }
+        #expect(flagged.contains { $0.kind == .tastingCount })
+    }
+
     /// A closing time in a stop body is blocking on the first answer, so the writer is asked once to remove it. If the
     /// rewrite still has it, the copy is used and the sentence is only flagged for review.
     @Test func cardCopyIssueIsRewrittenOnceThenFlagged() async throws {
@@ -357,9 +384,12 @@ extension GuidePipelineTests {
 
     @Test func sourcedResearchSurvivesInGuideAndWriterInput() async throws {
         let fixture = try data()
-        let finding = ResearchFinding(id: "f1", kind: .event, title: "Market", summary: "A local market.",
-            startDate: nil, endDate: nil, times: nil, placeName: nil, address: nil,
-            url: "https://example.com/market", sourceTitle: "Market page", confidence: .high, onTripDates: true)
+        // A transport warning is kept without a place, so the source reaches the guide. An event with no place the plan
+        // visits would be left out (see ResearchFactFilter).
+        let finding = ResearchFinding(id: "f1", kind: .transport, title: "Tram works",
+            summary: "Trams run a shorter route.", startDate: nil, endDate: nil, times: nil, placeName: nil,
+            address: nil, url: "https://example.com/trams", sourceTitle: "Transport page", confidence: .high,
+            onTripDates: true)
         let research = ResearchResult(findings: [finding], suggestedPlaces: [], searchNotes: "")
         let script = try PipelineScript([json(research), json(fixture.draft), json(fixture.draft),
                                          json(fixture.draft), json(fixture.copy)],

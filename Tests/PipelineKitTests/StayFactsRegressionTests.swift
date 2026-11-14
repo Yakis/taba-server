@@ -191,7 +191,7 @@ private func copy(for plan: PlanDraft, facts: TripFacts) throws -> GuideCopy {
             GuideCopyPlace(id: $0, tag: "Local", blurb: "Enjoy a visit.")
         },
         lists: plan.lists.map { GuideCopyList(key: $0.key, title: "Picks", caption: "Find a place.") },
-        tasting: ["Oats", "Tea", "Bread", "Cheese", "Soup", "Cake"].map {
+        tasting: ["Oatcakes", "Parkin", "Shortbread", "Eccles cakes", "Cranachan", "Irn-Bru"].map {
             TasteItem(name: $0, note: "A warming dish.")
         },
         notes: GuideNotes(weather: "Bring a layer.", light: "Enjoy the light.", backupPlan: "Take shelter.",

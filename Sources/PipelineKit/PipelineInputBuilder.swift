@@ -393,6 +393,20 @@ private extension PipelineInputBuilder {
     static let arrivalBufferMinutes = 30
     /// Minutes between the end of the day's plan and a stated leaving time, when no transport booking gives one.
     static let departureBufferMinutes = 45
+    /// The buffer when the departure place is known and the traveller goes by train, coach or car. The plan checker's
+    /// departure check already requires each last stop to end 30 minutes plus its journey before leaving (see GuideKit
+    /// `TransitChecks.departureFindings`), so the day ends where that check begins.
+    static let knownDepartureBufferMinutes = 30
+
+    /// The buffer before a stated leaving time: `knownDepartureBufferMinutes` from a known departure place by ground
+    /// transport, otherwise `departureBufferMinutes`.
+    static func departureBuffer(_ guide: Guide) -> Int {
+        guard let travel = guide.trip.travel, travel.mode != .flight,
+              let placeId = travel.departurePlaceId, guide.places[placeId] != nil else {
+            return departureBufferMinutes
+        }
+        return knownDepartureBufferMinutes
+    }
 
     static func window(
         _ date: LocalDate, guide: Guide, measurements: PipelineInputMeasurements
@@ -422,8 +436,8 @@ private extension PipelineInputBuilder {
             end = departure.departs.time.minutesSinceMidnight
                 - measurements.departureWalkMinutes - measurements.departureMarginMinutes
         } else if date == guide.trip.dates.end, let leaves = guide.trip.dates.leaves {
-            // No departure booking: the traveller leaves the city the stated buffer before the stated leaving time.
-            end = min(max(leaves.minutesSinceMidnight - departureBufferMinutes, 0), 1439)
+            // No departure booking: the traveller leaves the city a buffer before the stated leaving time.
+            end = min(max(leaves.minutesSinceMidnight - departureBuffer(guide), 0), 1439)
         }
         guard let first = LocalTime(minutesSinceMidnight: start),
               let last = LocalTime(minutesSinceMidnight: end), first <= last else {

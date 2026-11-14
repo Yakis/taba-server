@@ -7,6 +7,8 @@ public struct CopyCheckIssue: Hashable, Sendable {
         case missingID(CopyTarget), duplicateID(CopyTarget), extraID(CopyTarget)
         case bannedPhrase(String), emoji, exclamationLimit, wordLimit(min: Int, max: Int)
         case sentenceLimit(min: Int, max: Int), tastingCount, ungroundedNumber(String)
+        /// A tasting item that is only a category of food or drink, such as "Bread". The payload is the name.
+        case genericTasting(String)
         /// Facts the guide's cards already show, plan talk, and transport the trip does not have. The payload is the
         /// matching words.
         case hoursInBody(String), walkInBody(String), planTalk(String), inventedTransport(String)
@@ -32,6 +34,8 @@ public struct CopyCheckIssue: Hashable, Sendable {
     public var message: String {
         let sentence = text ?? ""
         switch kind {
+        case .genericTasting(let name):
+            return "Replace '\(name)' with a food or drink this place is known for, by its own name, not a category."
         case .hoursInBody:
             return "Remove the opening time from this sentence, since the card shows it: '\(sentence)'"
         case .walkInBody:
@@ -111,8 +115,11 @@ public struct CopyChecker: Sendable {
             add("lists[\(index)].title", list.title, 0, 4)
             add("lists[\(index)].caption", list.caption, 0, 15, 1, 1)
         }
-        if !(6...8).contains(copy.tasting.count) { issues.append(.init(kind: .tastingCount, path: "tasting")) }
+        if let issue = Self.tastingCountIssue(copy) { issues.append(issue) }
         for (index, item) in copy.tasting.enumerated() {
+            if GenericTasting.isGeneric(item.name) {
+                issues.append(.init(kind: .genericTasting(item.name), path: "tasting[\(index)].name"))
+            }
             add("tasting[\(index)].name", item.name)
             add("tasting[\(index)].note", item.note, 0, 18, 1, 1)
         }
@@ -122,6 +129,11 @@ public struct CopyChecker: Sendable {
         add("notes.rules", copy.notes.rules, 0, .max, 1, 2)
         issues += CopyTextChecks.check(fields, input: input)
         return issues
+    }
+
+    /// The tasting count issue, when the copy does not have 6 to 8 tasting items.
+    static func tastingCountIssue(_ copy: GuideCopy) -> CopyCheckIssue? {
+        (6...8).contains(copy.tasting.count) ? nil : .init(kind: .tastingCount, path: "tasting")
     }
 }
 

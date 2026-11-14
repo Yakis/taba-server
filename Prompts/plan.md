@@ -1,6 +1,6 @@
 ---
 id: plan
-version: 8
+version: 9
 role: instructions
 output: PlanDraft
 effort: high
@@ -71,7 +71,9 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
 6. The stay and the journey, with `kind: "logistics"`:
    - The arrival is the arrival booking or, without one, `trip.dates.arrives` at `anchors.travel.arrivalPlaceId`
      when there is one. The departure is the departure booking or, without one, `trip.dates.leaves` from
-     `anchors.travel.departurePlaceId` when there is one.
+     `anchors.travel.departurePlaceId` when there is one. On the last day, the last stop must end early enough to reach
+     the departure place 30 minutes before leaving: its walk there (its `fromBase` when `anchors.base` is the departure
+     place) plus those 30 minutes.
    - Only a `booked` stay exists. When `anchors.stay.arrangement` is `unknown` or `notNeeded`, there is no stay:
      plan no check-in, check-out, rest or bag stop at any hotel or other lodging, never choose or suggest
      somewhere to sleep, and don't ask about it.

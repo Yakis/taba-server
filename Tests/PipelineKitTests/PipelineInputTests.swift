@@ -336,6 +336,42 @@ extension PipelineInputTests {
         #expect(window == .object(["start": .string("09:30"), "end": .string("16:15")]))
     }
 
+    /// The fixture as a one-day trip that leaves at 18:00, with the given travel and no bookings.
+    private func oneDayLeaving(travel: TripTravel?) throws -> Guide {
+        let source = try guide()
+        let day = source.trip.dates.start
+        let trip = Trip(destination: source.trip.destination,
+                        dates: TripDates(start: day, end: day, leaves: try time("18:00")),
+                        party: source.trip.party, budget: source.trip.budget, interests: source.trip.interests,
+                        pace: source.trip.pace, voice: source.trip.voice, travel: travel)
+        return Guide(id: source.id, version: source.version, status: source.status, trip: trip, bookings: [],
+                     stay: source.stay, places: source.places, days: source.days, lists: source.lists,
+                     tasting: source.tasting, practical: source.practical, sources: source.sources)
+    }
+
+    @Test func aKnownDeparturePlaceByTrainEndsTheDayThirtyMinutesBeforeLeaving() throws {
+        let source = try guide()
+        let placeId = try #require(source.places.keys.sorted().first)
+        let travel = TripTravel(mode: .train, arrivalPlaceId: nil, departurePlaceId: placeId)
+        let expected: [JSONValue] = [.object(["start": .string("00:00"), "end": .string("17:30")])]
+        #expect(try windows(oneDayLeaving(travel: travel)) == expected)
+    }
+
+    @Test func withoutAKnownDeparturePlaceTheDayEndsFortyFiveMinutesBeforeLeaving() throws {
+        let expected: [JSONValue] = [.object(["start": .string("00:00"), "end": .string("17:15")])]
+        #expect(try windows(oneDayLeaving(travel: nil)) == expected)
+        let unknown = TripTravel(mode: .train, arrivalPlaceId: nil, departurePlaceId: "not-a-place")
+        #expect(try windows(oneDayLeaving(travel: unknown)) == expected)
+    }
+
+    @Test func aFlightKeepsTheFortyFiveMinuteBufferEvenWithAKnownDeparturePlace() throws {
+        let source = try guide()
+        let placeId = try #require(source.places.keys.sorted().first)
+        let travel = TripTravel(mode: .flight, arrivalPlaceId: nil, departurePlaceId: placeId)
+        let expected: [JSONValue] = [.object(["start": .string("00:00"), "end": .string("17:15")])]
+        #expect(try windows(oneDayLeaving(travel: travel)) == expected)
+    }
+
     @Test func aBookingWinsOverStatedTimes() throws {
         let source = try guide()
         let guide = withTimes(source, arrives: try time("05:00"),

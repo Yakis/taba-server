@@ -230,4 +230,15 @@ struct CopyCheckerTests {
         }
         #expect(wrongClaims == ["21:00", "twenty-one", "forty five"])
     }
+
+    @Test func genericTastingNamesAreRaisedAndSpecificOnesAreNot() throws {
+        let bread: [String: String] = ["name": "Bread", "note": "A warm loaf from the morning bake."]
+        let parkin: [String: String] = ["name": "Parkin", "note": "A dense, sticky spiced cake."]
+        let value = try copy { $0["tasting"] = [bread] + Array(repeating: parkin, count: 5) }
+        let issues = checker.check(value, expected: expected, input: "{}")
+        let generic = issues.filter { $0.kind == .genericTasting("Bread") }
+        #expect(generic.map(\.path) == ["tasting[0].name"])
+        #expect(issues.allSatisfy { $0.kind != .genericTasting("Parkin") })
+        #expect(issues.allSatisfy { $0.kind != .tastingCount })
+    }
 }

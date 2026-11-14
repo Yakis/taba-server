@@ -1,6 +1,6 @@
 ---
 id: research
-version: 4
+version: 5
 role: instructions
 output: ResearchResult
 effort: medium
@@ -52,6 +52,9 @@ Return only the JSON object matching the schema.
   `holiday` or `other`), `title`, `summary`, `startDate` and `endDate` (`YYYY-MM-DD` or `null`), `times`
   (the source's wording, or `null`), `placeName`, `address`, `url`, `sourceTitle`, `confidence` (`high`,
   `medium` or `low`) and `onTripDates` (`true` when it happens during the trip).
+  Write `title` and `summary` for the traveller, as plain facts: what it is, where, when, and anything they must do
+  (book, pay, bring). Never write instructions about planning ("don't schedule it", "an alternative rather than a
+  stop"), and never refer to "the traveller". Another step decides what the trip includes; yours only states facts.
 - `suggestedPlaces`: at most 12, the most useful first, each with `name`, `area`, `kind` (one of the place kinds
   in the schema), `why` (at most 15 words) and `interests` (the traveller's interests from the input, written
   exactly as given, that this place serves; an empty list when none). `kind` says what the place is, not why to go:
