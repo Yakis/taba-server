@@ -5,14 +5,17 @@ import FoundationNetworking
 import FoursquareKit
 import GuideKit
 
-/// Finds candidate places in OpenStreetMap through Nominatim's name search. It is the second OpenStreetMap fallback,
-/// after Overpass, and it answers in a second or two.
+/// Finds candidate places in OpenStreetMap through Nominatim's name search. It is the first place source a
+/// build asks, and it answers in a second or two.
 ///
 /// `sweep` sends one search per phrase, inside a box about the search radius either side of the centre. A phrase
 /// is sent once, however many searches use it. Each row becomes the tags of its object: its `extratags`, its `name`,
 /// and its `category=type`. A row is kept when it has a name and one of its search's filters selects it. Chains (a
 /// `brand` or `brand:wikidata` tag) are dropped. Places are ranked and kept as `OverpassPlacesSource` ranks them.
-/// `find` looks one place up by name, with no chain filter, since a suggested place may be a chain on purpose.
+/// `find` looks one place up by name, with no chain filter, since a suggested place may be a chain on purpose. When
+/// the full name finds nothing, `find` sends one more search with a shorter form of the name (see `shorterQuery`),
+/// because Nominatim needs every word of the query in the place's name. That search ignores street, place and
+/// boundary rows, so a shortened name never matches a road of the same name.
 ///
 /// Every request waits for the pacer first. The public policy allows one request per second, so the default pacer does
 /// too. Tests inject a clock and a sleeper.
@@ -37,6 +40,8 @@ public struct NominatimPlacesSource: Sendable {
     static let sweepRowLimit = 30
     /// Rows asked for in a name lookup.
     static let findRowLimit = 10
+    /// Categories of the rows a shortened name never matches: streets, named areas and boundaries.
+    private static let shortenedSearchIgnoredCategories: Set<String> = ["highway", "place", "boundary"]
 
     private let fetcher: any HTTPFetching
     private let pacer: RequestPacer
@@ -79,7 +84,9 @@ public struct NominatimPlacesSource: Sendable {
     }
 
     /// The place with the name most like `name` within `radiusMetres` of `centre`, or nil when none is similar enough.
-    /// It sends no request when the name has no significant word. Never throws.
+    /// When the full name answers with no match, one more search goes out with `shorterQuery(name)`, and its rows
+    /// that are streets, named areas or boundaries are ignored. It sends no request when the name has no significant
+    /// word. Never throws.
     public func find(
         named name: String,
         near centre: Coordinate,
@@ -90,12 +97,51 @@ public struct NominatimPlacesSource: Sendable {
         guard !NameTokens.significant(name, cityName: cityName).isEmpty else { return .success(nil) }
         let box = Self.viewbox(around: centre, radiusMetres: radiusMetres)
         do {
-            let rows = try await rows(for: name, viewbox: box, limit: Self.findRowLimit)
-            return .success(Self.best(for: name, among: rows, near: centre, cityName: cityName,
-                                      checkedAt: checkedAt))
+            let fullRows = try await rows(for: name, viewbox: box, limit: Self.findRowLimit)
+            if let place = Self.best(for: name, among: fullRows, near: centre, cityName: cityName,
+                                     checkedAt: checkedAt) {
+                return .success(place)
+            }
+            guard let shorter = Self.shorterQuery(name, cityName: cityName) else { return .success(nil) }
+            let shorterRows = try await rows(for: shorter, viewbox: box, limit: Self.findRowLimit)
+            return .success(Self.best(for: name, alternative: shorter, among: shorterRows, near: centre,
+                                      cityName: cityName, checkedAt: checkedAt,
+                                      ignoring: Self.shortenedSearchIgnoredCategories))
         } catch {
             return .failure(Self.sourcesError(error))
         }
+    }
+
+    /// A shorter form of a name for a second search: apostrophes removed, outer punctuation removed from each word, a
+    /// leading "The" dropped, and trailing generic, place-type or city words dropped, keeping at least one word. Nil
+    /// when nothing is shortened (compared case-insensitively) or nothing is left. "Whitelock's Ale House" becomes
+    /// "Whitelocks", and "Kirkgate Market" becomes "Kirkgate".
+    static func shorterQuery(_ name: String, cityName: String?) -> String? {
+        var words = name.split(whereSeparator: \.isWhitespace)
+            .map { cleanWord(String($0)) }
+            .filter { !$0.isEmpty }
+        if words.count > 1, words.first?.lowercased() == "the" {
+            words.removeFirst()
+        }
+        let cityWords = Set((cityName ?? "").lowercased()
+            .split(whereSeparator: { !$0.isLetter && !$0.isNumber })
+            .map(String.init))
+        while words.count > 1, let last = words.last?.lowercased(),
+              NameTokens.generic.contains(last) || NameTokens.placeTypeWords.contains(last)
+                || cityWords.contains(last) {
+            words.removeLast()
+        }
+        let shorter = words.joined(separator: " ")
+        let original = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !shorter.isEmpty, shorter.lowercased() != original.lowercased() else { return nil }
+        return shorter
+    }
+
+    /// A word without apostrophes (so "Whitelock's" is "Whitelocks") and without the punctuation at either end.
+    private static func cleanWord(_ word: String) -> String {
+        let apostrophes: Set<Character> = ["'", "\u{2019}"]
+        let unapostrophed = String(word.filter { !apostrophes.contains($0) })
+        return unapostrophed.trimmingCharacters(in: .punctuationCharacters)
     }
 
     // MARK: Requests
@@ -206,15 +252,22 @@ public struct NominatimPlacesSource: Sendable {
         let distance: Double
     }
 
-    /// The most similar name among the rows, from `acceptableSimilarity` up. Ties go to the nearest.
+    /// The most similar name among the rows, from `acceptableSimilarity` up. Ties go to the nearest. A row's similarity
+    /// is the better of `name` and `alternative`, and rows in the `ignoring` categories are skipped.
     static func best(
         for name: String,
+        alternative: String? = nil,
         among rows: [NominatimRow],
         near centre: Coordinate,
         cityName: String?,
-        checkedAt: LocalDate
+        checkedAt: LocalDate,
+        ignoring ignoredCategories: Set<String> = []
     ) -> Place? {
+        let names = [name, alternative].compactMap { $0 }
         let matches = rows.compactMap { row -> NamedMatch? in
+            if let category = row.category, ignoredCategories.contains(category) {
+                return nil
+            }
             let tags = tags(for: row, extra: textTags(row.extratags))
             guard let point = row.coordinate,
                   let place = OSMPlaceMapper.makePlace(osmType: row.osmType, osmId: row.osmId, tags: tags,
@@ -222,7 +275,9 @@ public struct NominatimPlacesSource: Sendable {
             else {
                 return nil
             }
-            let similarity = NameTokens.nameSimilarity(name, place.name, cityName: cityName)
+            let similarity = names
+                .map { NameTokens.nameSimilarity($0, place.name, cityName: cityName) }
+                .max() ?? 0
             guard similarity >= NameTokens.acceptableSimilarity else { return nil }
             return NamedMatch(place: place, similarity: similarity, distance: Geo.metres(from: centre, to: point))
         }
