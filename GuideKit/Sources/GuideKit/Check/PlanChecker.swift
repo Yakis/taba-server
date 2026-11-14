@@ -1,5 +1,5 @@
-/// Checks a guide's plan against opening hours, walking times, daylight, meals, travel, the stay, pace and
-/// repeated places.
+/// Checks a guide's plan against opening hours, walking times, daylight, meals, travel, the stay, pace, interests,
+/// spend and repeated places.
 ///
 /// The rules and numbers match the planning prompt, so the AI and this checker agree.
 public struct PlanChecker: Sendable {
@@ -22,6 +22,7 @@ public struct PlanChecker: Sendable {
             + repeatFindings(context)
             + contradictionFindings(context)
             + listFindings(context)
+            + preferenceFindings(context)
         return findings.sorted(by: Self.isOrderedBefore).map(\.issue)
     }
 

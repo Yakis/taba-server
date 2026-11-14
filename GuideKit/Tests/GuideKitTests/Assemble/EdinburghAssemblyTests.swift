@@ -105,7 +105,8 @@ struct EdinburghAssemblyTests {
                 message: issue.message
             )
         }
-        #expect(fixtureIssues.count == 9)
+        // Ten: the new rest check flags 24 November, a full day with no rest stop (plan.md rule 10).
+        #expect(fixtureIssues.count == 10)
         #expect(Plan.issues(assembled.result.guide) == expected)
     }
 

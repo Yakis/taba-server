@@ -48,4 +48,20 @@ public enum IssueKind: String, CaseIterable, Hashable, Sendable, Codable {
     case listKindMismatch
     /// A trip interest that no stop serves, though at least one candidate does. Info only: it never triggers a repair.
     case interestMissed
+    /// The top-ranked trip interest gets fewer main-stop minutes than a lower-ranked one.
+    case topInterestOutweighed
+    /// One trip interest takes more than half of all main-stop minutes.
+    case interestDominates
+    /// A day has more than two drink stops.
+    case drinkHeavyDay
+    /// A day has more main stops than the trip's pace allows.
+    case mainStopsOverPace
+    /// A full day has fewer main stops than the pace plans for. Info only: it never triggers a repair.
+    case mainStopsUnderPace
+    /// A full day's first main stop starts before the pace's earliest time.
+    case startsBeforePace
+    /// A full day on a relaxed or unhurried pace has no rest stop of 45 minutes or more.
+    case restMissing
+    /// A meal or drink costs more than the trip's daily spend allows.
+    case overSpend
 }
