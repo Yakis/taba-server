@@ -1,6 +1,6 @@
 ---
 id: plan
-version: 10
+version: 11
 role: instructions
 output: PlanDraft
 effort: high
@@ -38,14 +38,16 @@ the words. Your job is choosing and timing.
   ride, as code decides. Measured by code, keyed by stable area cluster ids.
 - `candidates`: the only places you may use, including the booked stay, the luggage store and the arrival and
   departure places when there are any. They are ordered by the best-ranked interest each one serves, so the
-  first candidates serve the top interests. Each has `id`, `name`,
-  `kind`, `area` (the stable cluster id used in `areaTravelMinutes`), `areaName` (the human-readable majority
+  first candidates serve the top interests; among those, the places research picked come first. Each has `id`,
+  `name`, `kind`, `area` (the stable cluster id used in `areaTravelMinutes`), `areaName` (the human-readable majority
   label for the cluster; different clusters can share a name), `fromBase` (`mode`, `walk` or `transit` for a
   bus or taxi ride, and `minutes` from `anchors.base`, as code decides; `null` when there is no base), `indoor`,
   `priceLevel` (1–4 or `null`), `bookingNeeded`, and
   `hours` for each trip date. Hours are one of: a list of open periods such as `"10:00-16:00"` (a close time
   earlier than the open time means it closes after midnight), `"closed"`, `"always"` for public spaces, or
-  `"unknown"`. `interests` (when present): which of the traveller's interests this place serves.
+  `"unknown"`. `interests` (when present): which of the traveller's interests this place serves. `researched`
+  (when present, always `true`): research picked this place by name as worth going to for this trip. The other
+  candidates are only what happens to be nearby.
 - `findings`: time-bound facts for these dates from earlier research, such as markets, events and closures.
   Each has an `id` and other structured fields at the top level; `external` contains `title`, `summary`,
   `times`, `placeName`, `address` and `sourceTitle`.
@@ -140,7 +142,11 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
 
 ## C. Taste.
 
-16. Give each day one clear highlight and a theme you can say in a few words. Rank means weight. The top-ranked
+16. Prefer the places research picked. For a main stop, a meal or a drink, choose a candidate with
+    `researched: true` when one fits the day's area, hours and time, and use another candidate only when none
+    does. Each day's highlight is a researched place whenever one is open that day. This never overrides
+    sections A and B, the rank order of the interests or `dailySpend`.
+17. Give each day one clear highlight and a theme you can say in a few words. Rank means weight. The top-ranked
     interest gets the most time across the trip and its best slots: its best time of day and its most memorable
     candidate. Each next interest gets less. Every interest gets at least one stop when a candidate or a finding
     serves it (`interests` says which interests each candidate serves), using that candidate or finding. No single
@@ -152,13 +158,13 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
     streets and neighbourhoods whose `interests` include it. If no candidate or finding serves an interest, say
     so in `openQuestions`. Don't put two stops of the same kind back to back, unless that kind is
     the top interest.
-17. Keep to `dailySpend`: mostly `priceLevel` 1–2 for `low`, up to 3 for `moderate`, any for `high`. Free
+18. Keep to `dailySpend`: mostly `priceLevel` 1–2 for `low`, up to 3 for `moderate`, any for `high`. Free
     sights suit every level. A meal or drink above that ceiling is a deliberate exception only, and the check
     will flag it.
-18. Respect mobility notes. For anyone who mentions stairs or hills, avoid long climbs late in the day.
-19. Leave slack. A plan with 15 minutes to spare beats one that only just fits.
-20. Mark stops that depend on weather or mood as `flexible: true`.
-21. Suggest freely, as suggestions: an optional detour as a `flexible` stop, a table worth booking, a rain swap.
+19. Respect mobility notes. For anyone who mentions stairs or hills, avoid long climbs late in the day.
+20. Leave slack. A plan with 15 minutes to spare beats one that only just fits.
+21. Mark stops that depend on weather or mood as `flexible: true`.
+22. Suggest freely, as suggestions: an optional detour as a `flexible` stop, a table worth booking, a rain swap.
     Never treat anything as arranged unless `anchors` says it is.
 
 # Lists

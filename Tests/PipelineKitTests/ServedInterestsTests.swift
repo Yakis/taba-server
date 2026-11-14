@@ -25,4 +25,12 @@ struct ServedInterestsTests {
                                              searchLabels: ["stall": [label]])
         #expect(served == ["stall": ["Photography"]])
     }
+
+    @Test func aResearchLabelAloneServesNothing() {
+        let places = ["stall": place("stall", .other), "pub": place("pub", .pub)]
+        let labels = [InterestMatch.researchLabel]
+        let served = ServedInterests.byPlace(places, interests: ["Photography", "Pubs", "Food"],
+                                             searchLabels: ["stall": labels, "pub": labels])
+        #expect(served == ["pub": ["Pubs"]])
+    }
 }

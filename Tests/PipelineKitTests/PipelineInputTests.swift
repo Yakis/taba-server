@@ -177,6 +177,94 @@ extension PipelineInputTests {
         }
     }
 
+    @Test func researchInputCarriesTheDailySpend() throws {
+        let guide = try guide()
+        let research = try PipelineInputBuilder.research(trip: guide.trip, stayArea: "Old Town")
+        #expect(research.objectValue?["dailySpend"] == .string(guide.trip.budget.dailySpend.rawValue))
+    }
+
+    @Test func researchPicksAreFlaggedOnlyInThePlanInput() throws {
+        let source = try guide()
+        let base = try measurements(source)
+        let picked = "osm:node/57543992"
+        let labeled = withLabels(base, [picked: [InterestMatch.researchLabel]])
+        let input = try PipelineInputBuilder.plan(guide: source, measurements: labeled, weather: [],
+                                                  findings: [], requests: .null)
+        let candidates = try #require(input.objectValue?["candidates"]?.arrayValue).compactMap(\.objectValue)
+        let pick = try #require(candidates.first { $0["id"] == .string(picked) })
+        #expect(pick["researched"] == .bool(true))
+        for entry in candidates where entry["id"] != .string(picked) {
+            #expect(entry["researched"] == nil)
+        }
+    }
+
+    @Test func writeInputNeverCarriesTheResearchedFlag() throws {
+        let source = try guide()
+        let base = try measurements(source)
+        let draft = draft(source)
+        let stopPlace = try #require(draft.days.first?.stops.compactMap(\.placeId).first)
+        let labeled = withLabels(base, [stopPlace: [InterestMatch.researchLabel]])
+        let write = try PipelineInputBuilder.write(guide: assembled(source, draft).guide, draft: draft,
+                                                   measurements: labeled, weather: [], findings: [],
+                                                   locale: "en-GB")
+        let places = try #require(write.objectValue?["places"]?.arrayValue).compactMap(\.objectValue)
+        #expect(places.contains { $0["id"] == .string(stopPlace) })
+        #expect(places.allSatisfy { $0["researched"] == nil })
+    }
+
+    @Test func researchPicksRankAfterTheInterestsTheyServeAndFirstAmongTheRest() throws {
+        let source = try guide()
+        let base = try measurements(source)
+        var places = source.places
+        let museum = try #require(places["osm:node/33185107"])
+        places["osm:node/33185107"] = withKind(museum, .museum)
+        let trip = Trip(destination: source.trip.destination, dates: source.trip.dates, party: source.trip.party,
+                        budget: source.trip.budget, interests: ["Pubs", "Museums"], pace: source.trip.pace,
+                        voice: source.trip.voice)
+        let guide = Guide(id: source.id, version: source.version, status: source.status, trip: trip,
+                          bookings: source.bookings, stay: source.stay, places: places, days: source.days,
+                          lists: source.lists, tasting: source.tasting, practical: source.practical,
+                          sources: source.sources)
+        let labeled = withLabels(base, [
+            "osm:node/33185107": [InterestMatch.researchLabel],  // a researched museum
+            "osm:node/57543992": [InterestMatch.researchLabel],  // a researched pub
+            "osm:way/416314343": [InterestMatch.researchLabel]   // a researched street that serves no interest
+        ])
+        let input = try PipelineInputBuilder.plan(guide: guide, measurements: labeled, weather: [],
+                                                  findings: [], requests: .null)
+        let ids = try #require(input.objectValue?["candidates"]?.arrayValue).compactMap { $0.objectValue?["id"] }
+        func position(_ id: String) throws -> Int { try #require(ids.firstIndex(of: .string(id))) }
+        let unresearchedPub = try position("osm:node/1367318907")
+        let researchedPub = try position("osm:node/57543992")
+        let researchedMuseum = try position("osm:node/33185107")
+        let researchedStreet = try position("osm:way/416314343")
+        let unresearchedStreet = try position("osm:way/192212388")
+        // A researched pub comes before an unresearched pub with a smaller id.
+        #expect(researchedPub < unresearchedPub)
+        // An unresearched pub comes before a researched museum, which serves a later interest.
+        #expect(unresearchedPub < researchedMuseum)
+        // Places serving no interest come after the places that serve one, research picks included.
+        #expect(researchedMuseum < researchedStreet)
+        // Among places serving no interest, the researched one is first.
+        #expect(researchedStreet < unresearchedStreet)
+    }
+
+    private func withKind(_ place: Place, _ kind: PlaceKind) -> Place {
+        Place(id: place.id, name: place.name, kind: kind, location: place.location, hours: place.hours,
+              priceLevel: place.priceLevel, booking: place.booking, indoor: place.indoor, images: place.images,
+              facts: place.facts, copy: place.copy, website: place.website, phone: place.phone,
+              interests: place.interests)
+    }
+    private func withLabels(_ base: PipelineInputMeasurements,
+                            _ labels: [String: [String]]) -> PipelineInputMeasurements {
+        PipelineInputMeasurements(areas: base.areas, areaLabels: base.areaLabels, walkFromBase: base.walkFromBase,
+                                  areaWalkMinutes: base.areaWalkMinutes, alwaysOpenPlaceIDs: base.alwaysOpenPlaceIDs,
+                                  arrivalWalkMinutes: base.arrivalWalkMinutes,
+                                  departureWalkMinutes: base.departureWalkMinutes,
+                                  arrivalMarginMinutes: base.arrivalMarginMinutes,
+                                  departureMarginMinutes: base.departureMarginMinutes, searchLabels: labels)
+    }
+
     @Test func hoursCarryOverAndExceptions() throws {
         let friday = try #require(LocalDate("2025-11-21"))
         let saturday = try #require(friday.adding(days: 1))

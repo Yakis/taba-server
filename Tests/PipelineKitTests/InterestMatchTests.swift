@@ -119,4 +119,22 @@ struct InterestMatchTests {
         #expect(served == ["Photos"])
         #expect(InterestMatch.interestLabel(for: "Art") == "interest:Art")
     }
+
+    @Test func researchLabelChangesNoInterest() {
+        let interests = ["Food", "Coffee", "Pubs", "Bars", "Museums", "Music", "Art", "Nature", "History",
+                         "Photography", "Shopping", "Surfing"]
+        let kinds: [PlaceKind] = [.restaurant, .cafe, .pub, .bar, .museum, .venue, .landmark, .viewpoint, .shop, .other]
+        let labels = ["music", "parks", "heritage", "galleries", "views"]
+        for kind in kinds {
+            for indoor in [true, false] {
+                let without = InterestMatch.interests(for: interests, kind: kind, indoor: indoor, searchLabels: labels)
+                let with = InterestMatch.interests(for: interests, kind: kind, indoor: indoor,
+                                                   searchLabels: labels + [InterestMatch.researchLabel])
+                #expect(with == without, "\(kind.rawValue) indoor=\(indoor) must serve the same interests")
+            }
+        }
+        #expect(InterestMatch.researchLabel == "research")
+        #expect(!serves("Research", .other, labels: [InterestMatch.researchLabel]))
+        #expect(!serves("Food", .other, labels: [InterestMatch.researchLabel]))
+    }
 }

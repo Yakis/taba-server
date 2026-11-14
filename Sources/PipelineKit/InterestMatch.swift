@@ -4,7 +4,7 @@ import GuideKit
 /// Which of the traveller's interests a place serves, so the plan can give each interest a stop.
 ///
 /// Interest words are split on non-letters and lowercased, and match a row's word whole: "art" does not match
-/// "architecture". A place serves an interest when its kind is in that row, or when Foursquare found it in one of the
+/// "architecture". A place serves an interest when its kind is in that row, or when a sweep found it in one of the
 /// row's interest searches (`searchLabels`, from `InterestSearches`). Photography's kinds count only outdoors.
 ///
 /// Research can also say which interest a suggested place serves, with the label made by `interestLabel(for:)`.
@@ -40,6 +40,10 @@ public enum InterestMatch {
             outdoorOnly: true),
         Row(words: ["shopping", "shops"], kinds: [.shop, .market], searchLabels: [], outdoorOnly: false)
     ]
+
+    /// The search label of a place that research picked by name as worth going to. It matches no row and serves no
+    /// interest, so it never changes which interests a place serves.
+    public static let researchLabel = "research"
 
     /// The search label that research gives a suggested place for the traveller's interest, as written in the trip.
     public static func interestLabel(for interest: String) -> String {

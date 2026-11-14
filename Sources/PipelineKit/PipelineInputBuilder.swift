@@ -165,7 +165,8 @@ public enum PipelineInputBuilder {
 
     public static func research(trip: Trip, stayArea: String) throws -> JSONValue {
         .object(["destination": try value(trip.destination), "dates": try value(trip.dates),
-                 "stayArea": .string(stayArea), "interests": try value(trip.interests)])
+                 "stayArea": .string(stayArea), "interests": try value(trip.interests),
+                 "dailySpend": try value(trip.budget.dailySpend)])
     }
 
     /// Hours include the previous day's carry-over, except where today's explicit closure overrides it.
@@ -307,9 +308,7 @@ public enum PipelineInputBuilder {
             result["address"] = try optional(place.location.address)
             result["external"] = .object(["facts": try value(place.facts)])
         } else {
-            let served = InterestMatch.interests(for: interests, kind: place.kind, indoor: place.indoor,
-                                                 searchLabels: measurements.searchLabels[place.id] ?? [])
-            if !served.isEmpty { result["interests"] = .array(served.map { .string($0) }) }
+            result.merge(planFields(place, interests: interests, measurements: measurements)) { _, new in new }
         }
         return .object(result)
     }
@@ -389,14 +388,34 @@ public enum PipelineInputBuilder {
 
 /// The trip window of a day, in minutes since midnight. Kept apart from the enum so its body stays short.
 private extension PipelineInputBuilder {
-    /// The candidates, ordered by the best trip interest each one serves (its place in the trip's list), then by id.
-    /// A candidate that serves none comes last. The planner meets the top-ranked interests first.
+    /// The candidates, ordered by the best trip interest each one serves (its place in the trip's list), then places
+    /// research picked before the others, then by id. A candidate that serves none comes last, with research picks
+    /// first among those. The planner meets the top-ranked interests first.
     static func rankedCandidates(_ guide: Guide, measurements: PipelineInputMeasurements) -> [Place] {
         let interests = guide.trip.interests
         let ranked = guide.places.values.map { place in
-            (place: place, rank: bestInterestRank(place, interests: interests, measurements: measurements))
+            (place: place, rank: bestInterestRank(place, interests: interests, measurements: measurements),
+             researchOrder: isResearched(place, measurements: measurements) ? 0 : 1)
         }
-        return ranked.sorted { ($0.rank, $0.place.id) < ($1.rank, $1.place.id) }.map(\.place)
+        return ranked.sorted {
+            ($0.rank, $0.researchOrder, $0.place.id) < ($1.rank, $1.researchOrder, $1.place.id)
+        }.map(\.place)
+    }
+
+    /// Whether research picked the place by name, which is what its `researched` flag in the plan input says.
+    static func isResearched(_ place: Place, measurements: PipelineInputMeasurements) -> Bool {
+        (measurements.searchLabels[place.id] ?? []).contains(InterestMatch.researchLabel)
+    }
+
+    /// The fields only a plan candidate carries: the interests it serves, and `researched` when research picked it.
+    static func planFields(_ place: Place, interests: [String],
+                           measurements: PipelineInputMeasurements) -> [String: JSONValue] {
+        var fields: [String: JSONValue] = [:]
+        let served = InterestMatch.interests(for: interests, kind: place.kind, indoor: place.indoor,
+                                             searchLabels: measurements.searchLabels[place.id] ?? [])
+        if !served.isEmpty { fields["interests"] = .array(served.map { .string($0) }) }
+        if isResearched(place, measurements: measurements) { fields["researched"] = .bool(true) }
+        return fields
     }
 
     /// The position in the trip's interests of the best one `place` serves, or `Int.max` when it serves none.

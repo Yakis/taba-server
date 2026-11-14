@@ -3,7 +3,7 @@ import GuideKit
 /// The price levels of the stops against the trip's daily spend.
 public struct SpendScore: Codable, Sendable, Equatable {
     public let dailySpend: String
-    /// The highest price level the plan should use (plan.md rule 17): 2 for low, 3 for moderate, and nil for high,
+    /// The highest price level the plan should use (plan.md rule 18): 2 for low, 3 for moderate, and nil for high,
     /// where any level fits.
     public let ceiling: Int?
     /// Meal and drink stops.
