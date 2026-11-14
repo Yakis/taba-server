@@ -1,5 +1,4 @@
 import Foundation
-import FoursquareKit
 import GuideKit
 import SourcesKit
 import Synchronization
@@ -54,14 +53,6 @@ enum Samples {
         HTTPResponse(status: status, body: Data(json.utf8), headers: [:])
     }
 
-    static func places(_ json: String) throws -> [FoursquarePlace] {
-        try JSONDecoder().decode(FoursquareSearchResponse.self, from: Data(json.utf8)).results
-    }
-
-    static func place(_ json: String) throws -> FoursquarePlace {
-        try JSONDecoder().decode(FoursquarePlace.self, from: Data(json.utf8))
-    }
-
     static func coordinate(_ latitude: Double, _ longitude: Double) -> Coordinate {
         guard let value = Coordinate(latitude: latitude, longitude: longitude) else {
             preconditionFailure("bad test coordinate")
@@ -111,39 +102,5 @@ final class FakeClock: Sendable {
             value.now = value.now.advanced(by: duration)
             value.slept.append(duration)
         }
-    }
-}
-
-/// Foursquare place JSON for one hit, with the fields the tests vary.
-enum HitJSON {
-    static func place(
-        id: String,
-        name: String,
-        latitude: Double,
-        longitude: Double,
-        category: String,
-        categoryId: String = "4bf58dd8d48988d1c4941735",
-        website: String? = nil,
-        dateClosed: String? = nil
-    ) -> String {
-        var fields = [
-            "\"fsq_place_id\":\"\(id)\"",
-            "\"name\":\"\(name)\"",
-            "\"latitude\":\(latitude)",
-            "\"longitude\":\(longitude)",
-            "\"location\":{\"address\":\"1 Example Row\",\"formatted_address\":\"1 Example Row, Edinburgh\"}",
-            "\"categories\":[{\"fsq_category_id\":\"\(categoryId)\",\"name\":\"\(category)\"}]"
-        ]
-        if let website {
-            fields.append("\"website\":\"\(website)\"")
-        }
-        if let dateClosed {
-            fields.append("\"date_closed\":\"\(dateClosed)\"")
-        }
-        return "{" + fields.joined(separator: ",") + "}"
-    }
-
-    static func search(_ places: [String]) -> String {
-        "{\"results\":[" + places.joined(separator: ",") + "]}"
     }
 }

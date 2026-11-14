@@ -2,7 +2,6 @@ import Foundation
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
-import FoursquareKit
 import GuideKit
 
 /// Finds candidate places in OpenStreetMap through Overpass. A build asks it only when Nominatim gives

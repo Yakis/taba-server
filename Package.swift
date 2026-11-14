@@ -9,7 +9,6 @@ let package = Package(
     ],
     products: [
         .library(name: "PipelineKit", targets: ["PipelineKit"]),
-        .executable(name: "foursquare-probe", targets: ["FoursquareProbe"]),
         .executable(name: "taba-chatgpt", targets: ["TabaChatGPT"]),
         .library(name: "SourcesKit", targets: ["SourcesKit"]),
         .executable(name: "taba-sources-probe", targets: ["SourcesProbe"]),
@@ -37,21 +36,13 @@ let package = Package(
             dependencies: [.product(name: "GuideKit", package: "GuideKit"), "SourcesKit", "ResponsesKit"],
             path: ".",
             exclude: ["AGENTS.md", "CLAUDE.md", "README.md", "docs", "private", "probe-output", "scripts", "Tests",
-                      "GuideKit", "Sources/FoursquareKit", "Sources/FoursquareProbe", "Sources/ResponsesKit",
+                      "GuideKit", "Sources/ResponsesKit",
                       "Sources/TabaChatGPT", "Sources/SourcesKit", "Sources/SourcesProbe", "Sources/Taba",
                       "Sources/ServerHTTPKit", "Sources/ServerKit", "Sources/BuildKit",
                       "Sources/LivePipelineKit", "Sources/TabaServer", "Sources/GuideScoreKit", "Sources/TabaScore",
                       "Evaluation", "Dockerfile", "compose.local.yml", ".dockerignore"],
             sources: ["Sources/PipelineKit"],
             resources: [.copy("Prompts")]
-        ),
-        .target(
-            name: "FoursquareKit",
-            dependencies: [.product(name: "GuideKit", package: "GuideKit")]
-        ),
-        .executableTarget(
-            name: "FoursquareProbe",
-            dependencies: ["FoursquareKit", .product(name: "GuideKit", package: "GuideKit")]
         ),
         .target(
             name: "ResponsesKit",
@@ -66,7 +57,7 @@ let package = Package(
         ),
         .target(
             name: "SourcesKit",
-            dependencies: [.product(name: "GuideKit", package: "GuideKit"), "FoursquareKit"]
+            dependencies: [.product(name: "GuideKit", package: "GuideKit")]
         ),
         .target(
             name: "ServerKit",
@@ -125,7 +116,7 @@ let package = Package(
                                    "PipelineKit", "ResponsesKit"]),
         .executableTarget(
             name: "SourcesProbe",
-            dependencies: ["SourcesKit", "FoursquareKit", .product(name: "GuideKit", package: "GuideKit")]
+            dependencies: ["SourcesKit", .product(name: "GuideKit", package: "GuideKit")]
         ),
         .executableTarget(
             name: "Taba",
@@ -163,11 +154,7 @@ let package = Package(
         ),
         .testTarget(
             name: "SourcesKitTests",
-            dependencies: ["SourcesKit", "FoursquareKit", .product(name: "GuideKit", package: "GuideKit")]
-        ),
-        .testTarget(
-            name: "FoursquareProbeTests",
-            dependencies: ["FoursquareKit", .product(name: "GuideKit", package: "GuideKit")]
+            dependencies: ["SourcesKit", .product(name: "GuideKit", package: "GuideKit")]
         ),
         .testTarget(
             name: "ResponsesKitTests",

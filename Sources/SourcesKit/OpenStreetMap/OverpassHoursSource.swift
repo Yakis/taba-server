@@ -2,7 +2,6 @@ import Foundation
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
-import FoursquareKit
 import GuideKit
 
 /// A place to look up in OpenStreetMap.

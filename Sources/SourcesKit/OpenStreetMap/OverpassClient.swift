@@ -2,7 +2,6 @@ import Foundation
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
-import FoursquareKit
 import GuideKit
 
 /// Sends one Overpass query and decodes its elements. Both OpenStreetMap sources use it.

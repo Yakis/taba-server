@@ -2,13 +2,12 @@ import Foundation
 #if canImport(FoundationNetworking)
 import FoundationNetworking
 #endif
-import FoursquareKit
 import GuideKit
 import SourcesKit
 
-// One run for a person to read. It makes at most 30 requests, and it never prints the Foursquare key.
-// The key is read from FOURSQUARE_API_KEY. Without it, the Foursquare sweep and the hours lookup are skipped.
-// Each source runs on its own. A failure is printed and the run carries on with the next source.
+// One run for a person to read. It makes at most 30 requests and needs no key.
+// It sweeps OpenStreetMap (through Nominatim) for cafes and pubs, then checks their hours on Overpass, the weather,
+// and the area names. Each source runs on its own. A failure is printed and the run carries on with the next source.
 
 let requestLimit = 30
 let destinationName = "Edinburgh"
@@ -46,19 +45,22 @@ func step<Value>(_ name: String, _ work: () async throws -> Value) async -> Valu
     }
 }
 
-/// Foursquare cafes and pubs around the centre. Empty, with a message, when the key is not set.
-func foursquarePlaces(fetcher: CappedFetcher, centre: GeocodedPlace, today: LocalDate) async -> [Place] {
-    guard let key = ProcessInfo.processInfo.environment["FOURSQUARE_API_KEY"], !key.isEmpty else {
-        print("FOURSQUARE_API_KEY is not set, so the Foursquare sweep is skipped.")
-        return []
-    }
-    let source = FoursquarePlacesSource(fetcher: fetcher, apiKey: key)
-    let report = await source.sweep(kinds: [.cafe, .pub], around: centre.coordinate, limit: 10, checkedAt: today)
+/// Cafes and pubs around the centre, from OpenStreetMap through Nominatim's name search.
+func osmPlaces(fetcher: CappedFetcher, centre: GeocodedPlace, today: LocalDate) async -> [Place] {
+    let searches = [
+        NominatimPlacesSource.Search(label: "cafe", phrases: ["cafe"], filters: [#"["amenity"="cafe"]"#]),
+        NominatimPlacesSource.Search(label: "pub", phrases: ["pub", "bar"],
+                                     filters: [#"["amenity"="pub"]"#, #"["amenity"="bar"]"#])
+    ]
+    let source = NominatimPlacesSource(fetcher: fetcher)
+    let report = await source.sweep(searches: searches, around: centre.coordinate, limit: 10, checkedAt: today)
     for sweep in report.sweeps {
-        let note = sweep.failure.map { " (failed: \($0))" } ?? ""
-        print("Foursquare \(sweep.label): \(sweep.returned) returned\(note).")
+        print("OSM \(sweep.label): \(sweep.returned) returned.")
     }
-    print("Foursquare places after de-duplication and closed filtering: \(report.places.count).")
+    if let error = report.error {
+        print("OSM sweep reported: \(error). Some places may be missing.")
+    }
+    print("OSM places after de-duplication: \(report.places.count).")
     return report.places
 }
 
@@ -135,8 +137,8 @@ func run() async {
     }
     print("Centre: \(centre.displayName) (\(centre.countryCode ?? "no country code")).")
 
-    let places = await step("Foursquare sweep") {
-        await foursquarePlaces(fetcher: fetcher, centre: centre, today: today)
+    let places = await step("OSM sweep") {
+        await osmPlaces(fetcher: fetcher, centre: centre, today: today)
     } ?? []
 
     if !places.isEmpty {
