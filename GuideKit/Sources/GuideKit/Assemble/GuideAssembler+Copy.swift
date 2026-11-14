@@ -134,7 +134,28 @@ extension Place {
             facts: facts,
             copy: copy,
             website: website,
-            phone: phone
+            phone: phone,
+            interests: interests
+        )
+    }
+
+    /// This place with the interests it serves replaced.
+    func withInterests(_ interests: [String]?) -> Place {
+        Place(
+            id: id,
+            name: name,
+            kind: kind,
+            location: location,
+            hours: hours,
+            priceLevel: priceLevel,
+            booking: booking,
+            indoor: indoor,
+            images: images,
+            facts: facts,
+            copy: copy,
+            website: website,
+            phone: phone,
+            interests: interests
         )
     }
 }

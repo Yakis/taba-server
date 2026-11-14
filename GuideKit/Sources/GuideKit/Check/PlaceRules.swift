@@ -23,7 +23,7 @@ extension Place {
 
 extension Pace {
     /// The walking minutes a full day is planned around. The walking check warns above 1.2 times this.
-    var walkingLimitMinutes: Int {
+    public var walkingLimitMinutes: Int {
         switch self {
         case .relaxed:
             return 100

@@ -14,16 +14,24 @@ public struct GuideAssembler: Sendable {
     ///
     /// `weather` is the expected weather keyed by date. A day with no entry gets no weather, and the default leaves
     /// every day without weather.
+    ///
+    /// `servedInterests` maps a place id to the trip interests that place serves, recorded on the place. Places with no
+    /// entry get none.
     public func assemble(
         id: String,
         facts: TripFacts,
         draft: PlanDraft,
         copy: GuideCopy,
-        weather: [LocalDate: DayOutlook] = [:]
+        weather: [LocalDate: DayOutlook] = [:],
+        servedInterests: [String: [String]] = [:]
     ) -> AssemblyResult {
         var problems: [AssemblyProblem] = []
         let matched = Self.matchCopy(draft: draft, copy: copy, places: facts.places, problems: &problems)
         let places = Self.placesWithCopy(facts.places, referenced: matched.placeIds, copy: matched.places)
+            .mapValues { place in
+                let served = servedInterests[place.id] ?? []
+                return place.withInterests(served.isEmpty ? nil : served)
+            }
         let built = buildDays(draft: draft, matched: matched, places: places, weather: weather)
         let lists = draft.lists.map { draftList -> PlaceList in
             let text = matched.lists[draftList.key]

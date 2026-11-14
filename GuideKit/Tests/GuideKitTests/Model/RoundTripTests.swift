@@ -67,6 +67,18 @@ struct RoundTripTests {
         let json = try encodedJSON(place)
         #expect(!json.contains("\"website\""))
         #expect(!json.contains("\"phone\""))
+        #expect(!json.contains("\"interests\""))
+    }
+
+    @Test func placeWithInterestsRoundTripsInTripOrder() throws {
+        let plain = try #require(SampleGuide.samplePlaces().values.first)
+        let place = Place(
+            id: plain.id, name: plain.name, kind: plain.kind, location: plain.location, hours: plain.hours,
+            priceLevel: plain.priceLevel, booking: plain.booking, indoor: plain.indoor, images: plain.images,
+            facts: plain.facts, copy: plain.copy, interests: ["Pubs", "Food"]
+        )
+        #expect(try roundTrip(place) == place)
+        #expect(try encodedJSON(place).contains("\"interests\" : ["))
     }
 
     @Test func dayWithoutWeatherOmitsTheKey() throws {

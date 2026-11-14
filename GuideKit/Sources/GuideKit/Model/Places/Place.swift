@@ -18,6 +18,9 @@ public struct Place: Hashable, Sendable, Codable {
     public let website: String?
     /// The phone number as the place publishes it, for example "+44 131 496 0000". Omitted when unknown.
     public let phone: String?
+    /// The traveller's interests, as written and in trip order, that this place serves. Omitted in guides made before
+    /// this was recorded, and when the place serves none.
+    public let interests: [String]?
 
     public init(
         id: String,
@@ -32,7 +35,8 @@ public struct Place: Hashable, Sendable, Codable {
         facts: [Fact],
         copy: PlaceCopy?,
         website: String? = nil,
-        phone: String? = nil
+        phone: String? = nil,
+        interests: [String]? = nil
     ) {
         self.id = id
         self.name = name
@@ -47,5 +51,6 @@ public struct Place: Hashable, Sendable, Codable {
         self.copy = copy
         self.website = website
         self.phone = phone
+        self.interests = interests
     }
 }

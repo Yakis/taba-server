@@ -130,6 +130,17 @@ struct GuideAssemblyTests {
         #expect(result.guide.days[0].weather == nil)
     }
 
+    @Test func servedInterestsAreRecordedOnTheirPlacesOnly() {
+        let facts = TripFacts(trip: SampleGuide.trip(), bookings: [], stay: SampleGuide.stay(),
+                              places: SampleGuide.samplePlaces(), practical: [], sources: [])
+        let served = [SampleGuide.marketId: ["Markets", "Food"], SampleGuide.cafeId: []]
+        let result = GuideAssembler(walkTimes: FixedWalk(fixedMinutes: 7)).assemble(
+            id: "sample", facts: facts, draft: outOfOrderDraft(), copy: completeCopy(), servedInterests: served
+        )
+        #expect(result.guide.places[SampleGuide.marketId]?.interests == ["Markets", "Food"])
+        #expect(result.guide.places[SampleGuide.cafeId]?.interests == nil)
+    }
+
     @Test func weatherDefaultsToNoneForEveryDay() {
         let result = assemble(outOfOrderDraft(), completeCopy())
         #expect(result.guide.days.allSatisfy { $0.weather == nil })
