@@ -1,6 +1,6 @@
 ---
 id: plan
-version: 11
+version: 12
 role: instructions
 output: PlanDraft
 effort: high
@@ -146,6 +146,12 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
     `researched: true` when one fits the day's area, hours and time, and use another candidate only when none
     does. Each day's highlight is a researched place whenever one is open that day. This never overrides
     sections A and B, the rank order of the interests or `dailySpend`.
+    Never pass over a researched place only because its hours are `"unknown"`: research found it open to
+    visitors, and the places database often has no hours for well-known places. Use it under rule 5, as a
+    `flexible: true` stop at a time such a place is normally open (a cafe from mid-morning to late afternoon, a
+    restaurant at lunch or dinner, a pub or bar from noon into the evening, a museum or shop from 10:00 to
+    17:00), and ask the traveller once in `openQuestions` to check its hours. At most two such stops a day,
+    and never both lunch and dinner on the same day.
 17. Give each day one clear highlight and a theme you can say in a few words. Rank means weight. The top-ranked
     interest gets the most time across the trip and its best slots: its best time of day and its most memorable
     candidate. Each next interest gets less. Every interest gets at least one stop when a candidate or a finding
