@@ -54,8 +54,9 @@ actor RunRecord {
             fields = ["event": .string("response"), "step": .string(step), "answer": .string(result.text),
                       "seconds": .number(seconds), "status": .string(result.status ?? ""),
                       "sources": .array(result.sourceURLs.map { .string($0) }), "usage": value(result.usage)]
-        case let .requestFailed(step, _, seconds):
-            fields = ["event": .string("requestFailed"), "step": .string(step), "seconds": .number(seconds)]
+        case let .requestFailed(step, message, seconds):
+            fields = ["event": .string("requestFailed"), "step": .string(step), "seconds": .number(seconds),
+                      "message": .string(String(message.prefix(500)))]
         case let .decodeFailed(step, _):
             fields = ["event": .string("decodeFailed"), "step": .string(step)]
         case let .research(accepted, ids):

@@ -33,8 +33,11 @@ struct EvidenceRecord: Encodable {
                 fields = ["event": .string("response"), "step": .string(step), "answer": .string(result.text),
                           "seconds": .number(seconds), "status": .string(result.status ?? ""),
                           "sources": try Self.value(result.sourceURLs), "usage": try Self.value(result.usage)]
-            case let .requestFailed(step, _, seconds):
-                fields = ["event": .string("requestFailed"), "step": .string(step), "seconds": .number(seconds)]
+            case let .requestFailed(step, message, seconds):
+                // The error says why: the HTTP status, and the provider's own message when it sent one. Errors
+                // never carry a key or a token. Long messages are cut.
+                fields = ["event": .string("requestFailed"), "step": .string(step), "seconds": .number(seconds),
+                          "message": .string(String(message.prefix(500)))]
             case let .decodeFailed(step, _):
                 fields = ["event": .string("decodeFailed"), "step": .string(step)]
             case let .research(accepted, ids):
