@@ -1,5 +1,4 @@
 import Foundation
-import FoursquareKit
 import GuideKit
 import PipelineKit
 import ResponsesKit
@@ -13,12 +12,12 @@ public struct Prepared: Sendable {
 }
 
 public enum SourcePreparation {
-    public static func prepare(_ options: SourceInput, fetcher: CappedFetcher, key: String,
-                               record: SourceRecord) async throws -> Prepared {
+    public static func prepare(_ options: SourceInput, fetcher: CappedFetcher, record: SourceRecord) async throws
+        -> Prepared {
         let geocoder = NominatimGeocoder(fetcher: fetcher)
         let basics = try await prepareBasics(options, fetcher: fetcher, geocoder: geocoder, record: record)
-        return try await prepareCandidates(options, basics: basics, fetcher: fetcher, key: key,
-                                           geocoder: geocoder, record: record)
+        return try await prepareCandidates(options, basics: basics, fetcher: fetcher, geocoder: geocoder,
+                                           record: record)
     }
 
     public static func prepareBasics(_ options: SourceInput, fetcher: CappedFetcher,
@@ -59,15 +58,13 @@ public enum SourcePreparation {
         return BasicsCheckpoint(facts: facts, weather: outlook.days, today: today)
     }
 
-    // swiftlint:disable:next function_parameter_count
     public static func prepareCandidates(_ options: SourceInput, basics: BasicsCheckpoint, fetcher: CappedFetcher,
-                                         key: String, geocoder: NominatimGeocoder, record: SourceRecord) async throws
-        -> Prepared {
+                                         geocoder: NominatimGeocoder, record: SourceRecord) async throws -> Prepared {
         let started = ContinuousClock.now
         let base = basics.facts.value
         var places = base.places
         var sources = base.sources
-        let (lookup, searchLabels) = try await collectCandidates(options, fetcher: fetcher, key: key,
+        let (lookup, searchLabels) = try await collectCandidates(options, fetcher: fetcher,
             today: basics.today, centre: base.trip.destination.centre, seed: options.facts, places: &places,
             sources: &sources, record: record)
         let facts = TripFacts(trip: base.trip, bookings: base.bookings, stay: base.stay, places: places,
@@ -102,66 +99,44 @@ public enum SourcePreparation {
                              "seconds": .number(seconds(started.duration(to: .now)))])
     }
 
-    /// The interest search labels that found each place, by place id. Only the labels of `interestSearches` count.
-    /// The sweeps may come from Foursquare or from the OpenStreetMap fallback.
+    /// The interest search labels that found each place, by place id. Only the labels in `interestLabels` count.
     static func searchLabels(_ sweeps: [(label: String, placeIds: [String])],
-                             interestSearches: [FoursquarePlacesSource.CategorySearch]) -> [String: [String]] {
-        let interestLabels = Set(interestSearches.map(\.label))
+                             interestLabels: [String]) -> [String: [String]] {
+        let interests = Set(interestLabels)
         var labels: [String: Set<String>] = [:]
-        for sweep in sweeps where interestLabels.contains(sweep.label) {
+        for sweep in sweeps where interests.contains(sweep.label) {
             for id in sweep.placeIds { labels[id, default: []].insert(sweep.label) }
         }
         return labels.mapValues { $0.sorted() }
     }
 
     // swiftlint:disable:next function_parameter_count
-    static func collectCandidates(_ options: SourceInput, fetcher: CappedFetcher, key: String, today: LocalDate,
+    static func collectCandidates(_ options: SourceInput, fetcher: CappedFetcher, today: LocalDate,
                                   centre: Coordinate, seed: Guide?, places: inout [String: Place],
                                   sources: inout [Source],
                                   record: SourceRecord,
-                                  openStreetMap: OpenStreetMapFallback? = nil) async throws
+                                  openStreetMap: OpenStreetMapPlaces? = nil) async throws
         -> (OverpassLookup, [String: [String]]) {
-        let started = ContinuousClock.now
         let baseKinds: [PlaceKind] = [.cafe, .restaurant, .pub, .viewpoint, .museum, .market, .shop, .grocery]
-        let interestSearches = InterestSearches.searches(for: options.preferences.interests)
-        let searches = FoursquarePlacesSource.searches(for: baseKinds) + interestSearches
-        let report = await FoursquarePlacesSource(fetcher: fetcher, apiKey: key)
-            .sweep(searches: searches, around: centre, limit: 6, checkedAt: today)
-        try Task.checkCancellation()
-        await record.append(["event": .string("foursquareSweep"),
-                             "seconds": .number(seconds(started.duration(to: .now))),
-                             "outcomes": .array(report.sweeps.map {
-            .object(["kind": .string($0.label), "returned": .integer($0.returned),
-                     "failureCategory": .string($0.failure == nil ? "none" : "sourceFailure")])
-        })])
-        // Foursquare is the first choice. OpenStreetMap is asked only when Foursquare gave no place at all.
-        var found = report.places
-        var sweeps = report.sweeps.map { (label: $0.label, placeIds: $0.placeIds) }
-        var openStreetMapSources: [Source] = []
-        if report.places.isEmpty {
-            let fallback = openStreetMap ?? OpenStreetMapFallback(fetcher: fetcher)
-            let osm = try await fallback.sweep(searches, centre: centre, today: today, record: record)
-            found = osm.places
-            sweeps = osm.sweeps.map { (label: $0.label, placeIds: $0.placeIds) }
-            openStreetMapSources = osm.sources
-        }
+        let interestLabels = InterestSearches.labels(for: options.preferences.interests)
+        let labels = baseKinds.map(\.rawValue) + interestLabels
+        let placeSource = openStreetMap ?? OpenStreetMapPlaces(fetcher: fetcher)
+        let report = try await placeSource.sweep(labels, centre: centre, today: today, record: record)
+        let found = report.places
         guard !found.isEmpty || seed != nil else { throw SourcePreparationError.noCandidates }
         let additions = found.filter { places[$0.id] == nil }
         for place in additions { places[place.id] = place }
-        if !report.places.isEmpty && !sources.contains(where: { $0.id == FoursquarePlacesSource.sourceId }) {
-            sources.append(Source(id: FoursquarePlacesSource.sourceId, url: "https://foursquare.com",
-                                  title: "Foursquare", checkedAt: today))
-        }
         let addedIds = Set(additions.map(\.id))
-        for source in openStreetMapSources where addedIds.contains(source.id)
-            && !sources.contains(where: { $0.id == source.id }) {
-            sources.append(source)
+        for reportSource in report.sources where addedIds.contains(reportSource.id)
+            && !sources.contains(where: { $0.id == reportSource.id }) {
+            sources.append(reportSource)
         }
-        // OpenStreetMap places already carry their opening hours, so only the Foursquare places are looked up.
-        let foursquareAdditions = additions.filter { !$0.id.hasPrefix(OverpassPlacesSource.idPrefix) }
-        let lookup = try await addHours(foursquareAdditions, city: options.destination, today: today,
+        // OpenStreetMap places already carry their opening hours, so only the places from elsewhere are looked up.
+        let lookupAdditions = additions.filter { !$0.id.hasPrefix(OverpassPlacesSource.idPrefix) }
+        let lookup = try await addHours(lookupAdditions, city: options.destination, today: today,
                                         fetcher: fetcher, places: &places, sources: &sources, record: record)
-        return (lookup, searchLabels(sweeps, interestSearches: interestSearches))
+        let sweeps = report.sweeps.map { (label: $0.label, placeIds: $0.placeIds) }
+        return (lookup, searchLabels(sweeps, interestLabels: interestLabels))
     }
 
     // swiftlint:disable:next function_parameter_count

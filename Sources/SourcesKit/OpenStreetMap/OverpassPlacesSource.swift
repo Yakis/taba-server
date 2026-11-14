@@ -5,8 +5,8 @@ import FoundationNetworking
 import FoursquareKit
 import GuideKit
 
-/// Finds candidate places in OpenStreetMap through Overpass. It is the first OpenStreetMap fallback for when Foursquare
-/// gives nothing; Nominatim is the second.
+/// Finds candidate places in OpenStreetMap through Overpass. A build asks it only when Nominatim gives
+/// nothing.
 ///
 /// `sweep` runs every search in one Overpass query. Each filter is one union branch around the centre, and an element
 /// goes to every search that has a filter it matches. Elements without a name or a coordinate, and those whose

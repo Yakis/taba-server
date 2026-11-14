@@ -6,15 +6,13 @@ import ResponsesKit
 import Testing
 
 struct SearchLabelsTests {
-    @Test func labelsComeOnlyFromTheInterestSearches() {
+    @Test func labelsComeOnlyFromTheInterestLabels() {
         let sweeps: [(label: String, placeIds: [String])] = [
             ("cafe", ["a", "b"]), ("music", ["b", "c"]), ("parks", []), ("heritage", ["c"])
         ]
-        let interests = [FoursquarePlacesSource.CategorySearch(label: "music", categoryIds: []),
-                         FoursquarePlacesSource.CategorySearch(label: "heritage", categoryIds: [])]
-        #expect(SourcePreparation.searchLabels(sweeps, interestSearches: interests)
+        #expect(SourcePreparation.searchLabels(sweeps, interestLabels: ["music", "heritage"])
             == ["b": ["music"], "c": ["heritage", "music"]])
-        #expect(SourcePreparation.searchLabels(sweeps, interestSearches: []).isEmpty)
+        #expect(SourcePreparation.searchLabels(sweeps, interestLabels: []).isEmpty)
     }
 
     @Test func measurementsSnapshotKeepsLabelsAndReadsOldCheckpoints() throws {

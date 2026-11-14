@@ -1,14 +1,14 @@
 import ResponsesKit
 import SourcesKit
 
-/// The evidence written for the OpenStreetMap fallbacks.
+/// The evidence written for the OpenStreetMap place sources.
 enum OSMEvidence {
-    /// The evidence event for the Overpass fallback sweep. `error` is recorded only when the query failed.
+    /// The evidence event for the Overpass sweep. `error` is recorded only when the query failed.
     static func sweepEvent(_ report: OSMSweep.Report, seconds: Double) -> [String: JSONValue] {
         event(named: "osmSweep", report, seconds: seconds)
     }
 
-    /// The evidence event for the Nominatim fallback sweep. `error` is recorded only when a phrase failed.
+    /// The evidence event for the Nominatim sweep. `error` is recorded only when a phrase failed.
     static func nominatimSweepEvent(_ report: OSMSweep.Report, seconds: Double) -> [String: JSONValue] {
         event(named: "nominatimSweep", report, seconds: seconds)
     }

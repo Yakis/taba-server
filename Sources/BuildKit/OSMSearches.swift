@@ -1,9 +1,8 @@
-import FoursquareKit
 import SourcesKit
 
-/// The OpenStreetMap searches for each Foursquare search label, so the fallbacks look for the same kinds of place. The
-/// labels are the base kinds and the interest labels of `InterestSearches`. Each label has the Overpass filters that
-/// select its places, and the phrases Nominatim is asked for (its name search does not read tags).
+/// The OpenStreetMap searches for each search label: the base kinds and the interest labels of `InterestSearches`.
+/// Each label has the Overpass filters that select its places, and the phrases Nominatim is asked for (its name
+/// search does not read tags).
 enum OSMSearches {
     private struct Terms {
         let filters: [String]
@@ -38,22 +37,20 @@ enum OSMSearches {
                        phrases: ["viewpoint", "square", "bridge"])
     ]
 
-    /// One Overpass search for each Foursquare search whose label has OSM filters, with the same label. A label with no
-    /// filters is left out.
-    static func searches(for searches: [FoursquarePlacesSource.CategorySearch]) -> [OverpassPlacesSource.Search] {
-        searches.compactMap { search in
-            guard let filters = terms[search.label]?.filters, !filters.isEmpty else { return nil }
-            return OverpassPlacesSource.Search(label: search.label, filters: filters)
+    /// One Overpass search for each label that has OSM filters, with the same label. A label with no filters is left
+    /// out.
+    static func searches(for labels: [String]) -> [OverpassPlacesSource.Search] {
+        labels.compactMap { label in
+            guard let filters = terms[label]?.filters, !filters.isEmpty else { return nil }
+            return OverpassPlacesSource.Search(label: label, filters: filters)
         }
     }
 
-    /// One Nominatim search for each Foursquare search whose label has OSM filters and phrases, with the same label.
-    static func nominatimSearches(
-        for searches: [FoursquarePlacesSource.CategorySearch]
-    ) -> [NominatimPlacesSource.Search] {
-        searches.compactMap { search in
-            guard let term = terms[search.label], !term.filters.isEmpty, !term.phrases.isEmpty else { return nil }
-            return NominatimPlacesSource.Search(label: search.label, phrases: term.phrases,
+    /// One Nominatim search for each label that has OSM filters and phrases, with the same label.
+    static func nominatimSearches(for labels: [String]) -> [NominatimPlacesSource.Search] {
+        labels.compactMap { label in
+            guard let term = terms[label], !term.filters.isEmpty, !term.phrases.isEmpty else { return nil }
+            return NominatimPlacesSource.Search(label: label, phrases: term.phrases,
                                                 filters: term.filters + term.nominatimOnlyFilters)
         }
     }

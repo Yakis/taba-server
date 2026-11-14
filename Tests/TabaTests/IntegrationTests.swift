@@ -6,17 +6,14 @@ import SourcesKit
 @testable import Taba
 import Testing
 
+/// Answers every request with one Nominatim row named "Unique Museum", and counts the requests.
 private actor SearchFetcher: HTTPFetching {
     var count = 0
     func send(_ request: URLRequest) async throws -> HTTPResponse {
         count += 1
         let body = """
-        {"results":[
-          {"fsq_place_id":"road","name":"Unique Museum Road","latitude":55.95,"longitude":-3.19,
-           "categories":[{"fsq_category_id":"road","name":"Road"}]},
-          {"fsq_place_id":"museum","name":"Unique Museum","latitude":55.95,"longitude":-3.19,
-           "categories":[{"fsq_category_id":"museum","name":"Museums"}]}
-        ]}
+        [{"osm_type":"node","osm_id":1,"lat":"55.95","lon":"-3.19","category":"tourism","type":"museum",
+          "name":"Unique Museum","importance":0.5}]
         """
         return HTTPResponse(status: 200, body: Data(body.utf8), headers: [:])
     }
@@ -34,7 +31,7 @@ private func fixture() throws -> Guide {
     #expect(SourcePreparation.currency(for: "JP") == "XXX")
 }
 
-@Test func researchUsesAllHitsAndBoundsRequests() async throws {
+@Test func researchMatchesASuggestionThroughNominatim() async throws {
     let guide = try fixture()
     let facts = TripFacts(trip: guide.trip, bookings: guide.bookings, stay: guide.stay,
                           places: guide.places, practical: guide.practical, sources: guide.sources)
@@ -42,13 +39,13 @@ private func fixture() throws -> Guide {
     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     let record = try RunRecord(directory: folder)
     let source = SearchFetcher()
+    // The cap and the request bounds are tested in BuildKit with no waits; this one goes through the live pacing.
     let service = SuggestionPreparation(fetcher: CappedFetcher(inner: source, limit: 150),
-                                        key: "test-key-not-real", facts: facts, record: record)
+                                        facts: facts, record: record)
     let suggestion = SuggestedPlace(name: "Unique Museum", area: "", kind: .museum, why: "Interesting")
     let result = try await service.resolve(suggestion)
     #expect(result?.name == "Unique Museum")
-    for _ in 0..<20 { _ = try await service.resolve(suggestion) }
-    #expect(await source.count == 12)
+    #expect(await source.count == 1)
 }
 
 @Test func existingCandidateAvoidsProvider() async throws {
@@ -60,7 +57,7 @@ private func fixture() throws -> Guide {
     try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
     let fetcher = SearchFetcher()
     let service = try SuggestionPreparation(fetcher: CappedFetcher(inner: fetcher, limit: 150),
-        key: "test-key-not-real", facts: facts, record: RunRecord(directory: folder))
+        facts: facts, record: RunRecord(directory: folder))
     let suggestion = SuggestedPlace(name: place.name, area: "", kind: place.kind, why: "Interesting")
     #expect(try await service.resolve(suggestion)?.id == place.id)
     #expect(await fetcher.count < 1)

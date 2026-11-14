@@ -46,14 +46,13 @@ private struct PoliteFetcher: HTTPFetching {
 /// Executes exactly one durable stage. Supply an AHC client configured to disallow redirects.
 public struct LiveStageRunner: Sendable {
     private let client: HTTPClient
-    private let key: String
     private let model: String
     private let session: CredentialSession
     private let providers: ProviderKeys
 
-    public init(client: HTTPClient, key: String, model: String, session: CredentialSession,
+    public init(client: HTTPClient, model: String, session: CredentialSession,
                 providers: ProviderKeys = ProviderKeys(anthropic: nil, deepSeek: nil)) {
-        self.client = client; self.key = key; self.model = model; self.session = session; self.providers = providers
+        self.client = client; self.model = model; self.session = session; self.providers = providers
     }
 
     // swiftlint:disable:next function_body_length
@@ -90,12 +89,12 @@ public struct LiveStageRunner: Sendable {
             let fetcher = sourceFetcher(limit: 150)
             let geocoder = NominatimGeocoder(fetcher: fetcher)
             let result = try await SourcePreparation.prepareCandidates(input, basics: basics, fetcher: fetcher,
-                key: key, geocoder: geocoder, record: record)
+                geocoder: geocoder, record: record)
             return try checkpoint(CandidatesCheckpoint(result))
         case .research:
             let candidates: CandidatesCheckpoint = try load(.candidates, from: work)
-            let fetcher = sourceFetcher(limit: 60)
-            let suggestions = SuggestionPreparation(fetcher: fetcher, key: key, facts: candidates.facts.value,
+            let fetcher = sourceFetcher(limit: 80)
+            let suggestions = SuggestionPreparation(fetcher: fetcher, facts: candidates.facts.value,
                 record: record, geocoder: NominatimGeocoder(fetcher: fetcher))
             let result = try await pipeline.researchStage(model: aiModel, facts: candidates.facts.value,
                 measurements: candidates.measurements.value, stayArea: candidates.stayArea,

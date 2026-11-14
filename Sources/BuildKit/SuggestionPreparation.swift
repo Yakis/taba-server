@@ -1,5 +1,4 @@
 import Foundation
-import FoursquareKit
 import GuideKit
 import PipelineKit
 import ResponsesKit
@@ -7,28 +6,24 @@ import SourcesKit
 
 public actor SuggestionPreparation {
     private let fetcher: CappedFetcher
-    private let builder: FoursquareRequestBuilder
     private let initial: TripFacts
     private let record: SourceRecord
     private let geocoder: NominatimGeocoder
-    private let openStreetMap: OpenStreetMapFallback
-    /// How many research suggestions are looked up for one trip. Each is one Foursquare search, or one OpenStreetMap
-    /// lookup once Foursquare has failed.
-    public static let maximumSuggestions = 12
+    private let openStreetMap: OpenStreetMapPlaces
+    /// How many suggested places are looked up for one trip. Each is one or two Nominatim lookups, or an Overpass
+    /// lookup when Nominatim fails.
+    public static let maximumSuggestions = 20
     private var count = 0
-    /// Set when a Foursquare search fails. Later suggestions then go straight to OpenStreetMap.
-    private var foursquareFailed = false
 
-    public init(fetcher: CappedFetcher, key: String, facts: TripFacts, record: SourceRecord,
+    public init(fetcher: CappedFetcher, facts: TripFacts, record: SourceRecord,
                 geocoder: NominatimGeocoder? = nil) {
-        self.init(fetcher: fetcher, key: key, facts: facts, record: record, geocoder: geocoder,
-                  openStreetMap: OpenStreetMapFallback(fetcher: fetcher))
+        self.init(fetcher: fetcher, facts: facts, record: record, geocoder: geocoder,
+                  openStreetMap: OpenStreetMapPlaces(fetcher: fetcher))
     }
 
-    init(fetcher: CappedFetcher, key: String, facts: TripFacts, record: SourceRecord,
-         geocoder: NominatimGeocoder?, openStreetMap: OpenStreetMapFallback) {
+    init(fetcher: CappedFetcher, facts: TripFacts, record: SourceRecord,
+         geocoder: NominatimGeocoder?, openStreetMap: OpenStreetMapPlaces) {
         self.fetcher = fetcher
-        self.builder = FoursquareRequestBuilder(apiKey: key)
         self.initial = facts
         self.record = record
         self.geocoder = geocoder ?? NominatimGeocoder(fetcher: fetcher)
@@ -38,64 +33,33 @@ public actor SuggestionPreparation {
     public func resolve(_ suggestion: SuggestedPlace) async throws -> Place? {
         guard count < Self.maximumSuggestions else { return nil }
         count += 1
-        let centre = initial.trip.destination.centre
-        let matcher = PlaceMatcher(maxDistanceMetres: 10_000, cityName: initial.trip.destination.name)
-        let wanted = WantedPlace(name: suggestion.name, kind: suggestion.kind, coordinate: centre)
-        let seedHits = initial.places.values.compactMap { place -> FoursquarePlace? in
-            guard place.kind == suggestion.kind else { return nil }
-            let object: [String: Any] = ["fsq_place_id": place.id, "name": place.name,
-                                         "latitude": place.location.coordinate.latitude,
-                                         "longitude": place.location.coordinate.longitude]
-            guard let data = try? JSONSerialization.data(withJSONObject: object) else { return nil }
-            return try? JSONDecoder().decode(FoursquarePlace.self, from: data)
-        }
-        if let match = matcher.choose(for: wanted, among: seedHits).best,
-           let place = initial.places[match.fsqPlaceId] {
+        if let existing = existingCandidate(for: suggestion) {
             await record.append(["event": .string("suggestion"), "result": .string("existing"),
-                                 "placeID": .string(place.id)])
-            return place
+                                 "placeID": .string(existing.id)])
+            return existing
         }
-        if foursquareFailed {
-            return try await resolveWithOpenStreetMap(suggestion, centre: centre)
-        }
-        let parameters = SearchParameters(query: suggestion.name,
-            latitude: centre.latitude, longitude: centre.longitude, radius: 10_000, categoryIds: [], limit: 50)
-        let start = ContinuousClock.now
-        let answer: [FoursquarePlace]
-        do {
-            answer = try await searchFoursquare(parameters)
-        } catch {
-            try Task.checkCancellation()
-            await record.append(["event": .string("suggestion"), "result": .string("failed")])
-            foursquareFailed = true
-            return try await resolveWithOpenStreetMap(suggestion, centre: centre)
-        }
-        let hits = answer.filter { $0.dateClosed?.isEmpty != false && !Self.isWrongAreaHit($0, for: suggestion.kind) }
-        let decision = matcher.choose(for: wanted, among: hits)
-        let hit = hits.first { $0.fsqPlaceId == decision.best?.fsqPlaceId }
-        let place = hit.flatMap { PlaceDraftMapper.draft(from: $0) }
-            .map { Self.keepingSuggestedKind($0, suggested: suggestion.kind) }
-        await record.append(["event": .string("suggestion"),
-                             "result": .string(place == nil ? "unmatched" : "matched"),
-                             "hits": .integer(hits.count), "seconds": .number(seconds(start.duration(to: .now)))])
-        return place
+        return try await resolveByName(suggestion, centre: initial.trip.destination.centre)
     }
 
-    /// One Foursquare search. A reply other than 2xx is recorded and thrown, as is a malformed body.
-    private func searchFoursquare(_ parameters: SearchParameters) async throws -> [FoursquarePlace] {
-        let response = try await fetcher.send(builder.search(parameters))
-        try Task.checkCancellation()
-        guard response.isSuccess else {
-            await record.append(["event": .string("suggestion"), "status": .integer(response.status)])
-            throw SourcesError.http(status: response.status)
+    /// The candidate already in the trip that has the suggested kind and the most similar name, when that similarity is
+    /// acceptable. Ties go to the smaller id. No request is sent.
+    private func existingCandidate(for suggestion: SuggestedPlace) -> Place? {
+        let city = initial.trip.destination.name
+        let similar = initial.places.values.compactMap { place -> (place: Place, similarity: Double)? in
+            guard place.kind == suggestion.kind else { return nil }
+            let similarity = NameTokens.nameSimilarity(suggestion.name, place.name, cityName: city)
+            guard similarity >= NameTokens.acceptableSimilarity else { return nil }
+            return (place, similarity)
         }
-        return try JSONDecoder().decode(FoursquareSearchResponse.self, from: response.body).results
+        return similar.min { first, second in
+            if first.similarity != second.similarity { return first.similarity > second.similarity }
+            return first.place.id < second.place.id
+        }?.place
     }
 
-    /// The OpenStreetMap lookup for a suggestion, used once Foursquare has failed. It matches by name, within 10 km.
-    /// Nominatim is asked first, as it is fast and reliable for names. Overpass is asked only when Nominatim fails; a
-    /// Nominatim answer with no match is final.
-    private func resolveWithOpenStreetMap(_ suggestion: SuggestedPlace, centre: Coordinate) async throws -> Place? {
+    /// The OpenStreetMap lookup for a suggestion, matched by name within 10 km. Nominatim is asked first, as it is fast
+    /// and reliable for names. Overpass is asked only when Nominatim fails; a Nominatim answer with no match is final.
+    private func resolveByName(_ suggestion: SuggestedPlace, centre: Coordinate) async throws -> Place? {
         guard let today = Self.today() else { throw SourcePreparationError.service }
         let city = initial.trip.destination.name
         let nominatimStart = ContinuousClock.now
@@ -145,9 +109,9 @@ public actor SuggestionPreparation {
         return LocalDate(year: year, month: month, day: day)
     }
 
-    /// Research says what a suggested place is. Foursquare often files a street or a hill under another kind ("other",
-    /// "landmark"), and indoor follows the kind, so the place could be taken for indoors. A suggested street,
-    /// neighbourhood or viewpoint keeps its own kind and is outdoors when Foursquare gave it "other" or "landmark".
+    /// Research says what a suggested place is. A place source often files a street or a hill under another kind
+    /// ("other", "landmark"), and indoor follows the kind, so the place could be taken for indoors. A suggested street,
+    /// neighbourhood or viewpoint keeps its own kind and is outdoors when the source gave it "other" or "landmark".
     /// Every other place comes back as it is.
     static func keepingSuggestedKind(_ place: Place, suggested: PlaceKind) -> Place {
         let outdoorKinds: Set<PlaceKind> = [.street, .neighbourhood, .viewpoint]
@@ -157,17 +121,18 @@ public actor SuggestionPreparation {
                      facts: place.facts, copy: place.copy, website: place.website, phone: place.phone)
     }
 
-    /// The measured search labels with each suggested place's interests added to its place, as "interest:<interest>"
-    /// (see `InterestMatch.interestLabel`). Labels the place already has are kept, with no duplicates, and sorted like
-    /// the interest searches. Only the places research suggested for an interest get a label.
-    static func withInterestLabels(_ measurements: PipelineInputMeasurements, _ verified: VerifiedResearch)
+    /// The measured search labels with research's labels added to each verified suggested place:
+    /// `InterestMatch.researchLabel` for every such place, and "interest:<interest>" for each interest the
+    /// suggestion names (see `InterestMatch.interestLabel`). Labels the place already has are kept, with no
+    /// duplicates, and sorted.
+    static func withResearchLabels(_ measurements: PipelineInputMeasurements, _ verified: VerifiedResearch)
         -> PipelineInputMeasurements {
         var labels = measurements.searchLabels
         for (suggestion, place) in zip(verified.result.suggestedPlaces, verified.places) {
-            let added = (suggestion.interests ?? [])
+            let interests = (suggestion.interests ?? [])
                 .filter { !$0.trimmingCharacters(in: .whitespaces).isEmpty }
                 .map { InterestMatch.interestLabel(for: $0) }
-            guard !added.isEmpty else { continue }
+            let added = [InterestMatch.researchLabel] + interests
             labels[place.id] = Array(Set((labels[place.id] ?? []) + added)).sorted()
         }
         guard labels != measurements.searchLabels else { return measurements }
@@ -179,23 +144,10 @@ public actor SuggestionPreparation {
             departureMarginMinutes: measurements.departureMarginMinutes, searchLabels: labels)
     }
 
-    /// PlaceMatcher rejects road hits for food/retail; apply the same safeguard to sights here.
-    private static func isWrongAreaHit(_ hit: FoursquarePlace, for kind: PlaceKind) -> Bool {
-        guard kind != .street && kind != .neighbourhood && kind != .other else { return false }
-        let areaWords: Set<String> = ["road", "roads", "street", "streets", "neighborhood", "neighborhoods",
-                                      "neighbourhood", "neighbourhoods", "intersection", "intersections"]
-        let hasArea = hit.categories.contains { category in
-            category.name.lowercased().split(whereSeparator: { !$0.isLetter }).contains {
-                areaWords.contains(String($0))
-            }
-        }
-        return hasArea && !hit.categories.contains { PlaceKindMapper.kind(for: [$0]) == kind }
-    }
-
     public func prepare(_ verified: VerifiedResearch, facts: TripFacts,
                         measurements: PipelineInputMeasurements) async throws
         -> (TripFacts, PipelineInputMeasurements) {
-        let labelled = Self.withInterestLabels(measurements, verified)
+        let labelled = Self.withResearchLabels(measurements, verified)
         let additions = verified.places.filter { facts.places[$0.id] == nil }
         guard !additions.isEmpty else { return (facts, labelled) }
         let start = ContinuousClock.now
@@ -205,9 +157,9 @@ public actor SuggestionPreparation {
         let components = Calendar(identifier: .gregorian).dateComponents(in: .gmt, from: Date())
         guard let year = components.year, let month = components.month, let day = components.day,
               let today = LocalDate(year: year, month: month, day: day) else { throw SourcePreparationError.service }
-        // OpenStreetMap places already carry their opening hours, so only the Foursquare places are looked up.
-        let foursquareAdditions = additions.filter { !$0.id.hasPrefix(OverpassPlacesSource.idPrefix) }
-        let lookup = await OverpassHoursSource(fetcher: fetcher).hours(for: foursquareAdditions.map {
+        // OpenStreetMap places already carry their opening hours, so only the places from elsewhere are looked up.
+        let lookupAdditions = additions.filter { !$0.id.hasPrefix(OverpassPlacesSource.idPrefix) }
+        let lookup = await OverpassHoursSource(fetcher: fetcher).hours(for: lookupAdditions.map {
             HoursLookupTarget(placeId: $0.id, name: $0.name, coordinate: $0.location.coordinate)
         }, cityName: facts.trip.destination.name, checkedAt: today)
         try Task.checkCancellation()
@@ -225,11 +177,6 @@ public actor SuggestionPreparation {
                   !sources.contains(where: { $0.id == source.id }) else { continue }
             sources.append(source)
         }
-        let hasFoursquarePlace = additions.contains { $0.id.hasPrefix("fsq:") }
-        if hasFoursquarePlace && !sources.contains(where: { $0.id == FoursquarePlacesSource.sourceId }) {
-            sources.append(Source(id: FoursquarePlacesSource.sourceId, url: "https://foursquare.com",
-                                  title: "Foursquare", checkedAt: today))
-        }
         let newFacts = TripFacts(trip: facts.trip, bookings: facts.bookings, stay: facts.stay, places: places,
                                  practical: facts.practical, sources: sources)
         let (updated, walks) = try await SourcePreparation.measure(newFacts, geocoder: geocoder,
@@ -243,5 +190,4 @@ public actor SuggestionPreparation {
         try await record.check()
         return (newFacts, updated)
     }
-
 }

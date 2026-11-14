@@ -78,14 +78,11 @@ struct TabaServer {
                 models = FixedModelCatalog(defaultModel: defaultModel)
                 logger.notice("Offline replay mode; no provider requests will be sent")
             case .live:
-                guard let key = environment["FOURSQUARE_API_KEY"], !key.isEmpty else {
-                    throw ConfigurationError.missingKey
-                }
                 // A default model whose provider has no key would fail every trip that uses it, so the server stops.
                 guard providers.canServe(defaultModel) else { throw ConfigurationError.missingKey }
                 let session = CredentialSession(store: .defaultStore,
                     tokenClient: TokenClient(transport: AHCOAuthTransport(client: client)))
-                let live = LiveStageRunner(client: client, key: key, model: defaultModel, session: session,
+                let live = LiveStageRunner(client: client, model: defaultModel, session: session,
                                            providers: providers)
                 runner = { try await live.run($0, evidence: $1) }
                 models = ModelCatalog.live(defaultModel: defaultModel, session: session,

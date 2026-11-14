@@ -96,7 +96,7 @@ let package = Package(
             name: "BuildKit",
             dependencies: [
                 .product(name: "GuideKit", package: "GuideKit"),
-                "PipelineKit", "SourcesKit", "FoursquareKit", "ResponsesKit"
+                "PipelineKit", "SourcesKit", "ResponsesKit"
             ]
         ),
         .target(
@@ -129,7 +129,7 @@ let package = Package(
         ),
         .executableTarget(
             name: "Taba",
-            dependencies: ["BuildKit", "PipelineKit", "SourcesKit", "FoursquareKit",
+            dependencies: ["BuildKit", "PipelineKit", "SourcesKit",
                            .product(name: "GuideKit", package: "GuideKit"), "ResponsesKit"]
         ),
         .testTarget(

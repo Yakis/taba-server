@@ -9,7 +9,7 @@ struct ServerModeTests {
                 .replay(URL(fileURLWithPath: "/tmp/example-replay")))
         for value in ["", " ", "\n"] {
             #expect(throws: ServerMode.ConfigurationError.self) {
-                try ServerMode.parse(["TABA_REPLAY_DIRECTORY": value, "FOURSQUARE_API_KEY": "test-key-not-real"])
+                try ServerMode.parse(["TABA_REPLAY_DIRECTORY": value])
             }
         }
     }

@@ -8,9 +8,9 @@ actor SuggestionPreparation {
     private let service: BuildKit.SuggestionPreparation
     private let record: RunRecord
 
-    init(fetcher: CappedFetcher, key: String, facts: TripFacts, record: RunRecord) {
+    init(fetcher: CappedFetcher, facts: TripFacts, record: RunRecord) {
         self.record = record
-        self.service = BuildKit.SuggestionPreparation(fetcher: fetcher, key: key, facts: facts,
+        self.service = BuildKit.SuggestionPreparation(fetcher: fetcher, facts: facts,
                                                        record: SourceRecord { await record.append($0) })
     }
 

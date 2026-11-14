@@ -38,7 +38,6 @@ in the process environment. Do not put real tokens in this repository or command
 | `DB_HOST`, `DB_PORT` | `localhost`, `5432` |
 | `DB_USER`, `DB_NAME` | `taba`, `taba` |
 | `DB_PASSWORD` | `taba-local-only` — local development only |
-| `FOURSQUARE_API_KEY` | Required for live mode; obtain securely from Keychain. Only free fields are used. |
 | `TABA_MODEL` | The default model for new trips; `gpt-6.1-sol` when unset (deployed: `gpt-6.1-terra`) |
 | `ANTHROPIC_API_KEY` | Optional, paid per use. When set, Claude Opus 5.5 and Claude Sonnet 5.5 are offered. Never logged. |
 | `DEEPSEEK_API_KEY` | Optional, paid per use. When set, DeepSeek V4 Pro and DeepSeek Flash are offered. Never logged. |
@@ -235,7 +234,7 @@ Production runs as two Compose services next to the host's other apps:
   `stop_grace_period: 60s` (workers get 30 seconds to finish a stage), memory capped at 1 GB.
 
 The image is copied over SSH (`docker save | ssh <host> docker load`) and pinned by image ID; nothing is
-pulled from a registry at start. Secrets (app token, Foursquare key, database password) live in root-only
+pulled from a registry at start. Secrets (app token, database password) live in root-only
 env files on the host, written over SSH stdin. The ChatGPT sign-in file sits in a host folder owned by the
 container user (65532), mounted writable because a token refresh replaces the file. A reverse proxy
 terminates TLS for a tailnet-only host name and refuses public requests with 403. Backups take a `pg_dump`

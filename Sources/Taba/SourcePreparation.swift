@@ -14,14 +14,13 @@ enum SourcePreparation {
                     handLuggageOnly: options.handLuggageOnly)
     }
 
-    static func prepare(_ options: Options, fetcher: CappedFetcher, key: String,
-                        record: RunRecord) async throws -> Prepared {
+    static func prepare(_ options: Options, fetcher: CappedFetcher, record: RunRecord) async throws -> Prepared {
         let seed = try options.facts.map {
             try JSONDecoder().decode(Guide.self, from: Data(contentsOf: URL(fileURLWithPath: $0)))
         }
         print("Preparing sources...")
         let result = try await BuildKit.SourcePreparation.prepare(input(options, seed: seed), fetcher: fetcher,
-            key: key, record: SourceRecord { await record.append($0) })
+            record: SourceRecord { await record.append($0) })
         try await record.check()
         return result
     }

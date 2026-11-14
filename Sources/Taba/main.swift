@@ -26,7 +26,6 @@ struct Taba {
             case CLIError.factsMismatch, SourcePreparationError.factsMismatch:
                 message = "Facts do not match the requested trip or are missing the stay."
             case CLIError.missingStay: message = "Supply --stay when building without --facts."
-            case CLIError.missingKey: message = "FOURSQUARE_API_KEY is not set."
             case CLIError.geocoding, SourcePreparationError.geocoding:
                 message = "Could not geocode the destination or stay."
             case CLIError.noCandidates, SourcePreparationError.noCandidates: message = "No candidate places were found."
@@ -55,14 +54,11 @@ struct Taba {
         print("Run record: \(directory.appendingPathComponent("run.json").path)")
         await record.append(["event": .string("started"), "model": .string(options.model)])
         do {
-            guard let key = ProcessInfo.processInfo.environment["FOURSQUARE_API_KEY"], !key.isEmpty else {
-                throw CLIError.missingKey
-            }
             let session = CredentialSession(store: .defaultStore, tokenClient: TokenClient())
             _ = try await session.credentials()
             let fetcher = CappedFetcher(inner: URLSessionFetcher(), limit: 150)
-            let prepared = try await SourcePreparation.prepare(options, fetcher: fetcher, key: key, record: record)
-            let suggestions = SuggestionPreparation(fetcher: fetcher, key: key, facts: prepared.facts, record: record)
+            let prepared = try await SourcePreparation.prepare(options, fetcher: fetcher, record: record)
+            let suggestions = SuggestionPreparation(fetcher: fetcher, facts: prepared.facts, record: record)
             let client = ResponsesClient()
             let built = try await GuidePipeline().run(
                 id: UUID().uuidString, model: options.model, facts: prepared.facts,
@@ -91,7 +87,6 @@ struct Taba {
     static func failureCategory(_ error: any Error) -> String {
         switch error {
         case is CancellationError: "cancelled"
-        case CLIError.missingKey: "missingFoursquareKey"
         case CLIError.geocoding, SourcePreparationError.geocoding: "geocoding"
         case CLIError.noCandidates, SourcePreparationError.noCandidates: "noCandidates"
         case CLIError.recording: "recording"

@@ -46,5 +46,5 @@ struct Options: Sendable {
 }
 
 enum CLIError: Error {
-    case usage, factsMismatch, missingStay, geocoding, missingKey, noCandidates, output, service, recording
+    case usage, factsMismatch, missingStay, geocoding, noCandidates, output, service, recording
 }
