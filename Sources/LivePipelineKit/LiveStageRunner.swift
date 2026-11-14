@@ -16,6 +16,15 @@ public enum LiveStageError: Error, Sendable {
     case transport
     /// No provider runs the model id.
     case unsupportedModel
+    /// ChatGPT gave no answer. `status` is the HTTP status, when there was one, and `reason` is the client's own
+    /// description of the failure (a usage limit, an error code, a stream that ended early). Never a token.
+    case chatGPTFailed(status: Int?, reason: String)
+
+    /// Why a ChatGPT request with no result failed, with the reason cut to a length that is safe to keep as evidence.
+    static func chatGPTFailure(_ outcome: ResponsesOutcome) -> LiveStageError {
+        let reason = outcome.error.map { String(describing: $0) } ?? "no result"
+        return .chatGPTFailed(status: outcome.status, reason: String(reason.prefix(300)))
+    }
 }
 
 /// The same process-wide pacer is shared by all jobs and runner instances.
@@ -188,7 +197,12 @@ public struct LiveStageRunner: Sendable {
             try Task.checkCancellation()
         }
         guard let result = outcome.result else {
-            throw LiveStageError.transport
+            // The reason is the client's own text. A token in it would be a leak, so it is then left out.
+            let failure = LiveStageError.chatGPTFailure(outcome)
+            guard !tokens.contains(where: { String(describing: failure).contains($0) }) else {
+                throw LiveStageError.transport
+            }
+            throw failure
         }
         return (result, tokens)
     }
