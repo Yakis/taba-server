@@ -129,5 +129,5 @@ M1 is done and the server is deployed (static Linux image, tailnet-only HTTPS). 
 `docs/PLAN.md` are deployed (`taba-server:q14`, 2026-11-13). Q14: the trip's typed facts
 outrank the prose: stay arrangement, trip travel and the guide's base; no invented stay; a contradiction check on
 all copy; pick lists keep fitting kinds; plan.md v8, write.md v8, repair.md v3. Default model: Sol.
-Q15 (2026-11-14, committed, not deployed): named tasting items, a trip-only Good to know, a later last stop
-before a known departure. Next: deploy Q15 with the owner's yes and rebuild Leeds. Deploying: `docs/SERVER.md`, "Deployment".
+Q15 (2026-11-14, deployed as `taba-server:q15`): named tasting items, a trip-only Good to know, a later last stop
+before a known departure. Next: the owner rebuilds Leeds to judge Q15. Deploying: `docs/SERVER.md`, "Deployment".
