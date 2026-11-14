@@ -103,11 +103,12 @@ public enum SourcePreparation {
     }
 
     /// The interest search labels that found each place, by place id. Only the labels of `interestSearches` count.
-    static func searchLabels(_ report: FoursquarePlacesSource.SweepReport,
+    /// The sweeps may come from Foursquare or from the OpenStreetMap fallback.
+    static func searchLabels(_ sweeps: [(label: String, placeIds: [String])],
                              interestSearches: [FoursquarePlacesSource.CategorySearch]) -> [String: [String]] {
         let interestLabels = Set(interestSearches.map(\.label))
         var labels: [String: Set<String>] = [:]
-        for sweep in report.sweeps where interestLabels.contains(sweep.label) {
+        for sweep in sweeps where interestLabels.contains(sweep.label) {
             for id in sweep.placeIds { labels[id, default: []].insert(sweep.label) }
         }
         return labels.mapValues { $0.sorted() }
@@ -131,16 +132,37 @@ public enum SourcePreparation {
             .object(["kind": .string($0.label), "returned": .integer($0.returned),
                      "failureCategory": .string($0.failure == nil ? "none" : "sourceFailure")])
         })])
-        let additions = report.places.filter { places[$0.id] == nil }
+        // Foursquare is the first choice. OpenStreetMap is asked only when Foursquare gave no place at all.
+        var found = report.places
+        var sweeps = report.sweeps.map { (label: $0.label, placeIds: $0.placeIds) }
+        var openStreetMapSources: [Source] = []
+        if report.places.isEmpty {
+            let osmStarted = ContinuousClock.now
+            let osm = await OverpassPlacesSource(fetcher: fetcher)
+                .sweep(searches: OSMSearches.searches(for: searches), around: centre, limit: 6, checkedAt: today)
+            try Task.checkCancellation()
+            await record.append(OSMEvidence.sweepEvent(osm, seconds: seconds(osmStarted.duration(to: .now))))
+            found = osm.places
+            sweeps = osm.sweeps.map { (label: $0.label, placeIds: $0.placeIds) }
+            openStreetMapSources = osm.sources
+        }
+        guard !found.isEmpty || seed != nil else { throw SourcePreparationError.noCandidates }
+        let additions = found.filter { places[$0.id] == nil }
         for place in additions { places[place.id] = place }
-        guard !report.places.isEmpty || seed != nil else { throw SourcePreparationError.noCandidates }
         if !report.places.isEmpty && !sources.contains(where: { $0.id == FoursquarePlacesSource.sourceId }) {
             sources.append(Source(id: FoursquarePlacesSource.sourceId, url: "https://foursquare.com",
                                   title: "Foursquare", checkedAt: today))
         }
-        let lookup = try await addHours(additions, city: options.destination, today: today, fetcher: fetcher,
-                                        places: &places, sources: &sources, record: record)
-        return (lookup, searchLabels(report, interestSearches: interestSearches))
+        let addedIds = Set(additions.map(\.id))
+        for source in openStreetMapSources where addedIds.contains(source.id)
+            && !sources.contains(where: { $0.id == source.id }) {
+            sources.append(source)
+        }
+        // OpenStreetMap places already carry their opening hours, so only the Foursquare places are looked up.
+        let foursquareAdditions = additions.filter { !$0.id.hasPrefix(OverpassPlacesSource.idPrefix) }
+        let lookup = try await addHours(foursquareAdditions, city: options.destination, today: today,
+                                        fetcher: fetcher, places: &places, sources: &sources, record: record)
+        return (lookup, searchLabels(sweeps, interestSearches: interestSearches))
     }
 
     // swiftlint:disable:next function_parameter_count

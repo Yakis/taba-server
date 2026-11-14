@@ -11,9 +11,12 @@ public actor SuggestionPreparation {
     private let initial: TripFacts
     private let record: SourceRecord
     private let geocoder: NominatimGeocoder
-    /// How many research suggestions are looked up for one trip. Each is one Foursquare search.
+    /// How many research suggestions are looked up for one trip. Each is one Foursquare search, or one OpenStreetMap
+    /// lookup once Foursquare has failed.
     public static let maximumSuggestions = 12
     private var count = 0
+    /// Set when a Foursquare search fails. Later suggestions then go straight to OpenStreetMap.
+    private var foursquareFailed = false
 
     public init(fetcher: CappedFetcher, key: String, facts: TripFacts, record: SourceRecord,
                 geocoder: NominatimGeocoder? = nil) {
@@ -44,31 +47,69 @@ public actor SuggestionPreparation {
                                  "placeID": .string(place.id)])
             return place
         }
+        if foursquareFailed {
+            return try await resolveWithOpenStreetMap(suggestion, centre: centre)
+        }
         let parameters = SearchParameters(query: suggestion.name,
             latitude: centre.latitude, longitude: centre.longitude, radius: 10_000, categoryIds: [], limit: 50)
         let start = ContinuousClock.now
+        let answer: [FoursquarePlace]
         do {
-            let response = try await fetcher.send(builder.search(parameters))
-            try Task.checkCancellation()
-            guard response.isSuccess else {
-                await record.append(["event": .string("suggestion"), "status": .integer(response.status)])
-                return nil
-            }
-            let hits = try JSONDecoder().decode(FoursquareSearchResponse.self, from: response.body).results
-                .filter { $0.dateClosed?.isEmpty != false && !Self.isWrongAreaHit($0, for: suggestion.kind) }
-            let decision = matcher.choose(for: wanted, among: hits)
-            let hit = hits.first { $0.fsqPlaceId == decision.best?.fsqPlaceId }
-            let place = hit.flatMap { PlaceDraftMapper.draft(from: $0) }
-                .map { Self.keepingSuggestedKind($0, suggested: suggestion.kind) }
-            await record.append(["event": .string("suggestion"),
-                                 "result": .string(place == nil ? "unmatched" : "matched"),
-                                 "hits": .integer(hits.count), "seconds": .number(seconds(start.duration(to: .now)))])
-            return place
+            answer = try await searchFoursquare(parameters)
         } catch {
             try Task.checkCancellation()
             await record.append(["event": .string("suggestion"), "result": .string("failed")])
+            foursquareFailed = true
+            return try await resolveWithOpenStreetMap(suggestion, centre: centre)
+        }
+        let hits = answer.filter { $0.dateClosed?.isEmpty != false && !Self.isWrongAreaHit($0, for: suggestion.kind) }
+        let decision = matcher.choose(for: wanted, among: hits)
+        let hit = hits.first { $0.fsqPlaceId == decision.best?.fsqPlaceId }
+        let place = hit.flatMap { PlaceDraftMapper.draft(from: $0) }
+            .map { Self.keepingSuggestedKind($0, suggested: suggestion.kind) }
+        await record.append(["event": .string("suggestion"),
+                             "result": .string(place == nil ? "unmatched" : "matched"),
+                             "hits": .integer(hits.count), "seconds": .number(seconds(start.duration(to: .now)))])
+        return place
+    }
+
+    /// One Foursquare search. A reply other than 2xx is recorded and thrown, as is a malformed body.
+    private func searchFoursquare(_ parameters: SearchParameters) async throws -> [FoursquarePlace] {
+        let response = try await fetcher.send(builder.search(parameters))
+        try Task.checkCancellation()
+        guard response.isSuccess else {
+            await record.append(["event": .string("suggestion"), "status": .integer(response.status)])
+            throw SourcesError.http(status: response.status)
+        }
+        return try JSONDecoder().decode(FoursquareSearchResponse.self, from: response.body).results
+    }
+
+    /// The OpenStreetMap lookup for a suggestion, used once Foursquare has failed. It matches by name, within 10 km.
+    private func resolveWithOpenStreetMap(_ suggestion: SuggestedPlace, centre: Coordinate) async throws -> Place? {
+        guard let today = Self.today() else { throw SourcePreparationError.service }
+        let start = ContinuousClock.now
+        let result = await OverpassPlacesSource(fetcher: fetcher).find(
+            named: suggestion.name, near: centre, cityName: initial.trip.destination.name, checkedAt: today)
+        try Task.checkCancellation()
+        switch result {
+        case .success(let found):
+            let place = found.map { Self.keepingSuggestedKind($0, suggested: suggestion.kind) }
+            await record.append(["event": .string("suggestion"), "source": .string("osm"),
+                                 "result": .string(place == nil ? "unmatched" : "matched"),
+                                 "seconds": .number(seconds(start.duration(to: .now)))])
+            return place
+        case .failure:
+            await record.append(["event": .string("suggestion"), "source": .string("osm"),
+                                 "result": .string("failed"), "seconds": .number(seconds(start.duration(to: .now)))])
             return nil
         }
+    }
+
+    /// Today's date in GMT, as the trip dates are compared with it.
+    static func today() -> LocalDate? {
+        let parts = Calendar(identifier: .gregorian).dateComponents(in: .gmt, from: Date())
+        guard let year = parts.year, let month = parts.month, let day = parts.day else { return nil }
+        return LocalDate(year: year, month: month, day: day)
     }
 
     /// Research says what a suggested place is. Foursquare often files a street or a hill under another kind ("other",
@@ -131,7 +172,9 @@ public actor SuggestionPreparation {
         let components = Calendar(identifier: .gregorian).dateComponents(in: .gmt, from: Date())
         guard let year = components.year, let month = components.month, let day = components.day,
               let today = LocalDate(year: year, month: month, day: day) else { throw SourcePreparationError.service }
-        let lookup = await OverpassHoursSource(fetcher: fetcher).hours(for: additions.map {
+        // OpenStreetMap places already carry their opening hours, so only the Foursquare places are looked up.
+        let foursquareAdditions = additions.filter { !$0.id.hasPrefix(OverpassPlacesSource.idPrefix) }
+        let lookup = await OverpassHoursSource(fetcher: fetcher).hours(for: foursquareAdditions.map {
             HoursLookupTarget(placeId: $0.id, name: $0.name, coordinate: $0.location.coordinate)
         }, cityName: facts.trip.destination.name, checkedAt: today)
         try Task.checkCancellation()
@@ -143,7 +186,14 @@ public actor SuggestionPreparation {
                 images: old.images, facts: old.facts, copy: old.copy)
             if !sources.contains(where: { $0.id == found.source.id }) { sources.append(found.source) }
         }
-        if !sources.contains(where: { $0.id == FoursquarePlacesSource.sourceId }) {
+        for place in additions where place.id.hasPrefix(OverpassPlacesSource.idPrefix)
+            && (place.hours.hoursKnown || !place.facts.isEmpty) {
+            guard let source = OverpassPlacesSource.source(forPlaceId: place.id, checkedAt: today),
+                  !sources.contains(where: { $0.id == source.id }) else { continue }
+            sources.append(source)
+        }
+        let hasFoursquarePlace = additions.contains { $0.id.hasPrefix("fsq:") }
+        if hasFoursquarePlace && !sources.contains(where: { $0.id == FoursquarePlacesSource.sourceId }) {
             sources.append(Source(id: FoursquarePlacesSource.sourceId, url: "https://foursquare.com",
                                   title: "Foursquare", checkedAt: today))
         }

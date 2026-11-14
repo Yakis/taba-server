@@ -94,7 +94,7 @@ public struct LiveStageRunner: Sendable {
             return try checkpoint(CandidatesCheckpoint(result))
         case .research:
             let candidates: CandidatesCheckpoint = try load(.candidates, from: work)
-            let fetcher = sourceFetcher(limit: 45)
+            let fetcher = sourceFetcher(limit: 60)
             let suggestions = SuggestionPreparation(fetcher: fetcher, key: key, facts: candidates.facts.value,
                 record: record, geocoder: NominatimGeocoder(fetcher: fetcher))
             let result = try await pipeline.researchStage(model: aiModel, facts: candidates.facts.value,
