@@ -132,4 +132,4 @@ all copy; pick lists keep fitting kinds; plan.md v8, write.md v8, repair.md v3. 
 Q15 (2026-11-14, deployed as `taba-server:q15`): named tasting items, a trip-only Good to know, a later last stop
 before a known departure. Deploying: `docs/SERVER.md`, "Deployment".
 Q16-Q18 (2026-11-14): `taba-score` and 11 evaluation scenarios; rank, pace and spend checks; and an OpenStreetMap fallback when Foursquare gives nothing (Foursquare credits ran out). Q19 adds Nominatim as a second fallback. Deployed as `taba-server:q19`. Apple Maps data cannot be stored in guides (Apple's terms); see the server `docs/PLAN.md` notes.
-Next: the owner rebuilds Leeds.
+Q20 (2026-11-14, committed, not deployed): research names up to 20 places (research.md v6), each looked up on OpenStreetMap by name with a shorter-name retry; the sweep only fills gaps (Nominatim, then Overpass); research picks are marked and plan.md v11 prefers them; the build no longer uses Foursquare or its key. Next: the six-trip comparison, then deploy, each with the owner's yes.
