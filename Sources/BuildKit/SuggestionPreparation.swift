@@ -109,16 +109,26 @@ public actor SuggestionPreparation {
         return LocalDate(year: year, month: month, day: day)
     }
 
-    /// Research says what a suggested place is. A place source often files a street or a hill under another kind
-    /// ("other", "landmark"), and indoor follows the kind, so the place could be taken for indoors. A suggested street,
-    /// neighbourhood or viewpoint keeps its own kind and is outdoors when the source gave it "other" or "landmark".
-    /// Every other place comes back as it is.
+    /// Research says what a suggested place is, and a place source often files it under a vague kind: "other" for a
+    /// takeaway, a bakery-cafe or a pedestrian square, and "landmark" for a street or a hill. The place then takes the
+    /// suggested kind in two cases:
+    /// - a suggested street, neighbourhood or viewpoint over a found "other" or "landmark";
+    /// - any other suggested kind over a found "other".
+    /// A found kind other than "other" always wins otherwise (a found pub stays a pub). When the place takes the
+    /// suggested kind, it is outdoors if the kind is street, neighbourhood, viewpoint, landmark or market, and keeps
+    /// the found indoor flag for every other kind. Every other field of the place is kept.
     static func keepingSuggestedKind(_ place: Place, suggested: PlaceKind) -> Place {
-        let outdoorKinds: Set<PlaceKind> = [.street, .neighbourhood, .viewpoint]
-        guard outdoorKinds.contains(suggested), [PlaceKind.other, .landmark].contains(place.kind) else { return place }
+        let outdoorSuggestions: Set<PlaceKind> = [.street, .neighbourhood, .viewpoint]
+        let vagueSourceKinds: Set<PlaceKind> = [.other, .landmark]
+        let takesSuggestion = (outdoorSuggestions.contains(suggested) && vagueSourceKinds.contains(place.kind))
+            || (place.kind == .other && suggested != .other)
+        guard takesSuggestion else { return place }
+        let outdoorKinds: Set<PlaceKind> = [.street, .neighbourhood, .viewpoint, .landmark, .market]
+        let indoor = outdoorKinds.contains(suggested) ? false : place.indoor
         return Place(id: place.id, name: place.name, kind: suggested, location: place.location, hours: place.hours,
-                     priceLevel: place.priceLevel, booking: place.booking, indoor: false, images: place.images,
-                     facts: place.facts, copy: place.copy, website: place.website, phone: place.phone)
+                     priceLevel: place.priceLevel, booking: place.booking, indoor: indoor, images: place.images,
+                     facts: place.facts, copy: place.copy, website: place.website, phone: place.phone,
+                     interests: place.interests)
     }
 
     /// The measured search labels with research's labels added to each verified suggested place:

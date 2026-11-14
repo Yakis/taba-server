@@ -69,8 +69,8 @@ struct SuggestionPreparationTests {
 
     @Test func otherSuggestionsComeBackUntouched() throws {
         let base = try #require(try fixtureFacts().places.values.first)
-        let pub = place(base, kind: .other, indoor: true)
-        #expect(SuggestionPreparation.keepingSuggestedKind(pub, suggested: .pub) == pub)
+        let pub = place(base, kind: .pub, indoor: true)
+        #expect(SuggestionPreparation.keepingSuggestedKind(pub, suggested: .restaurant) == pub)
         let museum = place(base, kind: .museum, indoor: true)
         #expect(SuggestionPreparation.keepingSuggestedKind(museum, suggested: .street) == museum)
     }
