@@ -65,7 +65,7 @@ struct TabaServer {
             timeout: .init(connect: .seconds(15), read: .minutes(10))))
         do {
             // The default model is used by trips that name none. It is also the only model offered offline.
-            let defaultModel = environment["TABA_MODEL"] ?? "gpt-6.1-sol"
+            let defaultModel = environment["TABA_MODEL"] ?? "gpt-6.2-sol"
             let runner: StageRunner
             let models: any TripModelCatalog
             // The provider keys are optional. A missing or empty key means that provider is not offered.

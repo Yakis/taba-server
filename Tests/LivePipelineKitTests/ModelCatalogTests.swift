@@ -99,6 +99,17 @@ struct ModelCatalogTests {
         #expect(await unnamed.options() == [ModelOption(id: "gpt-4o", name: "gpt-4o", provider: "ChatGPT")])
     }
 
+    @Test func gpt62SolIsOfferedAsSolOnceThePlanListsIt() async {
+        let slugs = ["gpt-6.1-sol", "gpt-6.2-sol", "gpt-6.2-astra", "gpt-6.1-terra", "gpt-6-luna"]
+        let catalog = ModelCatalog(defaultModel: "gpt-6.2-sol", clock: { self.start },
+                                   fetchSlugs: { slugs })
+        #expect(await catalog.options() == [
+            ModelOption(id: "gpt-6.2-sol", name: "Sol", provider: "ChatGPT"),
+            ModelOption(id: "gpt-6.1-terra", name: "Terra", provider: "ChatGPT"),
+            ModelOption(id: "gpt-6-luna", name: "Luna", provider: "ChatGPT")
+        ])
+    }
+
     @Test func theDefaultIsAlwaysOfferedFirstWhenTheAccountListLacksIt() async {
         let fetch = ScriptedFetch([.success(["gpt-6.1-terra", "gpt-6.1-luna"])])
         let catalog = ModelCatalog(defaultModel: "gpt-6.1-sol", clock: { self.start },

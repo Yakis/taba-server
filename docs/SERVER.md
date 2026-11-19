@@ -38,7 +38,7 @@ in the process environment. Do not put real tokens in this repository or command
 | `DB_HOST`, `DB_PORT` | `localhost`, `5432` |
 | `DB_USER`, `DB_NAME` | `taba`, `taba` |
 | `DB_PASSWORD` | `taba-local-only` — local development only |
-| `TABA_MODEL` | The default model for new trips; `gpt-6.1-sol` when unset (deployed: `gpt-6.1-terra`) |
+| `TABA_MODEL` | The default model for new trips; `gpt-6.2-sol` when unset (deployed: `gpt-6.1-sol` until the next deploy) |
 | `ANTHROPIC_API_KEY` | Optional, paid per use. When set, Claude Opus 5.5 and Claude Sonnet 5.5 are offered. Never logged. |
 | `DEEPSEEK_API_KEY` | Optional, paid per use. When set, DeepSeek V4 Pro and DeepSeek Flash are offered. Never logged. |
 | `TABA_WORKERS` | How many stages run at once, across trips: 1–4, default 3 (other values use 3). Each trip still runs one stage at a time. |
@@ -106,7 +106,7 @@ provider configuration are not accepted, apart from picking one of the offered `
 can embed `GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json` as `facts`.
 
 Models: `GET /models` answers
-`{"default":"gpt-6.1-sol","models":[{"id":"gpt-6.1-sol","name":"Sol","provider":"ChatGPT"},...]}`. Each option has a
+`{"default":"gpt-6.2-sol","models":[{"id":"gpt-6.2-sol","name":"Sol","provider":"ChatGPT"},...]}`. Each option has a
 `provider`: `ChatGPT`, `Claude` or `DeepSeek`.
 The list is the newest Sol, Terra and Luna on the ChatGPT plan (from `GET https://api.openai.com/v1/models`), kept
 for an hour; if the plan cannot be asked, the last good list, or only the default. The default is always first.
