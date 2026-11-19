@@ -55,21 +55,148 @@ struct ResearchFactFilterTests {
                          practical: practical, sources: sources)
     }
 
-    private func filtered(_ findings: [ResearchFinding]) throws -> TripFacts {
+    /// The made-up station where a train trip arrives.
+    private static let stationName = "Riverside Station"
+
+    /// The trip's facts with a way of travelling recorded: arriving at a made-up station. Nil leaves them as they are.
+    private func travelling(_ base: TripFacts, mode: TravelMode?) throws -> TripFacts {
+        guard let mode else { return base }
+        let model = try #require(base.places.values.first)
+        let station = Place(id: "manual:arrival", name: Self.stationName, kind: .station, location: model.location,
+                            hours: model.hours, priceLevel: nil, booking: model.booking, indoor: true, images: [],
+                            facts: [], copy: nil)
+        let trip = Trip(destination: base.trip.destination, dates: base.trip.dates, party: base.trip.party,
+                        budget: base.trip.budget, interests: base.trip.interests, pace: base.trip.pace,
+                        voice: base.trip.voice,
+                        travel: TripTravel(mode: mode, arrivalPlaceId: station.id, departurePlaceId: station.id))
+        return TripFacts(trip: trip, bookings: base.bookings, stay: base.stay,
+                         places: base.places.merging([station.id: station]) { first, _ in first },
+                         practical: base.practical, sources: base.sources)
+    }
+
+    private func filtered(_ findings: [ResearchFinding], mode: TravelMode? = nil) throws -> TripFacts {
         let setting = try setting()
-        return ResearchFactFilter.filtered(withResearch(setting.base, findings), findings: findings,
-                                           draft: setting.draft)
+        let facts = try travelling(withResearch(setting.base, findings), mode: mode)
+        return ResearchFactFilter.filtered(facts, findings: findings, draft: setting.draft)
+    }
+
+    private func isKept(_ finding: ResearchFinding, mode: TravelMode? = nil) throws -> Bool {
+        try texts(filtered([finding], mode: mode)).contains(ResearchFactFilter.factText(for: finding))
     }
 
     private func texts(_ facts: TripFacts) -> [String] {
         facts.practical.map(\.text)
     }
 
-    @Test func keepsATransportWarningOnTheTripDates() throws {
-        let warning = finding("f1", kind: .transport, title: "Engineering works", summary: "Trains run late.",
+    // Changed: this test used to keep any transport warning on the trip dates. A warning now has to name the arrival
+    // place, the stay or a visited place, so this one names the arrival station.
+    @Test func keepsATransportWarningThatNamesTheArrivalStation() throws {
+        let warning = finding("f1", kind: .transport, title: "Engineering works",
+                              summary: "Trains to \(Self.stationName) run late.", placeName: nil)
+        #expect(try isKept(warning, mode: .train))
+    }
+
+    @Test func keepsATransportWarningThatNamesTheArrivalStationWithoutItsKindOfPlace() throws {
+        let warning = finding("f1", kind: .transport, title: "Engineering works",
+                              summary: "Trains into Riverside run late.", placeName: nil)
+        #expect(try isKept(warning, mode: .train))
+    }
+
+    @Test func keepsAClosureThatNamesTheStay() throws {
+        let setting = try setting()
+        let stayId = try #require(setting.base.stay.placeId)
+        let stayName = try #require(setting.base.places[stayId]?.name)
+        let closure = finding("f1", kind: .closure, title: "Lift closed", summary: "The lift at \(stayName) is shut.",
                               placeName: nil)
-        let result = try filtered([warning])
-        #expect(texts(result).contains(ResearchFactFilter.factText(for: warning)))
+        #expect(try isKept(closure))
+    }
+
+    @Test func keepsAClosureThatNamesAVisitedPlace() throws {
+        let visited = try setting().visitedName
+        let closure = finding("f1", kind: .closure, title: "Closed for repairs",
+                              summary: "\(visited) is shut for repairs.", placeName: nil)
+        #expect(try isKept(closure, mode: .train))
+    }
+
+    @Test func dropsATransportWarningThatNamesNoPlaceThatMatters() throws {
+        let warning = finding("f1", kind: .transport, title: "Rail replacement buses on the Hillford route",
+                              summary: "Replacement buses run between Northgate and Hillford on Sunday.",
+                              placeName: nil)
+        #expect(try !isKept(warning, mode: .train))
+        #expect(try !isKept(warning))
+    }
+
+    @Test func keepsAHolidayWithoutAnyPlace() throws {
+        let holiday = finding("f1", kind: .holiday, title: "Bank holiday", summary: "Shops keep shorter hours.",
+                              placeName: nil)
+        #expect(try isKept(holiday, mode: .train))
+        #expect(try isKept(holiday))
+    }
+
+    /// The kinds of finding a real review of a trip by train on foot showed as noise, with the places made up.
+    private struct Noise {
+        let title: String
+        let summary: String
+        let kind: FindingKind
+    }
+
+    private static let noisyFindings: [Noise] = [
+        Noise(title: "Riverside Bridge traffic restriction",
+              summary: "The section nearest Market Street is closed to road traffic except cycles.", kind: .closure),
+        Noise(title: "Mill Lane closure",
+              summary: "The council lists a road closure between High Road and Chapel Steps.", kind: .closure),
+        Noise(title: "Overnight citybound closure at Mill Terrace",
+              summary: "Manhole repairs close Mill Terrace to citybound traffic overnight.", kind: .transport),
+        Noise(title: "Rail replacement buses on the Hillford route",
+              summary: "Replacement buses run between Northgate and Hillford during engineering works.",
+              kind: .transport)
+    ]
+
+    @Test(arguments: noisyFindings.indices)
+    func dropsRoadAndRouteNoiseOnATrainTrip(index: Int) throws {
+        let example = Self.noisyFindings[index]
+        let noise = finding("f1", kind: example.kind, title: example.title, summary: example.summary,
+                            placeName: nil)
+        #expect(try !isKept(noise, mode: .train))
+    }
+
+    private func millLaneClosure() -> ResearchFinding {
+        finding("f1", kind: .closure, title: "Mill Lane closure",
+                summary: "The council lists a road closure between High Road and Chapel Steps.", placeName: nil)
+    }
+
+    @Test(arguments: [TravelMode.car, .coach])
+    func keepsARoadClosureWhenDrivingOrByCoach(mode: TravelMode) throws {
+        #expect(try isKept(millLaneClosure(), mode: mode))
+    }
+
+    @Test(arguments: [TravelMode.train, .flight])
+    func dropsARoadClosureWhenNotDrivingOrByCoach(mode: TravelMode) throws {
+        #expect(try !isKept(millLaneClosure(), mode: mode))
+    }
+
+    @Test func keepsARoadClosureWhenNoTravelIsRecorded() throws {
+        #expect(try isKept(millLaneClosure()))
+    }
+
+    @Test func decidesARoadFindingBeforeLookingForTheArrivalStation() throws {
+        let restriction = finding("f1", kind: .closure, title: "Riverside Bridge traffic restriction",
+                                  summary: "Closed to road traffic except cycles.", placeName: nil)
+        #expect(try !isKept(restriction, mode: .train))
+    }
+
+    @Test(arguments: ["Road closure on Mill Lane.", "Closed to traffic on Sunday.", "Closed to road traffic.",
+                      "Citybound lane shut overnight.", "Outbound buses diverted.", "A diversion is in place.",
+                      "Lane closure on the bridge.", "Manhole repairs.", "Roadworks near the square."])
+    func roadTrafficWordingIsRecognised(text: String) {
+        #expect(ResearchFactFilter.readsAsRoadTraffic(text))
+    }
+
+    @Test(arguments: ["Replacement buses run on Sunday.", "Trains are cancelled after 20:00.",
+                      "The station closes at midnight.",
+                      "Outbound trains are diverted via the coast line.", "Rail traffic is light on Sunday."])
+    func otherTransportWordingIsNotRoadTraffic(text: String) {
+        #expect(!ResearchFactFilter.readsAsRoadTraffic(text))
     }
 
     @Test func keepsAnEventAtAVisitedPlace() throws {

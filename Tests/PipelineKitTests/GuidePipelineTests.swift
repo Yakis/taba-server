@@ -384,11 +384,14 @@ extension GuidePipelineTests {
 
     @Test func sourcedResearchSurvivesInGuideAndWriterInput() async throws {
         let fixture = try data()
-        // A transport warning is kept without a place, so the source reaches the guide. An event with no place the plan
-        // visits would be left out (see ResearchFactFilter).
+        // A transport warning that names the stay is kept, so the source reaches the guide. One that names no place
+        // that matters, or an event with no place the plan visits, would be left out (see ResearchFactFilter).
+        let stayId = try #require(fixture.facts.stay.placeId)
+        let stayName = try #require(fixture.facts.places[stayId]?.name)
         let finding = ResearchFinding(id: "f1", kind: .transport, title: "Tram works",
-            summary: "Trams run a shorter route.", startDate: nil, endDate: nil, times: nil, placeName: nil,
-            address: nil, url: "https://example.com/trams", sourceTitle: "Transport page", confidence: .high,
+            summary: "Trams run a shorter route past \(stayName).", startDate: nil, endDate: nil, times: nil,
+            placeName: nil, address: nil, url: "https://example.com/trams", sourceTitle: "Transport page",
+            confidence: .high,
             onTripDates: true)
         let research = ResearchResult(findings: [finding], suggestedPlaces: [], searchNotes: "")
         let script = try PipelineScript([json(research), json(fixture.draft), json(fixture.draft),
