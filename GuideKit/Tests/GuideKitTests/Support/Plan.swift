@@ -35,7 +35,8 @@ enum Plan {
         kind: PlaceKind = .cafe,
         indoor: Bool = true,
         hours: OpeningHours = unknownHours,
-        at coordinate: Coordinate = centre
+        at coordinate: Coordinate = centre,
+        afterDark: Bool? = nil
     ) -> Place {
         Place(
             id: id,
@@ -48,7 +49,8 @@ enum Plan {
             indoor: indoor,
             images: [],
             facts: [],
-            copy: nil
+            copy: nil,
+            afterDark: afterDark
         )
     }
 

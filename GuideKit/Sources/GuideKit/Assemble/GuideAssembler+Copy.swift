@@ -135,7 +135,8 @@ extension Place {
             copy: copy,
             website: website,
             phone: phone,
-            interests: interests
+            interests: interests,
+            afterDark: afterDark
         )
     }
 
@@ -155,7 +156,8 @@ extension Place {
             copy: copy,
             website: website,
             phone: phone,
-            interests: interests
+            interests: interests,
+            afterDark: afterDark
         )
     }
 }

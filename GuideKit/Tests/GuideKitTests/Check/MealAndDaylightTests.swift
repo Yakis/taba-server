@@ -47,74 +47,18 @@ struct MealCheckTests {
     }
 }
 
+/// Daylight no longer limits a plan: an outdoor stop may be timed for lit streets, markets or night views.
 struct DaylightCheckTests {
     private let viewpoint = Plan.place("view", name: "Test Viewpoint", kind: .viewpoint, indoor: false)
 
-    private func sight(_ id: String, startingAt start: Int, place: String = "view") -> Stop {
-        Plan.stop(id, start: start, minutes: 30, place: place)
-    }
-
-    @Test func outdoorSightStartingAfterSunsetFires() {
+    @Test(arguments: [-40, -10, 0, 12, 90])
+    func outdoorSightsAreNeverFlaggedForDaylight(minutesFromSunset: Int) {
         let sunset = Plan.sunsetMinutes(on: "2026-11-23")
-        let day = SampleGuide.day(on: "2026-11-23", stops: [sight("late", startingAt: sunset + 10)])
-        let issues = Plan.issues(Plan.guide(days: [day], places: [viewpoint]))
-        #expect(issues.contains(where: { $0.kind == .afterSunset && $0.severity == .error && $0.stopId == "late" }))
-    }
-
-    @Test func outdoorSightStartingAtSunsetFires() {
-        let sunset = Plan.sunsetMinutes(on: "2026-11-23")
-        let day = SampleGuide.day(on: "2026-11-23", stops: [sight("at", startingAt: sunset)])
-        #expect(Plan.has(Plan.issues(Plan.guide(days: [day], places: [viewpoint])), .afterSunset))
-    }
-
-    @Test func outdoorSightStartingWithinHalfAnHourOfSunsetWarns() {
-        // Starts 20 minutes before sunset, which is less than 30 minutes before it.
-        let sunset = Plan.sunsetMinutes(on: "2026-11-23")
-        let day = SampleGuide.day(on: "2026-11-23", stops: [sight("close", startingAt: sunset - 20)])
-        let issues = Plan.issues(Plan.guide(days: [day], places: [viewpoint]))
-        #expect(issues.contains(where: { $0.kind == .nearSunset && $0.severity == .warning }))
-        #expect(!Plan.has(issues, .afterSunset))
-    }
-
-    @Test func outdoorSightWellBeforeSunsetDoesNotFire() {
-        let sunset = Plan.sunsetMinutes(on: "2026-11-23")
-        let day = SampleGuide.day(on: "2026-11-23", stops: [sight("early", startingAt: sunset - 60)])
+        let stop = Plan.stop("view-stop", start: sunset + minutesFromSunset, minutes: 30, place: "view")
+        let day = SampleGuide.day(on: "2026-11-23", stops: [stop])
         let issues = Plan.issues(Plan.guide(days: [day], places: [viewpoint]))
         #expect(!Plan.has(issues, .afterSunset))
         #expect(!Plan.has(issues, .nearSunset))
-    }
-
-    @Test func indoorSightIsNotDaylightChecked() {
-        let museum = Plan.place("museum", name: "Test Museum", kind: .museum, indoor: true)
-        let sunset = Plan.sunsetMinutes(on: "2026-11-23")
-        let day = SampleGuide.day(on: "2026-11-23", stops: [sight("inside", startingAt: sunset + 60, place: "museum")])
-        #expect(!Plan.has(Plan.issues(Plan.guide(days: [day], places: [museum])), .afterSunset))
-    }
-
-    @Test func marketAndLightsAreExemptFromDaylight() {
-        let sunset = Plan.sunsetMinutes(on: "2026-11-23")
-        let market = Plan.place("market", name: "Test Market", kind: .market, indoor: false)
-        let lights = Plan.place("lights", name: "Test Christmas Lights", kind: .landmark, indoor: false)
-        let day = SampleGuide.day(on: "2026-11-23", stops: [
-            sight("market", startingAt: sunset + 60, place: "market"),
-            sight("lights", startingAt: sunset + 60, place: "lights")
-        ])
-        #expect(!Plan.has(Plan.issues(Plan.guide(days: [day], places: [market, lights])), .afterSunset))
-    }
-
-    @Test func polarNightGivesNoDaylightIssueButAnInfo() throws {
-        // Tromsø has no sunset on 2025-12-21, so no daylight issue is raised; the checker says so once.
-        let tromso = try #require(Coordinate(latitude: 69.6492, longitude: 18.9553))
-        let trip = Plan.trip(start: "2025-12-21", end: "2025-12-22", centre: tromso, timeZoneId: "Europe/Oslo")
-        let day = SampleGuide.day(on: "2025-12-21", stops: [
-            Plan.stop("view", start: 900, minutes: 60, place: "view"),
-            Plan.stop("walk", start: 1000, minutes: 60, place: "view")
-        ])
-        let issues = Plan.issues(Plan.guide(days: [day], places: [viewpoint], trip: trip))
-        #expect(!Plan.has(issues, .afterSunset))
-        #expect(!Plan.has(issues, .nearSunset))
-        let info = issues.filter { $0.kind == .noDaylightData }
-        #expect(info.count == 1)
-        #expect(info.first?.severity == .info)
+        #expect(!Plan.has(issues, .noDaylightData))
     }
 }

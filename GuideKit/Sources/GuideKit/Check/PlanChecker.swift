@@ -15,7 +15,6 @@ public struct PlanChecker: Sendable {
         let findings = hoursFindings(context)
             + timingFindings(context)
             + mealFindings(context)
-            + daylightFindings(context)
             + transitFindings(context)
             + stayFindings(context)
             + paceFindings(context)

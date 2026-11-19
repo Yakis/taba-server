@@ -16,11 +16,11 @@ public enum IssueKind: String, CaseIterable, Hashable, Sendable, Codable {
     case mealMissing
     /// A meal starts outside its time slot. It still counts as the meal.
     case mealOffSlot
-    /// An outdoor sight ends after sunset.
+    /// No longer raised (daylight does not limit a plan); kept so older evidence still decodes.
     case afterSunset
-    /// An outdoor sight ends less than 15 minutes before sunset.
+    /// No longer raised; kept so older evidence still decodes.
     case nearSunset
-    /// Sunset is not known for the date, so daylight is not checked.
+    /// No longer raised; kept so older evidence still decodes.
     case noDaylightData
     /// A stop starts before the traveller can reach it after arriving.
     case beforeArrival

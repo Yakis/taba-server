@@ -10,15 +10,6 @@ extension Place {
             return false
         }
     }
-
-    /// Markets, and landmarks named for lights or Christmas, are meant for after dark, so daylight checks skip them.
-    var isDaylightExempt: Bool {
-        if kind == .market {
-            return true
-        }
-        let lowered = name.lowercased()
-        return kind == .landmark && (lowered.contains("light") || lowered.contains("christmas"))
-    }
 }
 
 extension Pace {

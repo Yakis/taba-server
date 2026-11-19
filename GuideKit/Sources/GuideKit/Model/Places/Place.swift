@@ -21,6 +21,9 @@ public struct Place: Hashable, Sendable, Codable {
     /// The traveller's interests, as written and in trip order, that this place serves. Omitted in guides made before
     /// this was recorded, and when the place serves none.
     public let interests: [String]?
+    /// True when something on the trip dates, such as a seasonal market or an event, makes this place worth visiting
+    /// after dark. The planner is told so. Omitted when nothing does.
+    public let afterDark: Bool?
 
     public init(
         id: String,
@@ -36,7 +39,8 @@ public struct Place: Hashable, Sendable, Codable {
         copy: PlaceCopy?,
         website: String? = nil,
         phone: String? = nil,
-        interests: [String]? = nil
+        interests: [String]? = nil,
+        afterDark: Bool? = nil
     ) {
         self.id = id
         self.name = name
@@ -52,5 +56,6 @@ public struct Place: Hashable, Sendable, Codable {
         self.website = website
         self.phone = phone
         self.interests = interests
+        self.afterDark = afterDark
     }
 }
