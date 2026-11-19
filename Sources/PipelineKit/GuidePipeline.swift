@@ -11,6 +11,8 @@ public enum PipelineEvidence: Sendable {
     case decodeFailed(step: String, message: String)
     case research(accepted: ResearchResult, resolvedPlaceIDs: [String])
     case plan(round: Int, issues: [PlanIssue])
+    /// Gaps fixed by the server before a repair was needed: one plain sentence for each change.
+    case nudge(round: Int, changes: [String])
     case copy(issues: [CopyCheckIssue])
     case failure(message: String)
     case completed
@@ -145,22 +147,20 @@ public struct GuidePipeline: Sendable {
         var conversation = planned.conversation
         var draft = planned.draft
         var previousAssistant = planned.previousAssistant
-        let assembler = GuideAssembler(walkTimes: walkTimes)
-        let checker = PlanChecker(walkTimes: walkTimes)
         let served = ServedInterests.forTrip(facts, measurements: researched.measurements)
+        let scope = PlanCheckScope(id: id, facts: facts, served: served)
         for round in 0...2 {
             let problems = draftProblems(draft, facts: facts, findings: verified.result.findings,
                                          planInput: planned.planInput)
-            let withTransit = addTransit(draft, facts: facts)
+            var withTransit = addTransit(draft, facts: facts)
             var issues = problems
             if problems.isEmpty {
-                let assembled = assembler.assemble(id: id, facts: facts, draft: withTransit, copy: emptyCopy,
-                                                   servedInterests: served)
-                let reverse = Dictionary(assembled.stopIds.map { ($0.value, $0.key) },
-                                         uniquingKeysWith: { first, _ in first })
-                issues += checker.check(assembled.guide).map { issue in
-                    PlanIssue(severity: issue.severity, kind: issue.kind, date: issue.date,
-                              stopId: issue.stopId.map { reverse[$0] ?? $0 }, message: issue.message)
+                issues += checkAssembled(withTransit, scope)
+                // A gap that is only a few minutes short is fixed here, so it costs no repair round.
+                if let nudged = nudge(withTransit, issues: issues, scope) {
+                    withTransit = nudged.draft
+                    issues = nudged.issues
+                    await evidence(.nudge(round: round, changes: nudged.changes))
                 }
             }
             let accepted = !issues.contains(where: { $0.severity != .info })
@@ -315,6 +315,14 @@ public struct GuidePipeline: Sendable {
         return result.guide
     }
 }
+
+extension GuidePipeline {
+    var emptyCopy: GuideCopy {
+        GuideCopy(hero: GuideHero(title: "", subtitle: "", tagline: ""), days: [], stops: [], places: [], lists: [],
+                  tasting: [], notes: GuideNotes(weather: "", light: "", backupPlan: "", rules: ""))
+    }
+}
+
 private extension GuidePipeline {
     // swiftlint:disable:next function_parameter_count
     func research(model: String, facts: TripFacts, measurements: PipelineInputMeasurements, stayArea: String,
@@ -407,11 +415,6 @@ private extension GuidePipeline {
     private func seconds(_ duration: Duration) -> Double {
         let parts = duration.components
         return Double(parts.seconds) + Double(parts.attoseconds) / 1e18
-    }
-
-    private var emptyCopy: GuideCopy {
-        GuideCopy(hero: GuideHero(title: "", subtitle: "", tagline: ""), days: [], stops: [], places: [], lists: [],
-                  tasting: [], notes: GuideNotes(weather: "", light: "", backupPlan: "", rules: ""))
     }
 
     private func measuredLegs(_ draft: PlanDraft, facts: TripFacts) -> JSONValue {

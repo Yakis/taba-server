@@ -45,6 +45,9 @@ struct EvidenceRecord: Encodable {
                           "resolvedPlaceIDs": try Self.value(ids)]
             case let .plan(round, issues):
                 fields = ["event": .string("plan"), "round": .integer(round), "issues": try Self.value(issues)]
+            case let .nudge(round, changes):
+                fields = ["event": .string("nudge"), "round": .integer(round),
+                          "changes": .array(changes.map { .string($0) })]
             case let .copy(issues):
                 fields = ["event": .string("copy"), "issues": try Self.value(issues.map(CopyReviewFlag.init))]
             case .failure:

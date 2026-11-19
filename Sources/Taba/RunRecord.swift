@@ -64,6 +64,9 @@ actor RunRecord {
                       "resolvedPlaceIDs": .array(ids.map { .string($0) })]
         case let .plan(round, issues):
             fields = ["event": .string("plan"), "round": .integer(round), "issues": value(issues)]
+        case let .nudge(round, changes):
+            fields = ["event": .string("nudge"), "round": .integer(round),
+                      "changes": .array(changes.map { .string($0) })]
         case let .copy(issues):
             fields = ["event": .string("copy"), "issues": .array(issues.map { .string(String(describing: $0)) })]
         case .failure:
