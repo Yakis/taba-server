@@ -415,6 +415,7 @@ private extension PipelineInputBuilder {
                                              searchLabels: measurements.searchLabels[place.id] ?? [])
         if !served.isEmpty { fields["interests"] = .array(served.map { .string($0) }) }
         if isResearched(place, measurements: measurements) { fields["researched"] = .bool(true) }
+        if place.afterDark == true { fields["afterDark"] = .bool(true) }
         return fields
     }
 

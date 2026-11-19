@@ -373,7 +373,9 @@ private extension GuidePipeline {
             sources.append(Source(id: id, url: finding.url, title: finding.sourceTitle, checkedAt: checked))
             practical.append(Fact(text: ResearchFactFilter.factText(for: finding), sourceId: id, checkedAt: checked))
         }
-        return TripFacts(trip: facts.trip, bookings: facts.bookings, stay: facts.stay, places: facts.places,
+        return TripFacts(trip: facts.trip, bookings: facts.bookings, stay: facts.stay,
+                         places: AfterDarkPlaces.marked(facts.places, findings: findings,
+                                                        cityName: facts.trip.destination.name),
                          practical: practical, sources: sources)
     }
 

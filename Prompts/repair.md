@@ -1,12 +1,12 @@
 ---
 id: repair
-version: 4
+version: 5
 role: message
 output: PlanDraft
 effort: high
 ---
 
-The plan you returned has been checked by code against the real opening hours, measured walking times, daylight
+The plan you returned has been checked by code against the real opening hours, measured walking times
 and the trip's fixed times. The problems it found are in `issues` below. The planning instructions and their
 priority order still apply.
 

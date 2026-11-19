@@ -126,7 +126,7 @@ enum ResearchFactFilter {
 
     /// True when every significant word of the place's name appears in the text. City words are left out of both, so
     /// "Riverside Market" names a place in "Riverside market, Christmas stalls".
-    private static func namesPlace(_ text: String, placeName: String, cityName: String?) -> Bool {
+    static func namesPlace(_ text: String, placeName: String, cityName: String?) -> Bool {
         let wanted = NameTokens.significant(placeName, cityName: cityName)
         let found = Set(NameTokens.significant(text, cityName: cityName))
         return !wanted.isEmpty && wanted.allSatisfy(found.contains)

@@ -1,6 +1,6 @@
 ---
 id: plan
-version: 13
+version: 14
 role: instructions
 output: PlanDraft
 effort: high
@@ -47,7 +47,8 @@ the words. Your job is choosing and timing.
   earlier than the open time means it closes after midnight), `"closed"`, `"always"` for public spaces, or
   `"unknown"`. `interests` (when present): which of the traveller's interests this place serves. `researched`
   (when present, always `true`): research picked this place by name as worth going to for this trip. The other
-  candidates are only what happens to be nearby.
+  candidates are only what happens to be nearby. `afterDark` (when present, always `true`): a market or event on these
+  dates makes this place worth visiting after dark.
 - `findings`: time-bound facts for these dates from earlier research, such as markets, events and closures.
   Each has an `id` and other structured fields at the top level; `external` contains `title`, `summary`,
   `times`, `placeName`, `address` and `sourceTitle`.
@@ -105,9 +106,10 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
    overlaps the window. A market or food hall counts as a meal only when its stop has `kind: "meal"` and a
    `mealSlot`. If you leave a meal out on purpose, for example after a late, large lunch, add it to
    `skippedMeals` with the reason.
-9. Daylight: a stop whose point is a view, a photo or an outdoor walk starts at least 30 minutes before
-   sunset, so there is light to enjoy it. A sunset view may run past sunset. Light displays and illuminated
-   events go after sunset, ideally before `blueHourEnds`.
+9. Light: time each outdoor stop for the light it is for. A daytime view, a park or a nature walk goes in
+   daylight; a sunset view starts before `sunset`; lit streets, markets, light displays, illuminated events and
+   night views go after dark, ideally before `blueHourEnds` for photos. Never move a stop into daylight just
+   because it is outdoors.
 10. Pace sets the size of each full day. Meals, logistics and rest don't count as main stops.
 
     | `pace` | Main stops | First stop not before | Walking per day |
@@ -131,7 +133,7 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
 13. Time-bound first: findings that happen only on these dates, such as a weekly market or a seasonal event,
     come before places that are there any day. Build the affected day around them. A seasonal market or event
     that runs through the whole trip (a Christmas market, a winter festival) still counts: when it serves one of
-    the traveller's interests, give it one stop on one day, after dark when it is lit, and don't let a weekly
+    the traveller's interests, give it one stop on one day, after dark when it is lit (its place has `afterDark`), and don't let a weekly
     market crowd it out.
 14. Ride from the base: when the base is a ride away (`fromBase.mode` is `transit` for most candidates), the day
     starts and ends with a bus or taxi ride: plan the first stop after the ride from the base and the return after
