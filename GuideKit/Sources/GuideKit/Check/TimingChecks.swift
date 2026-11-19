@@ -1,4 +1,15 @@
 extension PlanChecker {
+    /// The shortest gap the checker leaves between two stops with a leg of `legMinutes` between them. Same area (a
+    /// walk of 5 minutes or less): 5 minutes. Between areas: at least 10. The gap is never less than the leg itself.
+    public static func minimumBuffer(legMinutes: Int) -> Int {
+        legMinutes <= 5 ? 5 : 10
+    }
+
+    /// The smallest gap between two stops that raises neither a `tightGap` nor a `shortGap` finding.
+    public static func requiredGap(legMinutes: Int) -> Int {
+        max(legMinutes, minimumBuffer(legMinutes: legMinutes))
+    }
+
     /// Overlaps, and gaps too short for the walk or for comfort, between consecutive stops in each day.
     func timingFindings(_ context: CheckContext) -> [Finding] {
         var findings: [Finding] = []
@@ -29,8 +40,7 @@ extension PlanChecker {
             let message = "Only \(gap) minutes between \(names), but \(travel) about \(leg.minutes) minutes."
             return [Finding(.error, .tightGap, date: date, stop: next, message: message)]
         }
-        // Same area (a walk of 5 minutes or less): leave 5 minutes. Between areas: leave at least 10.
-        let threshold = leg.minutes <= 5 ? 5 : 10
+        let threshold = Self.minimumBuffer(legMinutes: leg.minutes)
         if gap < threshold {
             let message = "Only \(gap) minutes between \(names); leave at least \(threshold)."
             return [Finding(.warning, .shortGap, date: date, stop: next, message: message)]
