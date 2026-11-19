@@ -1,6 +1,6 @@
 ---
 id: plan
-version: 12
+version: 13
 role: instructions
 output: PlanDraft
 effort: high
@@ -129,7 +129,10 @@ When two rules conflict, follow the earlier one and note the trade-off in `openQ
     `alternative` with `reason: "rain"`, pointing to an indoor candidate in the same or a neighbouring area
     that is open then. Use `null` only when no candidate fits.
 13. Time-bound first: findings that happen only on these dates, such as a weekly market or a seasonal event,
-    come before places that are there any day. Build the affected day around them.
+    come before places that are there any day. Build the affected day around them. A seasonal market or event
+    that runs through the whole trip (a Christmas market, a winter festival) still counts: when it serves one of
+    the traveller's interests, give it one stop on one day, after dark when it is lit, and don't let a weekly
+    market crowd it out.
 14. Ride from the base: when the base is a ride away (`fromBase.mode` is `transit` for most candidates), the day
     starts and ends with a bus or taxi ride: plan the first stop after the ride from the base and the return after
     the last stop, and don't go back to the base in the middle of the day unless check-in or bags need it.
