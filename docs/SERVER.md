@@ -38,7 +38,7 @@ in the process environment. Do not put real tokens in this repository or command
 | `DB_HOST`, `DB_PORT` | `localhost`, `5432` |
 | `DB_USER`, `DB_NAME` | `taba`, `taba` |
 | `DB_PASSWORD` | `taba-local-only` — local development only |
-| `TABA_MODEL` | The default model for new trips; `gpt-6.2-sol` when unset (deployed: `gpt-6.1-sol` until the next deploy) |
+| `TABA_MODEL` | The default model for new trips; `gpt-6.2-sol` when unset |
 | `ANTHROPIC_API_KEY` | Optional, paid per use. When set, Claude Opus 5.5 and Claude Sonnet 5.5 are offered. Never logged. |
 | `DEEPSEEK_API_KEY` | Optional, paid per use. When set, DeepSeek V4 Pro and DeepSeek Flash are offered. Never logged. |
 | `TABA_WORKERS` | How many stages run at once, across trips: 1–4, default 3 (other values use 3). Each trip still runs one stage at a time. |
@@ -185,6 +185,9 @@ docker build -t taba-local:static .
 BuildKit keeps compilation in a reusable cache; check Docker's free space before a first build. Never prune
 images, volumes or build cache without owner approval.
 
+Gotcha: Docker on the Mac fills up (build cache, and the `taba_test_*` databases the Postgres tests keep).
+`no space left on device` blocks image builds. Prune only with the owner's yes.
+
 ### Offline Edinburgh API replay
 
 Use an existing private step-4 run directory containing `run.json` and `guide.json`. Explicitly set
@@ -224,7 +227,9 @@ docker buildx build --platform linux/amd64 -t taba-server:<tag> --load .
 
 The Static SDK version and checksum in the `Dockerfile` must match the Swift compiler of the build image
 exactly (swift.org lists both). Code that imports `Glibc` needs a `Musl` branch too
-(`#elseif canImport(Musl)`). The image has a health check (`wget` on `/health`, BusyBox is in the base).
+(`#elseif canImport(Musl)`). Linux code that uses `URLRequest` needs `import FoundationNetworking` under
+`#if canImport(FoundationNetworking)`. The image has a health check (`wget` on `/health`, BusyBox is in the
+base).
 
 Production runs as two Compose services next to the host's other apps:
 
@@ -240,5 +245,19 @@ container user (65532), mounted writable because a token refresh replaces the fi
 terminates TLS for a tailnet-only host name and refuses public requests with 403. Backups take a `pg_dump`
 of the database rather than its live files.
 
+Before and after a deploy:
+
+- Deploy only with the owner's yes.
+- Back up the database first.
+- Check that no trip is queued or running.
+- After the switch, check that `/health` returns 200.
+- Keep the previous image on the host as the rollback.
+
 To update: build a new image, `docker save | docker load` it on the host, change the pinned image ID in the
 host's Compose configuration, and apply it; only `taba-server` is recreated.
+
+### Reading a trip from the database
+
+To look at a trip, run read-only SQL over SSH inside the Postgres container (the exact command is in the
+gitignored `private/INFRA.md`). The tables are `taba_trips` (`input` and `guide` are BYTEA: read them with
+`convert_from(<col>, 'UTF8')`), `taba_progress`, `taba_evidence`, `taba_checkpoints` and `taba_copy_reviews`.

@@ -50,6 +50,9 @@ export TABA_TOKEN='...'   # the app token
 swift run taba-score build --server https://<server> --scenarios Evaluation/scenarios --out Evaluation/runs/<label>
 ```
 
+To build a subset, copy those scenario files into a new folder and pass it as `--scenarios`. Ask the owner
+before any batch of builds.
+
 The runner posts each scenario with its dates moved to `startInDays` after today, keeping the trip's length. It waits
 while the server is busy, polls each trip every 15 seconds, and saves each finished guide as
 `Evaluation/runs/<label>/<scenario>.json`.
