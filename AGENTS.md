@@ -1,15 +1,30 @@
 # AGENTS.md
 
-Instructions for coding agents working on TABA. At the start of every session, read:
+Instructions for coding agents working on TABA.
 
-1. this file;
-2. `private/HANDOFF.md`, if it exists: the current state, the next actions, and the owner's
-   infrastructure details. The `private/` folder is gitignored and must never be committed;
-3. `docs/PLAN.md`: what we are building, the pipeline, the milestones, and each step's "done when";
-4. `Prompts/README.md`, before touching anything AI-related.
+## Start of every session
 
-Then check `git status` and `git log --oneline -5` against the handoff's `Now` section before you change
-anything. Keep the handoff current as you go (see "Handoff routine" below).
+1. Read this file.
+2. Read `private/HANDOFF.md` if it exists (gitignored, never commit `private/`): *Now* and *Next*. Do the task
+   under *Next* unless the owner says otherwise.
+3. Run `git status` and `git log --oneline -5`; if they disagree with *Now*, fix the handoff first.
+
+Then read nothing else up front. Use "Where to look" below. For any doc over 3,000 words, list its headings
+first (`rg -n '^#' <file>`) and read one section (`docs/PLAN.md` is over that). Never read `docs/history/`
+unless asked about a past decision.
+
+## Where to look
+
+| Task touches | Read |
+|---|---|
+| What TABA is, the pipeline, providers | `docs/PLAN.md` "Shape", "How a guide is built", "Providers" |
+| Anything AI-related (prompts, schemas, versions) | `Prompts/README.md`, before touching it |
+| A guide-quality step (Q1-Q23 and next) | `docs/PLAN.md` "Guide quality fixes", that row only |
+| An M1 step or a past decision on the plan | `docs/PLAN.md` "M1 steps", "Decisions already made" |
+| The HTTP API, configuration, jobs, deploy | `docs/SERVER.md`, the matching section |
+| Scoring guides, evaluation runs | `Evaluation/README.md` |
+| The iOS app (plan and design) | The private `taba-ios` repo next to this one: `../taba-ios/AGENTS.md`. GuideKit stays here |
+| Past decisions only | `docs/history/README.md` |
 
 ## The repo is public
 
@@ -36,6 +51,9 @@ This repo is public, because the ChatGPT plan route requires an open-source clie
   logs in in their browser). Never use an OpenAI API key automatically.
 - Everything stays free. Never call paid APIs (paid place data, OpenAI API key billing, image
   generation) without the owner's explicit yes.
+- Ask the owner before any batch of test builds: they cost no money but count toward the ChatGPT plan's usage
+  limits.
+- Deploy a new image to the VPS only with the owner's yes.
 - Free APIs still get polite use: Nominatim at most 1 request per second with a real User-Agent; Overpass
   one query at a time.
 
@@ -49,7 +67,9 @@ This repo is public, because the ChatGPT plan route requires an open-source clie
 | `Prompts/` | The AI prompts, versioned with front matter. See `Prompts/README.md` |
 | `Tests/` | Swift Testing. `GuideKit/Tests/GuideKitTests/Fixtures/edinburgh-mock.json` is the benchmark trip |
 | `scripts/` | `privacy-scan.sh`, `hooks/pre-commit` |
+| `Evaluation/` | Test scenarios and the gitignored runs; see `Evaluation/README.md` |
 | `docs/PLAN.md` | The plan and roadmap |
+| `docs/SERVER.md` | The server: API, configuration, jobs, deploy |
 | `probe-output/` | Probe reports and raw responses. Gitignored |
 
 ## Commands
@@ -106,27 +126,22 @@ What to update:
 
 1. **`docs/PLAN.md`:** mark the step done and add one line on anything learned that changes later steps.
    Public, so no personal or infrastructure details.
-2. **`AGENTS.md`, "Current state" below:** two or three lines saying where things stand. Public too.
-3. **`private/HANDOFF.md`** (gitignored, never committed). Keep its sections current:
+2. **`AGENTS.md`, "Current state" below:** at most 3 lines: the live image, the default model and pointers.
+   History goes to the handoff Log. Public, so no personal or infrastructure details.
+3. **`private/HANDOFF.md`** (gitignored, never committed). Keep it within its caps: `Now` at most 8 bullets,
+   `Next` at most 5, `Log` the 10 newest entries of at most 3 lines, at most 1,500 words. Older entries go to
+   `private/history/handoff-log.md`. Infrastructure details live in `private/INFRA.md`.
    - `Now`: what is finished, what is in progress, and the exact state of the working tree (uncommitted
      files, branches, worktrees, local commits not yet pushed).
    - `Next`: the next step from the plan, the first concrete actions, and anything to check first.
    - `Waiting on the owner`: questions or actions only the owner can take.
-   - `Log`: add a dated entry (newest first): what was done, commit hashes, live runs and their results,
-     and decisions with the reason for each.
-   - The reference sections (owner, credentials, hosting): edit them when they change.
+   - `Log`: add a dated entry (newest first): what was done, commit hashes, and decisions with the reason.
 4. Commit the public doc changes, `docs: update handoff after <step>`. Never commit `private/`.
 
-A handoff is good when a new agent can read `AGENTS.md`, `docs/PLAN.md` and `private/HANDOFF.md` and
-continue without asking the owner what happened.
+A handoff is good when a new agent can read `AGENTS.md` and the handoff's *Now* and *Next* and continue.
 
 ## Current state
 
-M1 is done and the server is deployed (static Linux image, tailnet-only HTTPS). Guide-quality fixes Q1–Q14 in
-`docs/PLAN.md` are deployed (`taba-server:q14`, 2026-11-13). Q14: the trip's typed facts
-outrank the prose: stay arrangement, trip travel and the guide's base; no invented stay; a contradiction check on
-all copy; pick lists keep fitting kinds; plan.md v8, write.md v8, repair.md v3. Default model: Sol.
-Q15 (2026-11-14, deployed as `taba-server:q15`): named tasting items, a trip-only Good to know, a later last stop
-before a known departure. Deploying: `docs/SERVER.md`, "Deployment".
-Q16-Q18 (2026-11-14): `taba-score` and 11 evaluation scenarios; rank, pace and spend checks; and an OpenStreetMap fallback when Foursquare gives nothing (Foursquare credits ran out). Q19 adds Nominatim as a second fallback. Deployed as `taba-server:q19`. Apple Maps data cannot be stored in guides (Apple's terms); see the server `docs/PLAN.md` notes.
-Q20 (2026-11-14, deployed as `taba-server:q20`): research names up to 20 places (research.md v6), each looked up on OpenStreetMap by name with a shorter-name retry; the sweep only fills gaps (Nominatim, then Overpass); research picks are marked and plan.md v11 prefers them; the build no longer uses Foursquare or its key. The six-trip run passed (83 of 87 picks found). The Foursquare code is deleted (2026-11-14, not deployed: no behaviour change). Fixes for the two weaknesses it showed (picks of kind `other`, picks with unknown hours; plan.md v12) and a fix that records why a ChatGPT request failed are deployed as `taba-server:q20c`; a Leeds rebuild passed. Next: stop the unfixable `mealMissing` warning burning repair rounds, then Q21 (OSM credit) and Q22 (live MapKit walks).
+Live image `taba-server:q23b` (2026-11-19), default model `gpt-6.2-sol`. Guide-quality fixes Q1-Q20 and Q23
+are deployed; Q21 and Q22 are planned (rows in `docs/PLAN.md` "Guide quality fixes"). Next steps: the handoff's
+*Next*. Older deploy history: `docs/history/2026-11-28-agents-current-state.md`.
